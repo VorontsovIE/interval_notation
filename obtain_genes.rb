@@ -1,4 +1,4 @@
-# Don't collect peaks that have zero expression
+# We don't collect peaks that have zero expression
 
 require 'logger'
 $logger = Logger.new($stderr)
@@ -265,6 +265,25 @@ class Peak
   
   def chromosome; region.chromosome; end
   def strand; region.strand; end
+  def pos_start; region.pos_start; end
+  def pos_end; region.pos_end; end
+  
+  # region_length is length of region before txStart(start of transcript) where we are looking for peaks
+  def transcripts_associated(transcripts, region_length)
+    if strand == '+'
+      region_of_possibly_associated_trascripts = Region.new(chromosome, strand, pos_start, pos_end + region_length)
+    else
+      region_of_possibly_associated_trascripts = Region.new(chromosome, strand, pos_start - region_length, pos_end)
+    end
+    transcripts.select{|ucsc_id, transcript| transcript.full_gene_region.intersect?(region_of_possibly_associated_trascripts)}
+  end
+  
+  ### !!! BAD SOLUTION because we change state of peak while the set of associated transcripts is dependent on region length
+  # attr_reader :associated_transcripts
+  # def associate_transcript(transcript)
+    # @associated_transcripts ||= []
+    # @associated_transcripts << transcript
+  # end
 end
 
 class Sequence
@@ -437,7 +456,13 @@ genes.each do |hgnc_id, gene|
     sequence = utr.load_sequence('genome/hg19/')
     # all transcripts in the group have the same associated peaks
     associated_peaks = transcripts.first.peaks_associated(gene.peaks, REGION_LENGTH)
-    summary_expression = associated_peaks.map(&:tpm).inject(&:+)
+    
+    ##associated_peaks.each{|peak| peak.associate(transcript)}
+    
+    # each peak can affect different transcripts so we distribute its expression equally between all transcripts which can be affected
+    summary_expression = associated_peaks.map{|peak| peak.tpm.to_f / peak.transcripts_associated(all_transcripts, REGION_LENGTH).size }.inject(&:+)
+    
+    ##summary_expression = associated_peaks.map{|peak| peak.tpm.to_f / peak.associated_transcripts.size }.inject(&:+)
     
     gene_info = "HGNC:#{gene.hgnc_id}\t#{gene.approved_symbol}\tentrezgene:#{gene.entrezgene_id}"
     exon_structure_on_utr_info = exons_on_utr.map(&:to_s).join(';')
