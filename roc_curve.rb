@@ -24,14 +24,18 @@ def area_under_curve(points)
   }.inject(&:+)
 end
 
+def output_curve_data(output_file, points)
+  File.open(output_file,'w') do |f|
+    points.each do |x,y|
+      f.puts "#{x}\t#{y}"
+    end
+  end
+end
+
 data = File.readlines('gene_matching_rates.out').map(&:strip).map(&:split)
 classifier_values = Hash[ data.map.with_index{|line,ind| [ind, line[3]]}]
 marks = Hash[data.map.with_index{|line,ind| [ind, line[4] =~ /mTOR.*Target/i]}]
 
 roc_points = roc_curve(classifier_values, marks )
 puts area_under_curve(roc_points)
-File.open('roc_curve.out','w') do |f|
-  roc_points.each do |x,y|
-    f.puts "#{x}\t#{y}"
-  end
-end
+#output_curve_data('roc_curve.out', roc_points)
