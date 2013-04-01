@@ -1,9 +1,9 @@
 # We don't collect peaks that have zero expression
 
 # TODO:
-# Some genes hasn't entrez in mapping but has it in fantom table
+# 1) Some genes hasn't entrez in mapping but has it in fantom table
 # For genes that has no mapping we get mapping from fantom
-
+# 2) Extract gene expression calculation into its own method
 
 require 'logger'
 $logger = Logger.new($stderr)
