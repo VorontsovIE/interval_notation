@@ -1,3 +1,5 @@
+# We should also match motifs 
+
 def read_mtor_carting(input_file)
   mtor_targets = {}
   translational_genes = {}
@@ -13,14 +15,15 @@ def read_mtor_carting(input_file)
   return mtor_targets, translational_genes
 end
 
-def percent_of_starts_matching_pattern(sequence, cages, pattern)
+def percent_of_starts_matching_pattern(sequence, cages, pattern, max_distance_from_start, min_length)
   sum_of_all_cages = cages.inject(0, &:+)
   sum_of_matching_cages = 0
+  complex_pattern = /(.{,#{max_distance_from_start}})(#{pattern})/i
   loop do
-    match = sequence.match(pattern)
+    match = sequence.match(complex_pattern)
     raise StopIteration  unless match
     pos = match.begin(0)
-    sum_of_matching_cages += cages[pos]
+    sum_of_matching_cages += cages[pos] if match[2].length >= min_length
     sequence = sequence[pos+1 .. -1]
     cages = cages[pos+1 .. -1]
     raise StopIteration  unless sequence
@@ -28,8 +31,61 @@ def percent_of_starts_matching_pattern(sequence, cages, pattern)
   sum_of_all_cages != 0  ?  sum_of_matching_cages.to_f / sum_of_all_cages  :  nil
 end
 
-mtor_targets, translational_genes = read_mtor_carting("mTOR_carting.txt")
-input_file = 'log_.txt'
+def percent_of_starts_by_ct_saturation(sequence, cages, max_distance_from_start, window_size, min_ct_saturation)
+  sum_of_all_cages = cages.inject(0, &:+)
+  sum_of_matching_cages = 0
+  
+  # cumulative_ct_saturation is an array where each element(index) is number of CT-nucleotides in a region [0, index)
+  cumulative_ct_saturation = Array.new(sequence.length + 1)
+  cumulative_ct_saturation[0] = 0
+  sequence.each_char.each_with_index do |letter, pos|
+    cumulative_ct_saturation[pos+1] = cumulative_ct_saturation[pos] + (['C', 'T'].include?(letter.upcase) ? 1 : 0)
+  end
+  #max_distance_from_start.times {
+  #  cumulative_ct_saturation[]
+  #}
+
+  sequence.length.times do |pos|
+    windows_saturation = (0..max_distance_from_start).map{|dist_from_start|
+      #sequence[pos + dist_from_start ... pos + dist_from_start + window_size].each_char.count{|x| x.downcase == 'c' || x.downcase == 't'}
+      window_start = pos + dist_from_start
+      window_end = pos + dist_from_start + window_size
+      window_start = [window_start, sequence.length].min
+      window_end = [window_end, sequence.length].min
+      cumulative_ct_saturation[window_end] - cumulative_ct_saturation[window_start]
+    }.max
+    sum_of_matching_cages += cages[pos] if windows_saturation >= min_ct_saturation
+  end
+  sum_of_all_cages != 0  ?  sum_of_matching_cages.to_f / sum_of_all_cages  :  nil
+end
+
+# class MotifMatcher
+# end
+
+# class PatternMatcher
+#   attr_accessor :pattern, :from_start, :min_length
+#   attr_reader :current_position
+#   def initialize(pattern, from_start, min_length)
+#     @pattern, @from_start, @min_length = pattern, from_start, min_length
+#     @current_position = 0
+#   end
+#   def match(sequence)
+#     match = sequence[current_position..-1].match(pattern)
+#     @current_position = match.begin(0) + 1
+#   end
+#   def each_match(sequence)
+#     yield match while match = match(sequence)
+#   end
+# end
+
+#max_distance_from_start, min_length = ARGV.first(2).map(&:to_i)
+#raise 'Specify max_distance_from_start and min_length as command-line args' unless max_distance_from_start && min_length
+raise 'Incorrect number of command-line arguments' unless ARGV.size == 3
+max_distance_from_start, window_size, min_ct_saturation =  ARGV.map(&:to_i)
+raise 'Specify max_distance_from_start and window_size and min_ct_saturation as command-line args' unless max_distance_from_start && window_size && min_ct_saturation
+
+mtor_targets, translational_genes = read_mtor_carting("mTOR_mapping.txt")
+input_file = 'transcripts_after_splicing.out'
 
 gene_names = {}
 gene_expression = {}
@@ -51,7 +107,8 @@ File.open('transcript_matching_rates.out', 'w') do |fw|
       expression = expression.to_f
       gene_names[hgnc_id] = approved_symbol
       
-      matching_rate = percent_of_starts_matching_pattern(sequence, cages, /.{,5}[CT]{5,}/i) || 0
+      #matching_rate = percent_of_starts_matching_pattern(sequence, cages, /[CT]+/i, max_distance_from_start, min_length) || 0
+      matching_rate = percent_of_starts_by_ct_saturation(sequence, cages, max_distance_from_start, window_size, min_ct_saturation) || 0
       
       gene_expression[hgnc_id] ||= 0
       gene_matching_rna_pool[hgnc_id] ||= 0

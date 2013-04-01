@@ -1,5 +1,10 @@
 # We don't collect peaks that have zero expression
 
+# TODO:
+# Some genes hasn't entrez in mapping but has it in fantom table
+# For genes that has no mapping we get mapping from fantom
+
+
 require 'logger'
 $logger = Logger.new($stderr)
 
@@ -442,25 +447,45 @@ all_peaks = read_peaks('robust_set.freeze1.reduced.pc-3', hgnc_to_entrezgene, en
 genes = read_genes('HGNC_protein_coding_22032013_entrez.txt')
 all_transcripts = read_transcripts('knownGene.txt')
 
-REGION_LENGTH = 1000
+REGION_LENGTH = 100
+genes_to_process = {}
+transcript_groups = {}
+number_of_genes_for_a_peak = {} # number of genes that have peak in their transcript UTRs.
 genes.each do |hgnc_id, gene|
-
   $logger.warn "Skip #{gene}" and next  unless gene.collect_transcripts(entrezgene_transcripts, all_transcripts)
   $logger.warn "Skip #{gene}" and next  unless gene.collect_peaks(all_peaks)
+  genes_to_process[hgnc_id] = gene
+  transcript_groups[hgnc_id] = gene.transcripts_grouped_by_common_exon_structure_on_utr(REGION_LENGTH)
+
+  peaks_associated_to_gene = transcript_groups[hgnc_id].collect{|(utr, exons_on_utr), transcripts|
+    transcripts.first.peaks_associated(gene.peaks, REGION_LENGTH)
+  }.flatten.uniq
   
-  
-  transcript_groups = gene.transcripts_grouped_by_common_exon_structure_on_utr(REGION_LENGTH)
-  transcript_groups.each do |(utr, exons_on_utr), transcripts|
+  peaks_associated_to_gene.each do |peak|
+    number_of_genes_for_a_peak[peak] ||= 0
+    number_of_genes_for_a_peak[peak] += 1
+  end
+end
+
+genes_to_process.each do |hgnc_id, gene|  
+  transcript_groups[hgnc_id].each do |(utr, exons_on_utr), transcripts|
     # sequence and cages here are unreversed on '-'-strand. One should reverse both arrays and complement sequence
     cages = collect_cages(all_cages, utr)
     sequence = utr.load_sequence('genome/hg19/')
     # all transcripts in the group have the same associated peaks
     associated_peaks = transcripts.first.peaks_associated(gene.peaks, REGION_LENGTH)
     
-    ##associated_peaks.each{|peak| peak.associate(transcript)}
-    
-    # each peak can affect different transcripts so we distribute its expression equally between all transcripts which can be affected
-    summary_expression = associated_peaks.map{|peak| peak.tpm.to_f / peak.transcripts_associated(all_transcripts, REGION_LENGTH).size }.inject(&:+)
+
+  
+    summary_expression = associated_peaks.map{|peak| 
+      num_of_transcript_groups_associated_to_peak = transcript_groups[hgnc_id].count { |(_,_),transcripts_2| 
+        transcripts_2.first.peaks_associated(gene.peaks, REGION_LENGTH).include?(peak)
+      }
+      # Divide expression of each peak equally between genes and then for each gene between glued transcripts
+      # Each peak can affect different transcripts so we distribute its expression equally
+      # between all transcripts of a single gene whose expression can be affected by this peak
+      (peak.tpm.to_f / number_of_genes_for_a_peak[peak]) / num_of_transcript_groups_associated_to_peak
+    }.inject(&:+)
     
     ##summary_expression = associated_peaks.map{|peak| peak.tpm.to_f / peak.associated_transcripts.size }.inject(&:+)
     
