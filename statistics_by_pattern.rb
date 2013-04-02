@@ -1,97 +1,14 @@
-# We should also match motifs 
+# TODO:
+# 1) We should also match motifs 
+# 2) extract matching_rates in calculate_transcript_matching_rates from transcript_info.
+# It's a bed smell that we rewrite it on each iteration
 
-def read_mtor_carting(input_file)
-  mtor_targets = {}
-  translational_genes = {}
-  File.open(input_file) do |f|
-    f.each_line do |line|
-      next if f.lineno == 1
-      hsieh_name, hgnc_name, hgnc_id = line.strip.split("\t")
-      hgnc_id = hgnc_id.split(':').last
-      mtor_targets[hgnc_id] = hgnc_name
-      translational_genes[hgnc_id] = hgnc_name  if hsieh_name.end_with?('=')
-    end
-  end
-  return mtor_targets, translational_genes
-end
+$:.unshift File.join(File.dirname(File.expand_path(__FILE__)), 'lib')
+require 'matching_rate'
+require 'classifier_quality'
 
-def percent_of_starts_matching_pattern(sequence, cages, pattern, max_distance_from_start, min_length)
-  sum_of_all_cages = cages.inject(0, &:+)
-  sum_of_matching_cages = 0
-  complex_pattern = /(.{,#{max_distance_from_start}})(#{pattern})/i
-  loop do
-    match = sequence.match(complex_pattern)
-    raise StopIteration  unless match
-    pos = match.begin(0)
-    sum_of_matching_cages += cages[pos] if match[2].length >= min_length
-    sequence = sequence[pos+1 .. -1]
-    cages = cages[pos+1 .. -1]
-    raise StopIteration  unless sequence
-  end
-  sum_of_all_cages != 0  ?  sum_of_matching_cages.to_f / sum_of_all_cages  :  nil
-end
-
-def percent_of_starts_by_ct_saturation(sequence, cages, max_distance_from_start, window_size, min_ct_saturation)
-  sum_of_all_cages = cages.inject(0, &:+)
-  sum_of_matching_cages = 0
-  
-  # cumulative_ct_saturation is an array where each element(index) is number of CT-nucleotides in a region [0, index)
-  cumulative_ct_saturation = Array.new(sequence.length + 1)
-  cumulative_ct_saturation[0] = 0
-  sequence.each_char.each_with_index do |letter, pos|
-    cumulative_ct_saturation[pos+1] = cumulative_ct_saturation[pos] + (['C', 'T'].include?(letter.upcase) ? 1 : 0)
-  end
-  #max_distance_from_start.times {
-  #  cumulative_ct_saturation[]
-  #}
-
-  sequence.length.times do |pos|
-    windows_saturation = (0..max_distance_from_start).map{|dist_from_start|
-      #sequence[pos + dist_from_start ... pos + dist_from_start + window_size].each_char.count{|x| x.downcase == 'c' || x.downcase == 't'}
-      window_start = pos + dist_from_start
-      window_end = pos + dist_from_start + window_size
-      window_start = [window_start, sequence.length].min
-      window_end = [window_end, sequence.length].min
-      cumulative_ct_saturation[window_end] - cumulative_ct_saturation[window_start]
-    }.max
-    sum_of_matching_cages += cages[pos] if windows_saturation >= min_ct_saturation
-  end
-  sum_of_all_cages != 0  ?  sum_of_matching_cages.to_f / sum_of_all_cages  :  nil
-end
-
-# class MotifMatcher
-# end
-
-# class PatternMatcher
-#   attr_accessor :pattern, :from_start, :min_length
-#   attr_reader :current_position
-#   def initialize(pattern, from_start, min_length)
-#     @pattern, @from_start, @min_length = pattern, from_start, min_length
-#     @current_position = 0
-#   end
-#   def match(sequence)
-#     match = sequence[current_position..-1].match(pattern)
-#     @current_position = match.begin(0) + 1
-#   end
-#   def each_match(sequence)
-#     yield match while match = match(sequence)
-#   end
-# end
-
-#max_distance_from_start, min_length = ARGV.first(2).map(&:to_i)
-#raise 'Specify max_distance_from_start and min_length as command-line args' unless max_distance_from_start && min_length
-raise 'Incorrect number of command-line arguments' unless ARGV.size == 3
-max_distance_from_start, window_size, min_ct_saturation =  ARGV.map(&:to_i)
-raise 'Specify max_distance_from_start and window_size and min_ct_saturation as command-line args' unless max_distance_from_start && window_size && min_ct_saturation
-
-mtor_targets, translational_genes = read_mtor_carting("mTOR_mapping.txt")
-input_file = 'transcripts_after_splicing.out'
-
-gene_names = {}
-gene_expression = {}
-gene_matching_rna_pool = {}
-
-File.open('transcript_matching_rates.out', 'w') do |fw|
+def read_transcript_infos(input_file)
+  transcript_infos = []
   File.open(input_file) do |f|
     line_iterator = f.each_line
     loop do
@@ -100,37 +17,125 @@ File.open('transcript_matching_rates.out', 'w') do |fw|
       cages = line_iterator.next.split("\t").map(&:to_i)
       
       hgnc_id, approved_symbol, entrezgene_id, \
-      utr, exon_structure_on_utr_info, transcripts_info, \
+      utr, exon_structure_on_utr_info, transcripts_names, \
       peaks_info, expression = line_infos.split("\t")
 
       hgnc_id = hgnc_id.split(':').last
       expression = expression.to_f
-      gene_names[hgnc_id] = approved_symbol
-      
-      #matching_rate = percent_of_starts_matching_pattern(sequence, cages, /[CT]+/i, max_distance_from_start, min_length) || 0
-      matching_rate = percent_of_starts_by_ct_saturation(sequence, cages, max_distance_from_start, window_size, min_ct_saturation) || 0
-      
-      gene_expression[hgnc_id] ||= 0
-      gene_matching_rna_pool[hgnc_id] ||= 0
-      gene_expression[hgnc_id] += expression
-      gene_matching_rna_pool[hgnc_id] += expression * matching_rate
-      
-      is_mtor_target = mtor_targets[hgnc_id] ? '*mTOR-target*' : ''
-      is_translational_gene = translational_genes[hgnc_id] ? '*translational-gene*' : ''
-      fw.puts "HGNC:#{hgnc_id}\t#{gene_names[hgnc_id]}\t#{transcripts_info}\t#{expression}\t#{matching_rate}\t#{is_mtor_target}\t#{is_translational_gene}"
+      transcript_infos << {hgnc_id: hgnc_id, name: approved_symbol, 
+                          transcript_names: transcripts_names, expression: expression,
+                          sequence: sequence, cages: cages}
+    end
+  end
+  transcript_infos
+end
+
+def collect_gene_names(transcript_infos)
+  gene_names = {}
+  transcript_infos.each do |transcript_info|
+    hgnc_id = transcript_info[:hgnc_id]
+    gene_names[ hgnc_id ] = transcript_info[:name]
+  end
+  gene_names
+end
+
+def collect_gene_expression(transcript_infos)
+  gene_expression = {}
+  transcript_infos.each do |transcript_info|
+    hgnc_id = transcript_info[:hgnc_id]
+    gene_expression[hgnc_id] ||= 0
+    gene_expression[hgnc_id] += transcript_info[:expression]
+  end
+  gene_expression
+end
+
+def calculate_transcript_matching_rates(transcript_infos, max_distance_from_start, window_size, min_ct_saturation)
+  transcript_infos.each do |transcript_info|
+    sequence = transcript_info[:sequence]
+    cages = transcript_info[:cages]
+    transcript_info[:cumulative_ct_saturation] ||= cumulative_saturation(sequence, ['C', 'T'])
+    cumulative_ct_saturation = transcript_info[:cumulative_ct_saturation]
+    transcript_info[:windows_saturations] ||= []
+    transcript_info[:windows_saturations][window_size] ||= windows_saturations(sequence, window_size, cumulative_ct_saturation)
+    windows_saturations = transcript_info[:windows_saturations][window_size]
+
+    #matching_rate = percent_of_starts_matching_pattern(sequence, cages, /[CT]+/i, max_distance_from_start, min_length) || 0
+    matching_rate = percent_of_starts_by_ct_saturation(sequence, cages, windows_saturations,
+                                                      max_distance_from_start, window_size, min_ct_saturation) || 0
+    transcript_info[:matching_rate] = matching_rate
+  end
+  transcript_infos
+end
+
+# transcript_info for each transcript should have calculated matching rate.
+def gene_matching_rate(transcript_infos, gene_expression)
+  rna_pool_matching_rate_unnormalized = {}
+  transcript_infos.each do |transcript_info|
+    raise 'Calculate transcript matching rates first' unless transcript_info.has_key?(:matching_rate)
+    hgnc_id = transcript_info[:hgnc_id]
+    rna_pool_matching_rate_unnormalized[hgnc_id] ||= 0
+    rna_pool_matching_rate_unnormalized[hgnc_id] += transcript_info[:expression] * transcript_info[:matching_rate]
+  end
+
+  gene_ids = rna_pool_matching_rate_unnormalized.keys
+  Hash[
+    gene_ids.map{|hgnc_id|
+      [hgnc_id, rna_pool_matching_rate_unnormalized[hgnc_id].to_f / gene_expression[hgnc_id]] 
+    }
+  ]
+end
+
+
+
+#max_distance_from_start, min_length = ARGV.first(2).map(&:to_i)
+#raise 'Specify max_distance_from_start and min_length as command-line args' unless max_distance_from_start && min_length
+
+#raise 'Incorrect number of command-line arguments' unless ARGV.size == 3
+#max_distance_from_start, window_size, min_ct_saturation =  ARGV.map(&:to_i)
+#raise 'Specify max_distance_from_start and window_size and min_ct_saturation as command-line args' unless max_distance_from_start && window_size && min_ct_saturation
+
+mtor_targets, translational_genes = read_mtor_carting("mTOR_mapping.txt")
+transcript_infos = read_transcript_infos('transcripts_after_splicing.out')
+gene_names = collect_gene_names(transcript_infos)
+gene_expression = collect_gene_expression(transcript_infos)
+
+(0..10).each do |max_distance_from_start|
+  (1..10).each do |window_size|
+    (0..window_size).each do |min_ct_saturation|
+      #max_distance_from_start, window_size, min_ct_saturation = 0,3,3
+
+      calculate_transcript_matching_rates(transcript_infos, max_distance_from_start, window_size, min_ct_saturation)
+      gene_matching_rate = gene_matching_rate(transcript_infos, gene_expression)
+
+      roc_points = roc_curve(gene_matching_rate, mtor_targets)
+      auc = area_under_curve(roc_points)
+      puts "#{max_distance_from_start}\t#{window_size}\t#{min_ct_saturation}\t#{auc}"
+
+      # File.open('transcript_matching_rates.out','w') do |fw|
+      #   transcript_infos.each do |transcript_info|
+      #     hgnc_id = transcript_info[:hgnc_id]
+      #     transcript_names = transcript_info[:transcript_names]
+      #     expression = transcript_info[:expression]
+      #     matching_rate = transcript_info[:matching_rate]
+      #     gene_name = transcript_info[:name]
+
+      #     is_mtor_target = mtor_targets[hgnc_id] ? '*mTOR-target*' : ''
+      #     is_translational_gene = translational_genes[hgnc_id] ? '*translational-gene*' : ''
+      #     fw.puts "HGNC:#{hgnc_id}\t#{gene_name}\t#{transcript_names}\t#{expression}\t#{matching_rate}\t#{is_mtor_target}\t#{is_translational_gene}"
+      #   end
+      # end
+
+      # File.open('gene_matching_rates.out', 'w') do |fw|
+      #   gene_names.each do |hgnc_id, name|
+      #     expression = gene_expression[hgnc_id]
+      #     matching_rate = gene_matching_rate[hgnc_id]
+      #     is_mtor_target = mtor_targets[hgnc_id] ? '*mTOR-target*' : ''
+      #     is_translational_gene = translational_genes[hgnc_id] ? '*translational-gene*' : ''
+      #     fw.puts "HGNC:#{hgnc_id}\t#{name}\t#{expression}\t#{matching_rate}\t#{is_mtor_target}\t#{is_translational_gene}"
+      #   end
+      # end
     end
   end
 end
 
 
-gene_matching_rate = {}
-genes = gene_names.keys
-File.open('gene_matching_rates.out', 'w') do |fw|
-  genes.each do |hgnc_id|
-    gene_matching_rate[hgnc_id] = gene_matching_rna_pool[hgnc_id].to_f / gene_expression[hgnc_id]
-
-    is_mtor_target = mtor_targets[hgnc_id] ? '*mTOR-target*' : ''
-    is_translational_gene = translational_genes[hgnc_id] ? '*translational-gene*' : ''
-    fw.puts "HGNC:#{hgnc_id}\t#{gene_names[hgnc_id]}\t#{gene_expression[hgnc_id]}\t#{gene_matching_rate[hgnc_id]}\t#{is_mtor_target}\t#{is_translational_gene}"
-  end
-end

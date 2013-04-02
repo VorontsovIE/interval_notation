@@ -1,3 +1,6 @@
+$:.unshift File.join(File.dirname(File.expand_path(__FILE__)),'lib')
+require 'identificator_mapping'
+
 # hgnc_ids is a hash {hgnc_id => true-value} for all targets which should be extracted
 # if hgnc_ids is :all, FASTA for all genes will be extracted
 def extract_fasta(input_file, output_file, hgnc_ids = :all)
@@ -19,19 +22,5 @@ def extract_fasta(input_file, output_file, hgnc_ids = :all)
   end
 end
 
-# returns {hgnc_id_of_mtor_target => true}
-def load_mtor_targets(input_file)
-  result = {}
-  File.open(input_file) do |f|
-    f.each_line do |line|
-      next if f.lineno == 1
-      gene_name_hsieh, gene_name, hgnc_id = line.strip.split("\t")
-      hgnc_id = hgnc_id.split(':').last
-      result[hgnc_id] = true
-    end
-  end
-  result
-end
-
-mtor_targets = load_mtor_targets('mTOR_mapping.txt')
+mtor_targets, translational_genes = read_mtor_carting('mTOR_mapping.txt')
 extract_fasta('transcripts_after_splicing.out', '5-utr.fasta', mtor_targets)
