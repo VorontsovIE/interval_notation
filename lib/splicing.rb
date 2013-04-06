@@ -26,5 +26,10 @@ end
 
 def splice_sequence(sequence, utr, exons_on_utr)
   spliced_sequence = splice_array(sequence, utr, exons_on_utr).join
-  utr.strand == '+'  ?  spliced_sequence  :  spliced_sequence.tr('acgtACGT', 'tgcaTGCA')
+  utr.strand == '+'  ?  spliced_sequence  :  complement(spliced_sequence)
+end
+
+# complement, not reverse complement
+def complement(sequence)
+  sequence.tr('acgtACGT', 'tgcaTGCA')
 end

@@ -94,8 +94,8 @@ end
 #max_distance_from_start, window_size, min_ct_saturation =  ARGV.map(&:to_i)
 #raise 'Specify max_distance_from_start and window_size and min_ct_saturation as command-line args' unless max_distance_from_start && window_size && min_ct_saturation
 
-mtor_targets, translational_genes = read_mtor_carting("mTOR_mapping.txt")
-transcript_infos = read_transcript_infos('transcripts_after_splicing.out')
+mtor_targets, translational_genes = read_mtor_mapping("mTOR_mapping.txt")
+transcript_infos = read_transcript_infos('transcripts_after_splicing.txt')
 gene_names = collect_gene_names(transcript_infos)
 gene_expression = collect_gene_expression(transcript_infos)
 

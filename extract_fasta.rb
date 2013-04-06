@@ -22,5 +22,5 @@ def extract_fasta(input_file, output_file, hgnc_ids = :all)
   end
 end
 
-mtor_targets, translational_genes = read_mtor_carting('mTOR_mapping.txt')
+mtor_targets, translational_genes = read_mtor_mapping('mTOR_mapping.txt')
 extract_fasta('transcripts_after_splicing.out', '5-utr.fasta', mtor_targets)

@@ -50,7 +50,7 @@ def read_hgnc_entrezgene_mappings(input_file)
   [hgnc_to_entrezgene, entrezgene_to_hgnc]
 end
 
-def read_mtor_carting(input_file)
+def read_mtor_mapping(input_file)
   mtor_targets = {}
   translational_genes = {}
   File.open(input_file) do |f|

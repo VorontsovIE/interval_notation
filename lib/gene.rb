@@ -39,10 +39,12 @@ class Gene
     transcript_ucsc_ids = entrezgene_transcripts[entrezgene_id] || []
     transcript_ucsc_ids.each do |ucsc_id|
       transcript = all_transcripts[ucsc_id]
-      if transcript
-        transcripts << transcript
+      if !transcript
+        $logger.error "#{self}'s transcript with #{ucsc_id} wasn't found. Skip transcript"
+      elsif transcript.coding_region.length == 0
+        $logger.warn "#{self}'s #{transcript} has no coding region. Skip transcript"
       else
-        $logger.error "#{self}'s transcript with #{ucsc_id} wasn't found. Skip transcript (gene may have another transcripts that are ok)" 
+        transcripts << transcript
       end
     end
     
@@ -66,15 +68,19 @@ class Gene
   # {[utr, exons_on_utr] => [transcripts]}
   def transcripts_grouped_by_common_exon_structure_on_utr(region_length)
     groups_of_transcripts = {}
+    group_associated_peaks = {}
     transcripts.each do |transcript|
-      utr = transcript.utr_region(peaks, region_length)
+      associated_peaks = transcript.peaks_associated(peaks, region_length)
+      utr = transcript.utr_region(associated_peaks)
       next  unless utr
       exon_intron_structure_on_utr = [utr, transcript.exons_on_region(utr)]  # utr should be here to know boundaries
       groups_of_transcripts[exon_intron_structure_on_utr] ||= []
       groups_of_transcripts[exon_intron_structure_on_utr] << transcript
+      group_associated_peaks[exon_intron_structure_on_utr] = associated_peaks
     end
-    groups_of_transcripts.map{|(utr, exons_on_utr), transcripts|
-      TranscriptGroup.new(utr, exons_on_utr, transcripts)
+    groups_of_transcripts.map{|exon_intron_structure_on_utr, transcripts|
+      utr, exons_on_utr = exon_intron_structure_on_utr
+      TranscriptGroup.new(utr, exons_on_utr, transcripts, group_associated_peaks[exon_intron_structure_on_utr])
     }
   end
 

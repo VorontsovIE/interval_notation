@@ -38,8 +38,7 @@ class Transcript
   
   # region_length is length of region before txStart(start of transcript) where we are looking for peaks
   # utr_region is defined by leftmost peak intersecting region [txStart-region_length; coding_region_start) and by start of coding region
-  def utr_region(peaks, region_length)
-    associated_peaks = peaks_associated(peaks, region_length)
+  def utr_region(associated_peaks)
     if associated_peaks.empty?
       $logger.warn "#{self} has no associated peaks"
       return nil

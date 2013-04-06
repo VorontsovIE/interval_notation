@@ -85,4 +85,18 @@ class Peak
   #   peaks
   # end
 
+  # Calculate number of genes that have specified peak in their transcript(transcript group)'s UTRs.
+  def self.calculate_number_of_genes_for_a_peak(genes_collection, transcript_groups)
+    number_of_genes_for_a_peak = {}
+    genes_collection.each do |hgnc_id, gene|
+      peaks_associated_to_gene = transcript_groups[hgnc_id].map(&:associated_peaks).flatten.uniq
+
+      peaks_associated_to_gene.each do |peak|
+        number_of_genes_for_a_peak[peak] ||= 0
+        number_of_genes_for_a_peak[peak] += 1
+      end
+    end
+    number_of_genes_for_a_peak
+  end
+
 end

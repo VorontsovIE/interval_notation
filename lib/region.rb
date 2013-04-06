@@ -3,7 +3,7 @@ $:.unshift File.dirname(File.expand_path(__FILE__))
 # [pos_start; pos_end) region on specified chromosome and strand
 # It's required that pos_start <= pos_end
 class Region
-  attr_reader :chromosome, :strand, :pos_start, :pos_end, :region, :sequence
+  attr_reader :chromosome, :strand, :pos_start, :pos_end, :region
   
   def ==(other_region)
     chromosome == other_region.chromosome && strand == other_region.strand && pos_start == other_region.pos_start && pos_end == other_region.pos_end

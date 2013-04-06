@@ -5,11 +5,13 @@
 # For genes that has no mapping we get mapping from fantom
 # 2) Extract gene expression calculation into its own method
 # 3) Class Sequence which will be able to store sequence(possibly with gaps) and its markup
-# It makes sense for iterating elements of sequence. Splicing should be moved in that class
+# It makes sense for iterating elements of sequence. Splicing and revcomplement should be moved in that class
+# Supplementary array of cages also can be indexed with the same (by value or identity) markup
 # 4) Extract all identificator mappings into its own class which would also control logic of rejecting data
 # 5) TranscriptGroup should encapsulate expression calculation. 
 # Before that it's useful to renorm peaks according to number of genes containing it in a separate method
 # 6) Add support for work with peaks-info file for all tissues
+# 7) Make sequence and array more consistent when array and sequence are spliced
 
 require 'logger'
 $logger = Logger.new($stderr)
@@ -23,13 +25,13 @@ require 'splicing'
 require 'cage'
 require 'identificator_mapping'
 require 'transcript_group'
+
 # class Sequence
 #   attr_reader :sequence, :markup
 # end
 
 # cages_file = 'prostate%20cancer%20cell%20line%253aPC-3.CNhs11243.10439-106E7.hg19.ctss.bed'
 # output_file = 'spliced_transcripts.txt'
-
 
 cages_file, output_file = *ARGV
 raise "You should specify file with cages for a specific tissue(*.bed) and output file" unless cages_file && output_file
@@ -42,51 +44,59 @@ genes = Gene.genes_from_file('HGNC_protein_coding_22032013_entrez.txt')
 all_transcripts = Transcript.transcripts_from_file('knownGene.txt')
 
 REGION_LENGTH = 100
+
 genes_to_process = {}
-transcript_groups = {}
-number_of_genes_for_a_peak = {} # number of genes that have peak in their transcript UTRs.
 genes.each do |hgnc_id, gene|
   $logger.warn "Skip #{gene}" and next  unless gene.collect_transcripts(entrezgene_transcripts, all_transcripts)
   $logger.warn "Skip #{gene}" and next  unless gene.collect_peaks(all_peaks)
   genes_to_process[hgnc_id] = gene
 end
 
+
+# We count all gene with the same UTR as the same transcript group and doesn't
+# renormalize expression and other quantities by number of transcripts in a group,
+# because have not enough information about concrete transcripts in a group.
+
+transcript_groups = {}
 genes_to_process.each do |hgnc_id, gene|
   transcript_groups[hgnc_id] = gene.transcripts_grouped_by_common_exon_structure_on_utr(REGION_LENGTH)
+end
 
-  peaks_associated_to_gene = transcript_groups[hgnc_id].map{|transcript_group|
-    transcript_group.peaks_associated(gene.peaks, REGION_LENGTH)
-  }.flatten.uniq
-  
-  peaks_associated_to_gene.each do |peak|
-    number_of_genes_for_a_peak[peak] ||= 0
-    number_of_genes_for_a_peak[peak] += 1
+# At this stage we don't consider number of transcripts for a gene because
+# we don't know anything about expression of each transcript for a gene.
+number_of_genes_for_a_peak = Peak.calculate_number_of_genes_for_a_peak(genes_to_process, transcript_groups)
+
+# Each peak can affect different transcripts so we distribute its expression
+# first equally between all genes whose expression can be affected by this peak
+# and then equally between all transcript groups of that gene
+
+genes_to_process.each do |hgnc_id, gene|
+  transcript_groups[hgnc_id].each do |transcript_group|
+    peaks_expression = transcript_group.associated_peaks.map{|peak|
+      num_of_transcript_groups_associated_to_peak = transcript_groups[hgnc_id].count{|transcript_group_2| transcript_group_2.associated_peaks.include?(peak) }     
+      (peak.tpm.to_f / number_of_genes_for_a_peak[peak]) / num_of_transcript_groups_associated_to_peak
+    }
+
+    transcript_group.summary_expression = peaks_expression.inject(&:+)
   end
 end
 
+
+
 File.open(output_file, 'w') do |fw|
-  genes_to_process.each do |hgnc_id, gene|  
+  genes_to_process.each do |hgnc_id, gene|
     transcript_groups[hgnc_id].each do |transcript_group|
       utr = transcript_group.utr
       exons_on_utr = transcript_group.exons_on_utr
-      transcripts = transcript_group.transcripts
 
-      # sequence and cages here are unreversed on '-'-strand. One should reverse both arrays and complement sequence
+      # sequence and cages here are unreversed on '-'-strand. One should possibly reverse both arrays and complement sequence
       cages = collect_cages(all_cages, utr)
       sequence = utr.load_sequence('genome/hg19/')
+
       # all transcripts in the group have the same associated peaks
-      associated_peaks = transcript_group.peaks_associated(gene.peaks, REGION_LENGTH)
-    
-      summary_expression = associated_peaks.map{|peak| 
-        num_of_transcript_groups_associated_to_peak = transcript_groups[hgnc_id].count{|transcript_group_2|
-          transcript_group_2.peaks_associated(gene.peaks, REGION_LENGTH).include?(peak)
-        }
-        # Divide expression of each peak equally between genes and then for each gene between glued transcripts
-        # Each peak can affect different transcripts so we distribute its expression equally
-        # between all transcripts of a single gene whose expression can be affected by this peak
-        (peak.tpm.to_f / number_of_genes_for_a_peak[peak]) / num_of_transcript_groups_associated_to_peak
-      }.inject(&:+)
-      
+      associated_peaks = transcript_group.associated_peaks
+
+      summary_expression = transcript_group.summary_expression
       gene_info = "HGNC:#{gene.hgnc_id}\t#{gene.approved_symbol}\tentrezgene:#{gene.entrezgene_id}"      
       peaks_info = associated_peaks.map{|peak| peak.region.to_s}.join(';')
       
