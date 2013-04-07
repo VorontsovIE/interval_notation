@@ -12,6 +12,7 @@
 # Before that it's useful to renorm peaks according to number of genes containing it in a separate method
 # 6) Add support for work with peaks-info file for all tissues
 # 7) Make sequence and array more consistent when array and sequence are spliced
+# 8) collect cages from gzip-files. Make gzips indexed (bgzf or anything other)
 
 require 'logger'
 $logger = Logger.new($stderr)
