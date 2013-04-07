@@ -30,6 +30,35 @@ def read_transcript_infos(input_file)
   transcript_infos
 end
 
+def print_transcript_matching_rates_infos(output_file, transcript_infos, mtor_targets, translational_genes)
+  File.open(output_file, 'w') do |fw|
+    transcript_infos.each do |transcript_info|
+      hgnc_id = transcript_info[:hgnc_id]
+      transcript_names = transcript_info[:transcript_names]
+      expression = transcript_info[:expression]
+      matching_rate = transcript_info[:matching_rate]
+      gene_name = transcript_info[:name]
+
+      is_mtor_target = mtor_targets[hgnc_id] ? '*mTOR-target*' : ''
+      is_translational_gene = translational_genes[hgnc_id] ? '*translational-gene*' : ''
+      fw.puts "HGNC:#{hgnc_id}\t#{gene_name}\t#{transcript_names}\t#{expression}\t#{matching_rate}\t#{is_mtor_target}\t#{is_translational_gene}"
+    end
+  end
+end
+
+def print_gene_matching_rates_infos(output_file, gene_names, gene_expression, gene_matching_rate, mtor_targets, translational_genes)
+  File.open(output_file, 'w') do |fw|
+    gene_names.each do |hgnc_id, name|
+      expression = gene_expression[hgnc_id]
+      matching_rate = gene_matching_rate[hgnc_id]
+      is_mtor_target = mtor_targets[hgnc_id] ? '*mTOR-target*' : ''
+      is_translational_gene = translational_genes[hgnc_id] ? '*translational-gene*' : ''
+      fw.puts "HGNC:#{hgnc_id}\t#{name}\t#{expression}\t#{matching_rate}\t#{is_mtor_target}\t#{is_translational_gene}"
+    end
+  end
+end
+
+
 def collect_gene_names(transcript_infos)
   gene_names = {}
   transcript_infos.each do |transcript_info|
@@ -111,29 +140,8 @@ gene_expression = collect_gene_expression(transcript_infos)
       auc = area_under_curve(roc_points)
       puts "#{max_distance_from_start}\t#{window_size}\t#{min_ct_saturation}\t#{auc}"
 
-      # File.open('transcript_matching_rates.out','w') do |fw|
-      #   transcript_infos.each do |transcript_info|
-      #     hgnc_id = transcript_info[:hgnc_id]
-      #     transcript_names = transcript_info[:transcript_names]
-      #     expression = transcript_info[:expression]
-      #     matching_rate = transcript_info[:matching_rate]
-      #     gene_name = transcript_info[:name]
-
-      #     is_mtor_target = mtor_targets[hgnc_id] ? '*mTOR-target*' : ''
-      #     is_translational_gene = translational_genes[hgnc_id] ? '*translational-gene*' : ''
-      #     fw.puts "HGNC:#{hgnc_id}\t#{gene_name}\t#{transcript_names}\t#{expression}\t#{matching_rate}\t#{is_mtor_target}\t#{is_translational_gene}"
-      #   end
-      # end
-
-      # File.open('gene_matching_rates.out', 'w') do |fw|
-      #   gene_names.each do |hgnc_id, name|
-      #     expression = gene_expression[hgnc_id]
-      #     matching_rate = gene_matching_rate[hgnc_id]
-      #     is_mtor_target = mtor_targets[hgnc_id] ? '*mTOR-target*' : ''
-      #     is_translational_gene = translational_genes[hgnc_id] ? '*translational-gene*' : ''
-      #     fw.puts "HGNC:#{hgnc_id}\t#{name}\t#{expression}\t#{matching_rate}\t#{is_mtor_target}\t#{is_translational_gene}"
-      #   end
-      # end
+      # print_transcript_matching_rates_infos('transcript_matching_rates.out', transcript_infos, mtor_targets, translational_genes)
+      # print_gene_matching_rates_infos('gene_matching_rates.out', gene_names, gene_expression, gene_matching_rate, mtor_targets, translational_genes)
     end
   end
 end
