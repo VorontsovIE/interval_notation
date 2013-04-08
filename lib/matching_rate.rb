@@ -1,5 +1,31 @@
 $:.unshift File.dirname(File.expand_path(__FILE__))
 require 'identificator_mapping'
+require 'bioinform'
+
+module Bioinform
+  class PWM
+    def score(word)
+      word = word.upcase
+      raise ArgumentError, 'word in PWM#score(word) should have the same length as matrix'  unless word.length == length
+      #raise ArgumentError, 'word in PWM#score(word) should have only ACGT-letters'  unless word.each_char.all?{|letter| %w{A C G T}.include? letter}
+      (0...length).map do |pos|
+        begin
+        # Need support of N-letters and other IUPAC
+          letter = word[pos]
+          matrix[pos][IndexByLetter[letter]]
+        rescue
+          if letter == 'N'
+            puts word
+            return matrix[pos].inject(&:+).to_f / 4
+          end
+          raise ArgumentError, 'word in PWM#score(word) should have only ACGT-letters'
+        end
+      end.inject(&:+)
+    end
+  end
+end
+
+
 
 def percent_of_starts_matching_pattern(sequence, cages, pattern, max_distance_from_start, min_length)
   sum_of_all_cages = cages.inject(0, &:+)
@@ -47,4 +73,14 @@ def windows_saturations(sequence, window_size, cumulative_ct_saturation)
   sequence.length.times.map{|pos|
     cumulative_ct_saturation[pos + window_size] - cumulative_ct_saturation[pos]
   }
+end
+
+def percent_of_starts_matching_motif(sequence, cages, max_distance_from_start, match_at_position)
+  positions = 0...sequence.length
+  sum_of_all_cages = cages.inject(0, &:+)
+  sum_of_matching_cages = 0
+  positions.each{|pos|
+    sum_of_matching_cages += cages[pos]  if (match_at_position[pos, max_distance_from_start + 1] || []).any?
+  }
+  (sum_of_all_cages != 0)  ?  sum_of_matching_cages.to_f / sum_of_all_cages  :  nil
 end

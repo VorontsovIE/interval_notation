@@ -2,6 +2,12 @@
 # 1) We should also match motifs 
 # 2) extract matching_rates in calculate_transcript_matching_rates from transcript_info.
 # It's a bed smell that we rewrite it on each iteration
+# 3) Think careful about filtering by minimal expression. There're at least two cases:
+# - choose minimal expression of gene to treat it as significant
+# In this case we'll lose such genes as RPL9 which are expressed mRNA slow but synthesis of proteins goes effective.
+# - normalize expression of each gene by maximal expression (or expressions_by_tissue.sort.last(10).average) of this gene through tissues
+# we suggest that a peak'll be expressed at least in a single tissue, so we'll understand whether gene(a peak of gene) is expressed or not
+# in this particular tissue
 
 $:.unshift File.join(File.dirname(File.expand_path(__FILE__)), 'lib')
 require 'matching_rate'
@@ -78,7 +84,7 @@ def collect_gene_expression(transcript_infos)
   gene_expression
 end
 
-def calculate_transcript_matching_rates(transcript_infos, max_distance_from_start, window_size, min_ct_saturation)
+def calculate_transcript_matching_rates_for_ct_saturation_in_window(transcript_infos, max_distance_from_start, window_size, min_ct_saturation)
   transcript_infos.each do |transcript_info|
     sequence = transcript_info[:sequence]
     cages = transcript_info[:cages]
@@ -95,6 +101,21 @@ def calculate_transcript_matching_rates(transcript_infos, max_distance_from_star
   end
   transcript_infos
 end
+
+def calculate_transcript_matching_rates_for_motif(transcript_infos, max_distance_from_start, pwm, threshold)
+  transcript_infos.each do |transcript_info|
+    sequence = transcript_info[:sequence]
+    cages = transcript_info[:cages]
+
+    positions = 0..(sequence.length - pwm.length)
+    transcript_info[:match_at_position] ||= positions.map{|pos| pwm.score(sequence[pos, pwm.length]) >= pwm_threshold ? true : nil}
+    matching_rate = percent_of_starts_matching_motif(sequence.upcase, cages, max_distance_from_start, transcript_info[:match_at_position]) || 0
+
+    transcript_info[:matching_rate] = matching_rate
+  end
+  transcript_infos
+end
+
 
 # transcript_info for each transcript should have calculated matching rate.
 def gene_matching_rate(transcript_infos, gene_expression)
@@ -131,9 +152,9 @@ gene_expression = collect_gene_expression(transcript_infos)
 (0..10).each do |max_distance_from_start|
   (1..10).each do |window_size|
     (0..window_size).each do |min_ct_saturation|
-      #max_distance_from_start, window_size, min_ct_saturation = 0,3,3
+      #max_distance_from_start, window_size, min_ct_saturation = 0,4,4
 
-      calculate_transcript_matching_rates(transcript_infos, max_distance_from_start, window_size, min_ct_saturation)
+      calculate_transcript_matching_rates_for_ct_saturation_in_window(transcript_infos, max_distance_from_start, window_size, min_ct_saturation)
       gene_matching_rate = gene_matching_rate(transcript_infos, gene_expression)
 
       roc_points = roc_curve(gene_matching_rate, mtor_targets)
