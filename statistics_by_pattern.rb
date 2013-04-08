@@ -8,6 +8,8 @@
 # - normalize expression of each gene by maximal expression (or expressions_by_tissue.sort.last(10).average) of this gene through tissues
 # we suggest that a peak'll be expressed at least in a single tissue, so we'll understand whether gene(a peak of gene) is expressed or not
 # in this particular tissue
+# 4) Extract rate evaluators to classes to encapsulate caching results and so on
+# 5) fix scoring N in Bioinform::PWM (should it be average of all scores or weighted average or smth different)
 
 $:.unshift File.join(File.dirname(File.expand_path(__FILE__)), 'lib')
 require 'matching_rate'
@@ -108,7 +110,7 @@ def calculate_transcript_matching_rates_for_motif(transcript_infos, max_distance
     cages = transcript_info[:cages]
 
     positions = 0..(sequence.length - pwm.length)
-    transcript_info[:match_at_position] ||= positions.map{|pos| pwm.score(sequence[pos, pwm.length]) >= pwm_threshold ? true : nil}
+    transcript_info[:match_at_position] ||= positions.map{|pos| pwm.score(sequence[pos, pwm.length]) >= threshold ? true : nil}
     matching_rate = percent_of_starts_matching_motif(sequence.upcase, cages, max_distance_from_start, transcript_info[:match_at_position]) || 0
 
     transcript_info[:matching_rate] = matching_rate
@@ -149,10 +151,28 @@ transcript_infos = read_transcript_infos('transcripts_after_splicing.txt')
 gene_names = collect_gene_names(transcript_infos)
 gene_expression = collect_gene_expression(transcript_infos)
 
+
+pwm = Bioinform::PWM.new( [[0, 4, 0 ,2], [0, 2, 0, 2], [0, 2, 0, 2], [0, 2, 0, 2], [0, 0.5, 0, 0.5]] )
+threshold = 9
+(0..10).each do |max_distance_from_start|
+  calculate_transcript_matching_rates_for_motif(transcript_infos, max_distance_from_start, pwm, threshold)
+
+  gene_matching_rate = gene_matching_rate(transcript_infos, gene_expression)
+
+  roc_points = roc_curve(gene_matching_rate, mtor_targets)
+  auc = area_under_curve(roc_points)
+  puts "#{max_distance_from_start}\t#{auc}"
+
+  output_curve_data('roc.txt', roc_points)
+  # print_transcript_matching_rates_infos('transcript_matching_rates.out', transcript_infos, mtor_targets, translational_genes)
+  # print_gene_matching_rates_infos('gene_matching_rates.out', gene_names, gene_expression, gene_matching_rate, mtor_targets, translational_genes)
+end
+
+
+
 (0..10).each do |max_distance_from_start|
   (1..10).each do |window_size|
     (0..window_size).each do |min_ct_saturation|
-      #max_distance_from_start, window_size, min_ct_saturation = 0,4,4
 
       calculate_transcript_matching_rates_for_ct_saturation_in_window(transcript_infos, max_distance_from_start, window_size, min_ct_saturation)
       gene_matching_rate = gene_matching_rate(transcript_infos, gene_expression)
@@ -161,6 +181,7 @@ gene_expression = collect_gene_expression(transcript_infos)
       auc = area_under_curve(roc_points)
       puts "#{max_distance_from_start}\t#{window_size}\t#{min_ct_saturation}\t#{auc}"
 
+      output_curve_data('roc.txt', roc_points)
       # print_transcript_matching_rates_infos('transcript_matching_rates.out', transcript_infos, mtor_targets, translational_genes)
       # print_gene_matching_rates_infos('gene_matching_rates.out', gene_names, gene_expression, gene_matching_rate, mtor_targets, translational_genes)
     end
