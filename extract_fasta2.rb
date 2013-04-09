@@ -19,6 +19,7 @@ entrezgene_transcripts = read_entrezgene_transcript_ids('knownToLocusLink.txt')
 all_peaks = Peak.peaks_from_file('robust_set.freeze1.reduced.pc-3', hgnc_to_entrezgene, entrezgene_to_hgnc)
 genes = Gene.genes_from_file('HGNC_protein_coding_22032013_entrez.txt')
 all_transcripts = Transcript.transcripts_from_file('knownGene.txt')
+mtor_targets, translational_genes = read_mtor_mapping('mTOR_mapping.txt')
 
 REGION_LENGTH = 100
 
@@ -36,6 +37,7 @@ end
 
 File.open('longest_5-utr.txt', 'w') do |fw|
   genes_to_process.each do |hgnc_id, gene|
+    next unless mtor_targets.has_key?(hgnc_id)
     longest_utr = transcript_groups[hgnc_id].map{|transcript_group| 
       sequence = transcript_group.utr.load_sequence('genome/hg19/')
       spliced_sequence = splice_sequence(sequence, transcript_group.utr, transcript_group.exons_on_utr)
@@ -68,7 +70,7 @@ end
 
 File.open('weighted_5-utr.txt', 'w') do |fw|
   genes_to_process.each do |hgnc_id, gene|
-
+    next unless mtor_targets.has_key?(hgnc_id)
     gene_expression = transcript_groups[hgnc_id].map(&:summary_expression).inject(&:+).to_f
 
     transcript_groups[hgnc_id].each do |transcript_group|
