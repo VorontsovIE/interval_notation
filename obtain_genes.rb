@@ -8,7 +8,7 @@
 # It makes sense for iterating elements of sequence. Splicing and revcomplement should be moved in that class
 # Supplementary array of cages also can be indexed with the same (by value or identity) markup
 # 4) Extract all identificator mappings into its own class which would also control logic of rejecting data
-# 5) TranscriptGroup should encapsulate expression calculation. 
+# 5) TranscriptGroup should encapsulate expression calculation.
 # Before that it's useful to renorm peaks according to number of genes containing it in a separate method
 # 6) Add support for work with peaks-info file for all tissues
 # 7) Make sequence and array more consistent when array and sequence are spliced

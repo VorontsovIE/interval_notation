@@ -35,17 +35,6 @@ genes_to_process.each do |hgnc_id, gene|
   transcript_groups[hgnc_id] = gene.transcripts_grouped_by_common_exon_structure_on_utr(REGION_LENGTH)
 end
 
-File.open('longest_5-utr.txt', 'w') do |fw|
-  genes_to_process.each do |hgnc_id, gene|
-    next unless mtor_targets.has_key?(hgnc_id)
-    longest_utr = transcript_groups[hgnc_id].map{|transcript_group| 
-      sequence = transcript_group.utr.load_sequence('genome/hg19/')
-      spliced_sequence = splice_sequence(sequence, transcript_group.utr, transcript_group.exons_on_utr)
-    }.max_by(&:length)
-    fw.puts ">1.0\n#{longest_utr}"
-  end
-end
-
 ###############################################
 
 # At this stage we don't consider number of transcripts for a gene because
@@ -59,7 +48,7 @@ number_of_genes_for_a_peak = Peak.calculate_number_of_genes_for_a_peak(genes_to_
 genes_to_process.each do |hgnc_id, gene|
   transcript_groups[hgnc_id].each do |transcript_group|
     peaks_expression = transcript_group.associated_peaks.map{|peak|
-      num_of_transcript_groups_associated_to_peak = transcript_groups[hgnc_id].count{|transcript_group_2| transcript_group_2.associated_peaks.include?(peak) }     
+      num_of_transcript_groups_associated_to_peak = transcript_groups[hgnc_id].count{|transcript_group_2| transcript_group_2.associated_peaks.include?(peak) }
       (peak.tpm.to_f / number_of_genes_for_a_peak[peak]) / num_of_transcript_groups_associated_to_peak
     }
 
@@ -67,21 +56,54 @@ genes_to_process.each do |hgnc_id, gene|
   end
 end
 
+# marks best start (top `rate` part of them) with poly-N so that motif finding ignore them
+def mark_best_starts_as_poly_n(sequence, cages, rate)
+  new_sequence = sequence.dup
+  sum_cages = cages.inject(&:+)
+  cages_taken = 0
+  cages_sorted = cages.each_with_index.sort_by{|cage, index| cage}.reverse
+  while cages_taken + cages_sorted.first.first <= sum_cages * 0.7
+    cage, index = cages_sorted.shift
+    cages_taken += cage
+    new_sequence[index] = 'N'
+  end
+  new_sequence
+end
+
+genes_to_extract = genes_to_process.select{|hgnc_id, gene| mtor_targets.has_key?(hgnc_id)}
 
 File.open('weighted_5-utr.txt', 'w') do |fw|
-  genes_to_process.each do |hgnc_id, gene|
-    next unless mtor_targets.has_key?(hgnc_id)
+  genes_to_extract.each do |hgnc_id, gene|
     gene_expression = transcript_groups[hgnc_id].map(&:summary_expression).inject(&:+).to_f
-
     transcript_groups[hgnc_id].each do |transcript_group|
       utr = transcript_group.utr
       exons_on_utr = transcript_group.exons_on_utr
 
-      # sequence and cages here are unreversed on '-'-strand. One should possibly reverse both arrays and complement sequence
-      sequence = utr.load_sequence('genome/hg19/')    
-      spliced_sequence = splice_sequence(sequence, utr, exons_on_utr)
+      spliced_sequence = splice_sequence(utr.load_sequence('genome/hg19/'), utr, exons_on_utr)
+      spliced_cages = splice_array(collect_cages(all_cages, utr), utr, exons_on_utr)
+      sequence_with_polyN_starts = mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7)
+      transcript_rate = transcript_group.summary_expression.to_f / gene_expression
+      sequence, cages = sequence_with_polyN_starts, spliced_cages
+      fw.puts ">#{transcript_rate}\n#{sequence}\n#{cages.join ' '}"
+      #fw.puts ">#{transcript_rate}\n#{sequence}"
+    end
+  end
+end
 
-      fw.puts ">#{transcript_group.summary_expression.to_f / gene_expression}\n#{spliced_sequence}"
-    end 
+File.open('longest_5-utr.txt', 'w') do |fw|
+  genes_to_extract.each do |hgnc_id, gene|
+
+    longest_utr, cages = transcript_groups[hgnc_id].map{|transcript_group|
+      utr = transcript_group.utr
+      exons_on_utr = transcript_group.exons_on_utr
+
+      spliced_sequence = splice_sequence(utr.load_sequence('genome/hg19/'), utr, exons_on_utr)
+      spliced_cages = splice_array(collect_cages(all_cages, utr), utr, exons_on_utr)
+      sequence_with_polyN_starts = mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7)
+
+      [sequence_with_polyN_starts, spliced_cages]
+    }.max_by{|sequence, cages| sequence.length }
+    fw.puts ">1.0\n#{longest_utr}\n#{cages.join ' '}"
+    #fw.puts ">1.0\n#{longest_utr}"
   end
 end

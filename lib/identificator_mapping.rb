@@ -15,7 +15,7 @@ def read_entrezgene_transcript_ids(input_file)
   transcripts = {}
   File.open(input_file) do |f|
     f.each_line do |line|
-      # we don't remove version
+      # we don't remove version (part of name after dot)
       transcript_id, entrezgene_id = line.strip.split("\t")
       transcripts[entrezgene_id] ||= []
       transcripts[entrezgene_id] << transcript_id
