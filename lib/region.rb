@@ -19,7 +19,7 @@ class Region
   def initialize(chromosome, strand, pos_start, pos_end)
     @chromosome, @strand, @pos_start, @pos_end = chromosome, strand, pos_start, pos_end
     @region = pos_start...pos_end
-    raise "Negative length for region #{annotation}"  if length < 0
+    raise "Negative length for region #{annotation}"  if length <= 0
   end
   
   # Region.new_by_annotation('chr1:564462..564463,+')
@@ -32,9 +32,9 @@ class Region
   def annotation
     "#{@chromosome}:#{@pos_start}..#{@pos_end},#{@strand}"
   end
-  def to_s
-    annotation
-  end
+
+  alias_method :to_s, :annotation
+  alias_method :inspect, :annotation
   
   def same_strand?(other_region)
     other_region.chromosome == chromosome && other_region.strand == strand
