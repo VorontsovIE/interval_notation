@@ -165,31 +165,66 @@ describe Region do
   end
 
   describe 'Comparable' do
-    Then{ (region <=> same_region).should == 0 }
-
-    Then{ (region <=> region_outside_right).should == -1 }
-    Then{ (region <=> region_outside_extend_from_end).should == -1 }
-
-    Then{ (region <=> region_outside_left).should == 1 }
-    Then{ (region <=> region_outside_extend_to_start).should == 1 }
-
     Then{ (region <=> region_on_another_strand).should be_nil }
     Then{ (region <=> region_on_another_chromosome).should be_nil }
-    Then{ (region <=> region_inside).should be_nil }
-    Then{ (region <=> region_containing).should be_nil }
-    Then{ (region <=> region_inside_extend_to_end).should be_nil }
-    Then{ (region <=> region_inside_extend_from_start).should be_nil }
-    Then{ (region <=> region_from_inside_to_outside_after_end).should be_nil }
-    Then{ (region <=> region_from_outside_before_start_to_inside).should be_nil }
+    
+    shared_examples 'compare regions' do
+      Then { (subject_region <=> same_as_subject_region).should == 0 }
+      
+      Then { (subject_region <=> region_right_to_subject).should == -1 }
+      Then { (subject_region <=> region_left_to_subject).should == 1 }
+      Then { (subject_region <=> region_right_to_subject_joint).should == -1 }
+      Then { (subject_region <=> region_left_to_subject_joint).should == 1 }
 
-    Then{ region.should <= same_region }
-    Then{ region.should_not < same_region }
-    Then{ region.should_not > same_region }
-    Then{ region.should >= same_region }
+      Then { (subject_region <=> region_inside_of_subject).should be_nil }
+      Then { (subject_region <=> region_inside_of_subject_left_joint).should be_nil }
+      Then { (subject_region <=> region_inside_of_subject_right_joint).should be_nil }
+      Then { (subject_region <=> region_inside_to_outside_of_subject).should be_nil }
+      Then { (subject_region <=> region_outside_to_inside_of_subject).should be_nil }
+      
+      Then{ subject_region.should <= same_as_subject_region }
+      Then{ subject_region.should_not < same_as_subject_region }
+      Then{ subject_region.should >= same_as_subject_region }
+      Then{ subject_region.should_not > same_as_subject_region }
+      
+      Then{ subject_region.should < region_right_to_subject }
+      Then{ subject_region.should <= region_right_to_subject }
+      Then{ subject_region.should_not > region_right_to_subject }
+      Then{ subject_region.should_not >= region_right_to_subject }
+    end
+    
+    context "On + strand" do
+      Given(:subject_region) { Region.new('chr1', '+', 100, 110) }
+      Given(:same_as_subject_region) { Region.new('chr1', '+', 100, 110) }
+      Given(:region_right_to_subject) { Region.new('chr1', '+', 113, 117) }
+      Given(:region_left_to_subject) { Region.new('chr1', '+', 93, 97) }
+      Given(:region_right_to_subject_joint) { Region.new('chr1', '+', 110, 117) }
+      Given(:region_left_to_subject_joint) { Region.new('chr1', '+', 93, 100) }
 
-    Then{ region.should <= region_outside_right }
-    Then{ region.should < region_outside_right }
-    Then{ region.should_not > region_outside_right }
-    Then{ region.should_not >= region_outside_right }
+      Given(:region_inside_of_subject) { Region.new('chr1', '+', 103, 107) }
+      Given(:region_inside_of_subject_left_joint) { Region.new('chr1', '+', 100, 107) }
+      Given(:region_inside_of_subject_right_joint) { Region.new('chr1', '+', 103, 110) }
+      Given(:region_inside_to_outside_of_subject) { Region.new('chr1', '+', 103, 113) }
+      Given(:region_outside_to_inside_of_subject) { Region.new('chr1', '+', 97, 103) }
+
+      include_examples 'compare regions'
+    end
+    
+    context "On - strand" do
+      Given(:subject_region) { Region.new('chr1', '-', 100, 110) }
+      Given(:same_as_subject_region) { Region.new('chr1', '-', 100, 110) }
+      Given(:region_left_to_subject) { Region.new('chr1', '-', 113, 117) }
+      Given(:region_right_to_subject) { Region.new('chr1', '-', 93, 97) }
+      Given(:region_left_to_subject_joint) { Region.new('chr1', '-', 110, 117) }
+      Given(:region_right_to_subject_joint) { Region.new('chr1', '-', 93, 100) }
+
+      Given(:region_inside_of_subject) { Region.new('chr1', '-', 103, 107) }
+      Given(:region_inside_of_subject_right_joint) { Region.new('chr1', '-', 100, 107) }
+      Given(:region_inside_of_subject_left_joint) { Region.new('chr1', '-', 103, 110) }
+      Given(:region_outside_to_inside_of_subject) { Region.new('chr1', '-', 103, 113) }
+      Given(:region_inside_to_outside_of_subject) { Region.new('chr1', '-', 97, 103) }
+      
+      include_examples 'compare regions'
+    end
   end
 end

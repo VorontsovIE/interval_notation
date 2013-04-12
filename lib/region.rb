@@ -17,7 +17,7 @@ class Region
   # region represented a semi-interval: [pos_start; pos_end) Positions are 0-based
   def initialize(chromosome, strand, pos_start, pos_end)
     @chromosome, @strand, @pos_start, @pos_end = chromosome, strand, pos_start, pos_end
-
+    raise "Strand can be only + or - but was #{strand.inspect}"  unless ["+", "-"].include?(strand)
     raise "Negative length for region #{annotation}"  if length <= 0
   end
 
@@ -77,14 +77,19 @@ class Region
   end
 
   # compare regions if they are comparable
+  # regions are compared taking strand into account (on + strand A < B; on - strand B < A)
+  # 0 1 2 ...
+  # ------
+  #  A  B
+  # ------
   def <=>(other)
     return nil  unless same_strand?(other)
     if self == other
       0
     elsif pos_end <= other.pos_start
-      -1
+      strand == '+' ? -1 : +1
     elsif other.pos_end <= pos_start
-      1
+      strand == '+' ? +1 : -1
     else
       nil
     end
