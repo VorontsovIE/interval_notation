@@ -1,5 +1,10 @@
-# [pos_start; pos_end) region on specified chromosome and strand
-# It's required that pos_start < pos_end
+# Region is immutable structure
+#
+# It contains semi-interval [pos_start; pos_end) on specified chromosome and strand('+'/'-')
+# It's required that pos_start < pos_end.
+# Regions can be ordered if they are on the same strand and don't intersect.
+# Ordering depends on strand: plus-strand regions ordered as their coordinates, minus-strand regions ordered contrary-wise
+
 class Region
   attr_reader :chromosome, :strand, :pos_start, :pos_end
 

@@ -9,13 +9,13 @@ class Gene
 
   attr_reader :chromosome_map, :entrezgene_id
   attr_accessor :transcripts, :peaks
-  
+
   def initialize(hgnc_id, approved_symbol, approved_name, chromosome_map, entrezgene_id)
     @hgnc_id, @approved_symbol, @approved_name, @chromosome_map, @entrezgene_id = hgnc_id, approved_symbol, approved_name, chromosome_map, entrezgene_id
     @transcripts = []
     @peaks = []
   end
-  
+
   # Gene.new_by_infos('HGNC:10000 RGS4  regulator of G-protein signaling 4  1q23.3  5999')
   def self.new_by_infos(infos)
     hgnc_id, approved_symbol, approved_name, chromosome_map, entrezgene_id = infos.strip.split("\t")
@@ -23,18 +23,18 @@ class Gene
     entrezgene_id = nil  if entrezgene_id && entrezgene_id.empty?
     self.new(hgnc_id, approved_symbol, approved_name, chromosome_map, entrezgene_id)
   end
-  
+
   def to_s
     "Gene<HGNC:#{hgnc_id}; #{approved_symbol}; entrezgene:#{entrezgene_id}; #{transcripts.map(&:to_s).join(', ')}; have #{peaks.size} peaks>"
   end
-  
+
   # returns loaded transripts or false if due to some reasons transcripts can't be collected
   def collect_transcripts(entrezgene_transcripts, all_transcripts)
     unless entrezgene_id
       $logger.warn "#{self} has no entrezgene_id so we cannot find transcripts"
       return false
     end
-    
+
     transcripts = []
     transcript_ucsc_ids = entrezgene_transcripts[entrezgene_id] || []
     transcript_ucsc_ids.each do |ucsc_id|
@@ -47,12 +47,12 @@ class Gene
         transcripts << transcript
       end
     end
-    
+
     if transcripts.empty?
       $logger.error "No one transcript of #{self} was found"
       return false
     end
-    self.transcripts = transcripts  
+    self.transcripts = transcripts
   end
 
   # returns loaded peaks or false if due to some reasons peaks can't be collected
@@ -64,7 +64,7 @@ class Gene
       false
     end
   end
-  
+
   # {[utr, exons_on_utr] => [transcripts]}
   def transcripts_grouped_by_common_exon_structure_on_utr(region_length)
     groups_of_transcripts = {}

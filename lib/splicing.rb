@@ -11,7 +11,7 @@ def splice_array(array, utr, exons_on_utr)
     utr.region.each do |pos|
       spliced_array << array[local_pos]  if !leftmost_exon_start || (leftmost_exon_start && pos < leftmost_exon_start) || exons_on_utr.any?{|exon| exon.include_position?(pos) }
       local_pos += 1
-    end  
+    end
   else
     rightmost_exon_end = exons_on_utr.map(&:pos_end).max
     local_pos = 0

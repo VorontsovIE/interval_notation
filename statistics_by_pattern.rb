@@ -1,5 +1,5 @@
 # TODO:
-# 1) We should also match motifs 
+# 1) We should also match motifs
 # 2) extract matching_rates in calculate_transcript_matching_rates from transcript_info.
 # It's a bed smell that we rewrite it on each iteration
 # 3) Think careful about filtering by minimal expression. There're at least two cases:
@@ -23,14 +23,14 @@ def read_transcript_infos(input_file)
       line_infos = line_iterator.next.strip[1..-1] # remove '>'
       sequence = line_iterator.next.strip
       cages = line_iterator.next.split("\t").map(&:to_i)
-      
+
       hgnc_id, approved_symbol, entrezgene_id, \
       utr, exon_structure_on_utr_info, transcripts_names, \
       peaks_info, expression = line_infos.split("\t")
 
       hgnc_id = hgnc_id.split(':').last
       expression = expression.to_f
-      transcript_infos << {hgnc_id: hgnc_id, name: approved_symbol, 
+      transcript_infos << {hgnc_id: hgnc_id, name: approved_symbol,
                           transcript_names: transcripts_names, expression: expression,
                           sequence: sequence, cages: cages}
     end
@@ -132,7 +132,7 @@ def gene_matching_rate(transcript_infos, gene_expression)
   gene_ids = rna_pool_matching_rate_unnormalized.keys
   Hash[
     gene_ids.map{|hgnc_id|
-      [hgnc_id, rna_pool_matching_rate_unnormalized[hgnc_id].to_f / gene_expression[hgnc_id]] 
+      [hgnc_id, rna_pool_matching_rate_unnormalized[hgnc_id].to_f / gene_expression[hgnc_id]]
     }
   ]
 end

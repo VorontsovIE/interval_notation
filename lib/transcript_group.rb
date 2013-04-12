@@ -4,9 +4,9 @@ require 'peak'
 
 
 # Group transcripts for a gene so that several transcripts having the same
-# exon-intron structure on UTR are taken altogether as a TranscriptGroup. Now 
+# exon-intron structure on UTR are taken altogether as a TranscriptGroup. Now
 # we can treat transcript group, as a single transcript.
-# This makes sense because we have no that much information about distinct 
+# This makes sense because we have no that much information about distinct
 # transcripts to distinguish them when their structure on the region of interest
 # is the same. So it's useful to just glue them up and treat as one transcript group
 

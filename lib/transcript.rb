@@ -21,11 +21,11 @@ class Transcript
     exons = exon_count.to_i.times.map{|index| Region.new(chromosome, strand, exon_starts[index], exon_ends[index]) }
     self.new(name, chromosome, strand, full_gene_region, coding_region, exons, protein_id, align_id)
   end
-  
+
   def to_s
     "Transcript<#{name}; #{chromosome},#{strand}; with coding_region #{coding_region}>"
   end
-  
+
   # region_length is length of region before txStart(start of transcript) where we are looking for peaks
   def peaks_associated(peaks, region_length)
     if strand == '+'
@@ -35,7 +35,7 @@ class Transcript
     end
     peaks.select{|peak| region_of_interest.intersect?(peak.region)}
   end
-  
+
   # region_length is length of region before txStart(start of transcript) where we are looking for peaks
   # utr_region is defined by leftmost peak intersecting region [txStart-region_length; coding_region_start) and by start of coding region
   def utr_region(associated_peaks)
@@ -43,7 +43,7 @@ class Transcript
       $logger.warn "#{self} has no associated peaks"
       return nil
     end
-    
+
     if strand == '+'
       utr_start = associated_peaks.map{|peak| peak.region.pos_start}.min
       utr_end = coding_region.pos_start
@@ -57,12 +57,12 @@ class Transcript
     end
     Region.new(chromosome, strand, utr_start, utr_end)
   end
-  
+
   # region --> [regions]
-  
-  # |   (         )       
+
+  # |   (         )
   # |      |--| |---| |--|
-  # V 
+  # V
   #        |--| |-|
   def exons_on_region(region)
     exons_inside = []

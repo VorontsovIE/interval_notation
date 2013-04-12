@@ -74,7 +74,7 @@ number_of_genes_for_a_peak = Peak.calculate_number_of_genes_for_a_peak(genes_to_
 genes_to_process.each do |hgnc_id, gene|
   transcript_groups[hgnc_id].each do |transcript_group|
     peaks_expression = transcript_group.associated_peaks.map{|peak|
-      num_of_transcript_groups_associated_to_peak = transcript_groups[hgnc_id].count{|transcript_group_2| transcript_group_2.associated_peaks.include?(peak) }     
+      num_of_transcript_groups_associated_to_peak = transcript_groups[hgnc_id].count{|transcript_group_2| transcript_group_2.associated_peaks.include?(peak) }
       (peak.tpm.to_f / number_of_genes_for_a_peak[peak]) / num_of_transcript_groups_associated_to_peak
     }
 
@@ -98,17 +98,17 @@ File.open(output_file, 'w') do |fw|
       associated_peaks = transcript_group.associated_peaks
 
       summary_expression = transcript_group.summary_expression
-      gene_info = "HGNC:#{gene.hgnc_id}\t#{gene.approved_symbol}\tentrezgene:#{gene.entrezgene_id}"      
+      gene_info = "HGNC:#{gene.hgnc_id}\t#{gene.approved_symbol}\tentrezgene:#{gene.entrezgene_id}"
       peaks_info = associated_peaks.map{|peak| peak.region.to_s}.join(';')
-      
+
       spliced_sequence = splice_sequence(sequence, utr, exons_on_utr)
       spliced_cages = splice_array(cages, utr, exons_on_utr)
-      
+
       fw.puts ">#{gene_info}\t#{transcript_group}\t#{peaks_info}\t#{summary_expression}"
       #puts sequence
       #puts cages.join("\t")
       fw.puts spliced_sequence
       fw.puts spliced_cages.join("\t")
-    end 
+    end
   end
 end

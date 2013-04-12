@@ -167,10 +167,10 @@ describe Region do
   describe 'Comparable' do
     Then{ (region <=> region_on_another_strand).should be_nil }
     Then{ (region <=> region_on_another_chromosome).should be_nil }
-    
+
     shared_examples 'compare regions' do
       Then { (subject_region <=> same_as_subject_region).should == 0 }
-      
+
       Then { (subject_region <=> region_right_to_subject).should == -1 }
       Then { (subject_region <=> region_left_to_subject).should == 1 }
       Then { (subject_region <=> region_right_to_subject_joint).should == -1 }
@@ -181,18 +181,18 @@ describe Region do
       Then { (subject_region <=> region_inside_of_subject_right_joint).should be_nil }
       Then { (subject_region <=> region_inside_to_outside_of_subject).should be_nil }
       Then { (subject_region <=> region_outside_to_inside_of_subject).should be_nil }
-      
+
       Then{ subject_region.should <= same_as_subject_region }
       Then{ subject_region.should_not < same_as_subject_region }
       Then{ subject_region.should >= same_as_subject_region }
       Then{ subject_region.should_not > same_as_subject_region }
-      
+
       Then{ subject_region.should < region_right_to_subject }
       Then{ subject_region.should <= region_right_to_subject }
       Then{ subject_region.should_not > region_right_to_subject }
       Then{ subject_region.should_not >= region_right_to_subject }
     end
-    
+
     context "On + strand" do
       Given(:subject_region) { Region.new('chr1', '+', 100, 110) }
       Given(:same_as_subject_region) { Region.new('chr1', '+', 100, 110) }
@@ -209,7 +209,7 @@ describe Region do
 
       include_examples 'compare regions'
     end
-    
+
     context "On - strand" do
       Given(:subject_region) { Region.new('chr1', '-', 100, 110) }
       Given(:same_as_subject_region) { Region.new('chr1', '-', 100, 110) }
@@ -223,7 +223,7 @@ describe Region do
       Given(:region_inside_of_subject_left_joint) { Region.new('chr1', '-', 103, 110) }
       Given(:region_outside_to_inside_of_subject) { Region.new('chr1', '-', 103, 113) }
       Given(:region_inside_to_outside_of_subject) { Region.new('chr1', '-', 97, 103) }
-      
+
       include_examples 'compare regions'
     end
   end
