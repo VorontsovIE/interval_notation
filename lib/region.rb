@@ -76,7 +76,20 @@ class Region
     end
   end
 
-
+  # compare regions if they are comparable
+  def <=>(other)
+    return nil  unless same_strand?(other)
+    if self == other
+      0
+    elsif pos_end <= other.pos_start
+      -1
+    elsif other.pos_end <= pos_start
+      1
+    else
+      nil
+    end
+  end
+  include Comparable
 
   # whether other_region is inside of region
   def contain?(other_region)

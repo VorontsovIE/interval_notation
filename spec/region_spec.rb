@@ -19,6 +19,9 @@ describe Region do
   end
 
   Given(:region) { Region.new('chr1', '+', 100, 110) }
+
+  Given(:same_region) { Region.new('chr1', '+', 100, 110) }
+
   Given(:region_inside) { Region.new('chr1', '+', 103, 107) }
   Given(:region_inside_extend_to_end) { Region.new('chr1', '+', 103, 110) }
   Given(:region_inside_extend_from_start) { Region.new('chr1', '+', 100, 103) }
@@ -37,7 +40,7 @@ describe Region do
   Given(:region_outside_extend_to_start) { Region.new('chr1', '+', 97, 100) }
 
   Given(:all_region_types) {
-    [ region, region_inside, region_inside_extend_to_end, region_inside_extend_from_start,
+    [ region, same_region, region_inside, region_inside_extend_to_end, region_inside_extend_from_start,
     region_on_another_strand, region_on_another_chromosome,
     region_from_inside_to_outside_after_end, region_from_outside_before_start_to_inside,
     region_containing,
@@ -65,6 +68,7 @@ describe Region do
 
   describe '#intersection' do
     Then{ region.intersection(region).should == region }
+    Then{ region.intersection(same_region).should == region }
 
     Then{ region.intersection(region_inside).should == region_inside }
     Then{ region.intersection(region_inside_extend_to_end).should == region_inside_extend_to_end }
@@ -92,6 +96,7 @@ describe Region do
 
   describe '#contain?' do
     Then{ region.contain?(region).should be_true }
+    Then{ region.contain?(same_region).should be_true }
 
     Then{ region.contain?(region_inside).should be_true }
     Then{ region.contain?(region_inside_extend_to_end).should be_true }
@@ -135,7 +140,6 @@ describe Region do
   end
 
   describe '==' do
-    Given(:same_region) { Region.new('chr1', '+', 100, 110) }
     Given(:another_pos_start) { Region.new('chr1', '+', 103, 110) }
     Given(:another_pos_end) { Region.new('chr1', '+', 100, 107) }
     Given(:another_chromosome) { Region.new('chrY', '+', 100, 110) }
@@ -150,14 +154,42 @@ describe Region do
 
   describe 'hash/eql? ability' do
     Given(:hash_by_region) { {region => 'first region', region_inside => 'another region'} }
-    Given(:same_region) { Region.new('chr1', '+', 100, 110) }
+
     Then{ hash_by_region.should have_key(region) }
     Then{ hash_by_region.should have_key(region) }
     Then{ hash_by_region.should have_key(same_region) }
     Then{ hash_by_region[region].should be_eql hash_by_region[same_region] }
 
     Then{ hash_by_region.should have_key(region_inside) }
-
     Then{ hash_by_region.should_not have_key(region_containing) }
+  end
+
+  describe 'Comparable' do
+    Then{ (region <=> same_region).should == 0 }
+
+    Then{ (region <=> region_outside_right).should == -1 }
+    Then{ (region <=> region_outside_extend_from_end).should == -1 }
+
+    Then{ (region <=> region_outside_left).should == 1 }
+    Then{ (region <=> region_outside_extend_to_start).should == 1 }
+
+    Then{ (region <=> region_on_another_strand).should be_nil }
+    Then{ (region <=> region_on_another_chromosome).should be_nil }
+    Then{ (region <=> region_inside).should be_nil }
+    Then{ (region <=> region_containing).should be_nil }
+    Then{ (region <=> region_inside_extend_to_end).should be_nil }
+    Then{ (region <=> region_inside_extend_from_start).should be_nil }
+    Then{ (region <=> region_from_inside_to_outside_after_end).should be_nil }
+    Then{ (region <=> region_from_outside_before_start_to_inside).should be_nil }
+
+    Then{ region.should <= same_region }
+    Then{ region.should_not < same_region }
+    Then{ region.should_not > same_region }
+    Then{ region.should >= same_region }
+
+    Then{ region.should <= region_outside_right }
+    Then{ region.should < region_outside_right }
+    Then{ region.should_not > region_outside_right }
+    Then{ region.should_not >= region_outside_right }
   end
 end
