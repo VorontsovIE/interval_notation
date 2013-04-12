@@ -4,15 +4,15 @@ require 'rspec/given'
 
 describe Region do
   describe '#initialize' do
-    describe 'with start < end' do
+    context 'with start < end' do
       When(:region) { Region.new('chr1', '+', 100, 110) }
       Then { region.should_not have_failed }
     end
-    describe 'with start > end' do
+    context 'with start > end' do
       When(:region) { Region.new('chr1', '+', 100, 97) }
       Then { region.should have_failed }
     end
-    describe 'with start == end' do
+    context 'with start == end' do
       When(:region) { Region.new('chr1', '+', 100, 100) }
       Then { region.should have_failed }
     end
