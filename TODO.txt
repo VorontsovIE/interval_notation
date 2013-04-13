@@ -30,3 +30,4 @@
 # 6) Add support for work with peaks-info file for all tissues
 # 7) Make sequence and array more consistent when array and sequence are spliced
 # 8) collect cages from gzip-files. Make gzips indexed (bgzf or anything other)
+# 9) class EmptyRegion; private Region.new; new method which allows creation of region by 4 arguments, 1 argument, 0 argument (EmptyRegion).
