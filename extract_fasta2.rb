@@ -84,7 +84,7 @@ File.open('weighted_5-utr.txt', 'w') do |fw|
       sequence_with_polyN_starts = mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7)
       transcript_rate = transcript_group.summary_expression.to_f / gene_expression
       sequence, cages = sequence_with_polyN_starts, spliced_cages
-      fw.puts ">#{transcript_rate}\n#{sequence}\n#{cages.join ' '}"
+      fw.puts ">#{sequence.length}\t#{hgnc_id}\t#{transcript_group}\t#{transcript_rate}\n#{sequence}\n#{cages.join ' '}"
       #fw.puts ">#{transcript_rate}\n#{sequence}"
     end
   end
@@ -93,7 +93,7 @@ end
 File.open('longest_5-utr.txt', 'w') do |fw|
   genes_to_extract.each do |hgnc_id, gene|
 
-    longest_utr, cages = transcript_groups[hgnc_id].map{|transcript_group|
+    transcript_group_long, longest_utr, cages = transcript_groups[hgnc_id].map{|transcript_group|
       utr = transcript_group.utr
       exons_on_utr = transcript_group.exons_on_utr
 
@@ -101,9 +101,9 @@ File.open('longest_5-utr.txt', 'w') do |fw|
       spliced_cages = splice_array(collect_cages(all_cages, utr), utr, exons_on_utr)
       sequence_with_polyN_starts = mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7)
 
-      [sequence_with_polyN_starts, spliced_cages]
-    }.max_by{|sequence, cages| sequence.length }
-    fw.puts ">1.0\n#{longest_utr}\n#{cages.join ' '}"
+      [transcript_group, sequence_with_polyN_starts, spliced_cages]
+    }.max_by{|transcript_group, sequence, cages| sequence.length }
+    fw.puts ">#{longest_utr.length}\t#{hgnc_id}\t#{transcript_group_long.transcripts}\t1.0\n#{longest_utr}\n#{cages.join ' '}"
     #fw.puts ">1.0\n#{longest_utr}"
   end
 end
