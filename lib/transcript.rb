@@ -17,7 +17,7 @@ class Transcript
     exon_starts = exon_starts.split(',').map(&:strip).reject(&:empty?).map(&:to_i)
     exon_ends = exon_ends.split(',').map(&:strip).reject(&:empty?).map(&:to_i)
     full_gene_region = Region.new(chromosome, strand, tx_start.to_i, tx_end.to_i)
-    coding_region = Region.new(chromosome, strand, cds_start.to_i, cds_end.to_i)
+    coding_region = Region.new(chromosome, strand, cds_start.to_i, cds_end.to_i)  rescue nil
     exons = exon_count.to_i.times.map{|index| Region.new(chromosome, strand, exon_starts[index], exon_ends[index]) }
     self.new(name, chromosome, strand, full_gene_region, coding_region, exons, protein_id, align_id)
   end
@@ -28,6 +28,10 @@ class Transcript
 
   # region_length is length of region before txStart(start of transcript) where we are looking for peaks
   def peaks_associated(peaks, region_length)
+    ##
+    ## ??? What to do if peak is on the boundary of exon and intron?
+    peaks = peaks.reject{|peak| full_gene_region.contain?(peak) && exons.none?{|exon| exon.intersect?(peak) } }
+    ##
     if strand == '+'
       region_of_interest = Region.new(chromosome, strand, full_gene_region.pos_start - region_length, coding_region.pos_start)
     else

@@ -41,7 +41,7 @@ class Gene
       transcript = all_transcripts[ucsc_id]
       if !transcript
         $logger.error "#{self}'s transcript with #{ucsc_id} wasn't found. Skip transcript"
-      elsif transcript.coding_region.length == 0
+      elsif ! transcript.coding_region #.length == 0
         $logger.warn "#{self}'s #{transcript} has no coding region. Skip transcript"
       else
         transcripts << transcript
