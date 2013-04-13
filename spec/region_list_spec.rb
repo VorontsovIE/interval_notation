@@ -1,3 +1,6 @@
+# TODO: spec for each
+# TODO: add ability to give construction an array instead of splatted list. And add spec too
+
 $:.unshift File.dirname(File.expand_path(__FILE__, '../lib'))
 require 'region_list'
 require 'rspec/given'

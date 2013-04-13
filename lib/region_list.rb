@@ -65,4 +65,15 @@ class RegionList
     intersected_regions = list_of_regions.map{|region| region.intersect?(other_region) ? region.intersection(other_region) : nil }.compact
     RegionList.new(*intersected_regions)
   end
+
+  def each(&block)
+    if block_given?
+      list_of_regions.each do |region|
+        block.call(region)
+      end
+    else
+      Enumerator.new(list_of_regions)
+    end
+  end
+  include Enumerable
 end

@@ -1,5 +1,6 @@
 $:.unshift File.dirname(File.expand_path(__FILE__))
 require 'region'
+require 'region_list'
 require 'peak'
 
 class Transcript
@@ -19,6 +20,7 @@ class Transcript
     full_gene_region = Region.new(chromosome, strand, tx_start.to_i, tx_end.to_i)
     coding_region = Region.new(chromosome, strand, cds_start.to_i, cds_end.to_i)  rescue nil
     exons = exon_count.to_i.times.map{|index| Region.new(chromosome, strand, exon_starts[index], exon_ends[index]) }
+    exons = RegionList.new(*exons)
     self.new(name, chromosome, strand, full_gene_region, coding_region, exons, protein_id, align_id)
   end
 
@@ -30,7 +32,17 @@ class Transcript
   def peaks_associated(peaks, region_length)
     ##
     ## ??? What to do if peak is on the boundary of exon and intron?
+    # # # peaks.each do |peak|
+      # # # exons.each do |exon|
+        # # # puts "#{self}'s #{peak} intersect exon #{exon} but is not inside of it"  if full_gene_region.contain?(peak) && !coding_region.intersect?(peak) && exon.intersect?(peak) && ! exon.contain?(peak)
+      # # # end
+    # # # end
+
     peaks = peaks.reject{|peak| full_gene_region.contain?(peak) && exons.none?{|exon| exon.intersect?(peak) } }
+
+    ## I must intersect peak to exons
+    ## How the hell should I recalculate expression of peak here?!
+
     ##
     if strand == '+'
       region_of_interest = Region.new(chromosome, strand, full_gene_region.pos_start - region_length, coding_region.pos_start)
@@ -62,18 +74,8 @@ class Transcript
     Region.new(chromosome, strand, utr_start, utr_end)
   end
 
-  # region --> [regions]
-
-  # |   (         )
-  # |      |--| |---| |--|
-  # V
-  #        |--| |-|
   def exons_on_region(region)
-    exons_inside = []
-    exons.each do |exon|
-      exons_inside << region.intersection(exon)  if region.intersect?(exon)
-    end
-    exons_inside
+    exons.intersection(region)
   end
 
   # ucsc_id => transcript
