@@ -73,7 +73,7 @@ class Gene
       associated_peaks = transcript.peaks_associated(peaks, region_length)
       utr = transcript.utr_region(associated_peaks)
       next  unless utr
-      exon_intron_structure_on_utr = [utr, transcript.exons_on_region(utr)]  # utr should be here to know boundaries
+      exon_intron_structure_on_utr = [utr, transcript.exons.intersection(utr)]  # utr should be here to know boundaries
       groups_of_transcripts[exon_intron_structure_on_utr] ||= []
       groups_of_transcripts[exon_intron_structure_on_utr] << transcript
       group_associated_peaks[exon_intron_structure_on_utr] = associated_peaks

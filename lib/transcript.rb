@@ -74,10 +74,6 @@ class Transcript
     Region.new(chromosome, strand, utr_start, utr_end)
   end
 
-  def exons_on_region(region)
-    exons.intersection(region)
-  end
-
   # ucsc_id => transcript
   def self.transcripts_from_file(input_file)
     transcripts = {}
