@@ -77,7 +77,7 @@ File.open(output_file, 'w') do |fw|
       exons_on_utr = transcript_group.exons_on_utr
 
       # sequence and cages here are unreversed on '-'-strand. One should possibly reverse both arrays and complement sequence
-      cages = collect_cages(all_cages, utr)
+      cages = utr.load_cages(all_cages)
       sequence = utr.load_sequence('genome/hg19/')
 
       # all transcripts in the group have the same associated peaks

@@ -30,7 +30,7 @@ class RegionList
 
     raise 'RegionList must contain regions on the same strand and chromosome'  unless @list_of_regions.same_by?(&:chromosome) && @list_of_regions.same_by?(&:strand)
 
-    @list_of_regions = @list_of_regions.uniq.sort
+    @list_of_regions = @list_of_regions.uniq.sort  # here sorting can raise if regions are intersecting
   end
 
   def empty?
@@ -76,4 +76,23 @@ class RegionList
     end
   end
   include Enumerable
+
+  def union(other_region)
+    groups = list_of_regions.group_by{|region| region.intersect?(other_region) || region.contact?(other_region) }
+    regions_intersecting = groups[true]
+    regions_not_intersecting = groups[false]
+    region_union = Region.new(chromosome, strand, regions_intersecting.map(&:pos_start).min, regions_intersecting.map(&:pos_end).max)
+    RegionList.new(*regions_not_intersecting, region_union)
+  end
+
+  def include_position?(pos)
+    any?{|region| region.include_position?(pos) }
+  end
+
+  def position_upstream?(pos)
+    all?{|region| region.position_upstream?(pos) }
+  end
+  def position_downstream?(pos)
+    all?{|region| region.position_downstream?(pos) }
+  end
 end

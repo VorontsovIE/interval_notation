@@ -67,10 +67,7 @@ class Transcript
       utr_end = associated_peaks.map{|peak| peak.region.pos_end}.max
       utr_start = coding_region.pos_end
     end
-    if utr_start > utr_end
-      $logger.error "#{gene}'s UTR can't be evaluated: utr_start=#{utr_start} > utr_end=#{utr_end}"
-      return nil
-    end
+
     Region.new(chromosome, strand, utr_start, utr_end)
   end
 

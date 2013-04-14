@@ -74,11 +74,28 @@ class Region
   # genome_dir is a folder with files of different chromosomes
   # here we don't take strand into account
   def load_sequence(genome_dir)
-    filename = File.join(genome_dir, "#{chromosome}.plain")
-    File.open(filename) do |f|
-      f.seek(pos_start)
-      f.read(length)
+    @sequence_on_positive_strand ||= begin
+      filename = File.join(genome_dir, "#{chromosome}.plain")
+      File.open(filename) do |f|
+        f.seek(pos_start)
+        f.read(length)
+      end
     end
+  end
+
+  # returns array of cages (not reversed on '-' strand)
+  def load_cages(all_cages)
+    #caching here is a bad strategy because different tissues have different all_cages and yields different results
+    #@cages ||= begin
+      strand_of_cages = all_cages[strand][chromosome]
+      cages = Array.new(length)
+      local_pos = 0
+      region.each do |pos|
+        cages[local_pos] = strand_of_cages.fetch(pos, 0)
+        local_pos +=1
+      end
+      cages
+    #end
   end
 
   # compare regions if they are comparable
@@ -123,4 +140,34 @@ class Region
     @region ||= pos_start...pos_end
   end
 
+  # external contact of regions
+  def contact?(other_region)
+    same_strand?(other_region) && (pos_start == other_region.pos_end || pos_end == other_region.pos_start)
+  end
+
+  # region of length `len` upstream from this region (jointed)
+  def upstream(len)
+    if strand == '+'
+      Region.new(chromosome, strand, pos_start - len, pos_start)
+    else
+      Region.new(chromosome, strand, pos_end, pos_end + len)
+    end
+  end
+
+  # region of length `len` downstream from this region (jointed)
+  def downstream(len)
+    if strand == '+'
+      Region.new(chromosome, strand, pos_end, pos_end + len)
+    else
+      Region.new(chromosome, strand, pos_start - len, pos_start)
+    end
+  end
+
+  # is pos upstream/downstream of region
+  def position_upstream?(pos)
+    (strand == '+') ? pos < pos_start : pos >= pos_end
+  end
+  def position_downstream?(pos)
+    (strand == '+') ? pos >= pos_end : pos < pos_start
+  end
 end

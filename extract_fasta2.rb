@@ -80,7 +80,7 @@ File.open('weighted_5-utr.txt', 'w') do |fw|
       exons_on_utr = transcript_group.exons_on_utr
 
       spliced_sequence = splice_sequence(utr.load_sequence('genome/hg19/'), utr, exons_on_utr)
-      spliced_cages = splice_array(collect_cages(all_cages, utr), utr, exons_on_utr)
+      spliced_cages = splice_array(utr.load_cages(all_cages), utr, exons_on_utr)
       sequence_with_polyN_starts = mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7)
       transcript_rate = transcript_group.summary_expression.to_f / gene_expression
       sequence, cages = sequence_with_polyN_starts, spliced_cages
@@ -98,7 +98,7 @@ File.open('longest_5-utr.txt', 'w') do |fw|
       exons_on_utr = transcript_group.exons_on_utr
 
       spliced_sequence = splice_sequence(utr.load_sequence('genome/hg19/'), utr, exons_on_utr)
-      spliced_cages = splice_array(collect_cages(all_cages, utr), utr, exons_on_utr)
+      spliced_cages = splice_array(utr.load_cages(all_cages), utr, exons_on_utr)
       sequence_with_polyN_starts = mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7)
 
       [transcript_group, sequence_with_polyN_starts, spliced_cages]
