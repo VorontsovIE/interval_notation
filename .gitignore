@@ -1,0 +1,9 @@
+genome/
+top_motif/
+*.bed
+robust_set.freeze1
+robust_set.freeze1.reduced.pc-3
+*.txt
+*.out
+*.log
+*.sav
