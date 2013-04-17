@@ -45,12 +45,17 @@ class Peak
   
   # region_length is length of region before txStart(start of transcript) where we are looking for peaks
   def transcripts_associated(transcripts, region_length)
-    if strand == '+'
-      region_of_possibly_associated_trascripts = Region.new(chromosome, strand, pos_start, pos_end + region_length)
-    else
-      region_of_possibly_associated_trascripts = Region.new(chromosome, strand, pos_start - region_length, pos_end)
-    end
-    transcripts.select{|ucsc_id, transcript| transcript.full_gene_region.intersect?(region_of_possibly_associated_trascripts)}
+    # if strand == '+'
+      # region_of_possibly_associated_trascripts = Region.new(chromosome, strand, pos_start, pos_end + region_length)
+    # else
+      # region_of_possibly_associated_trascripts = Region.new(chromosome, strand, pos_start - region_length, pos_end)
+    # end
+    # transcripts.select{|ucsc_id, transcript| transcript.full_gene_region.intersect?(region_of_possibly_associated_trascripts)}
+    
+    transcripts.select{|ucsc_id, transcript|
+      full_gene_region_with_upstream = transcript.full_gene_region.union(full_gene_region.upstream(region_length))
+      full_gene_region_with_upstream.intersect?(self.region)
+    }
   end
 
   # hgnc_id => [peaks]
@@ -85,18 +90,5 @@ class Peak
   #   peaks
   # end
 
-  # Calculate number of genes that have specified peak in their transcript(transcript group)'s UTRs.
-  def self.calculate_number_of_genes_for_a_peak(genes_collection, transcript_groups)
-    number_of_genes_for_a_peak = {}
-    genes_collection.each do |hgnc_id, gene|
-      peaks_associated_to_gene = transcript_groups[hgnc_id].map(&:associated_peaks).flatten.uniq
-
-      peaks_associated_to_gene.each do |peak|
-        number_of_genes_for_a_peak[peak] ||= 0
-        number_of_genes_for_a_peak[peak] += 1
-      end
-    end
-    number_of_genes_for_a_peak
-  end
 
 end

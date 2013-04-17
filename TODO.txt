@@ -32,3 +32,6 @@
 # 8) collect cages from gzip-files. Make gzips indexed (bgzf or anything other)
 # 9) class EmptyRegion; private Region.new; new method which allows creation of region by 4 arguments, 1 argument, 0 argument (EmptyRegion).
 # 10) think about class for position. And about operations: position < region
+
+# 11) !!! Is it correct to look on number of transcripts associated to peak as I do it, taking into account that I have several copies of a peak for several hgnc_ids
+# 12) how to use infinite regions? #each on them doesn't work (so splice and collect_cages will work bad). Also negative positions should be tested

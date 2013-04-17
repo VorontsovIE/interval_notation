@@ -78,15 +78,54 @@ class RegionList
   include Enumerable
 
   def union(other_region)
-    groups = list_of_regions.group_by{|region| region.intersect?(other_region) || region.contact?(other_region) }
-    regions_intersecting = groups[true]
-    regions_not_intersecting = groups[false]
-    region_union = Region.new(chromosome, strand, regions_intersecting.map(&:pos_start).min, regions_intersecting.map(&:pos_end).max)
-    RegionList.new(*regions_not_intersecting, region_union)
+    case other_region
+    when NilClass # union with empty region
+      self
+    when Region
+      groups = list_of_regions.group_by{|region| region.intersect?(other_region) || region.contact?(other_region) }
+      regions_intersecting = groups[true]
+      regions_not_intersecting = groups[false]
+      region_union = Region.new(chromosome, strand, [*regions_intersecting.map(&:pos_start), other_region.pos_start].min, [*regions_intersecting.map(&:pos_end), other_region.pos_end].max)
+      RegionList.new(*regions_not_intersecting, region_union)
+    when RegionList
+      other_region.list_of_regions.inject(self){|result, region| result.union(region) }
+    else
+      raise 'unsupported class of object to unite'
+    end
   end
+  alias_method :+, :union
+  
+  def subtract(other_region)
+    case other_region
+    when NilClass # subtracting empty region
+      self
+    when Region
+      groups = list_of_regions.group_by{|region| region.intersect?(other_region)}
+      regions_intersecting = groups[true]
+      regions_not_intersecting = groups[false]
+      union_of_shortened_regions = regions_intersecting.map{|region| region.subtract(other_region) }
+      RegionList.new(*regions_not_intersecting, *union_of_shortened_regions)
+    when RegionList
+      other_region.list_of_regions.inject(self){|result, region| result.subtract(region) }
+    else
+      raise 'unsupported class of subtract'
+    end
+  end
+  alias_method :-, :subtract
 
   def include_position?(pos)
     any?{|region| region.include_position?(pos) }
+  end
+
+  def intersect?(other_region)
+    case other_region
+    when NilClass
+      false
+    when Region
+      any?{|region| other_region.intersect?(region)}
+    when RegionList
+      any?{|region| other_region.intersect?(region)} # recursive call
+    end
   end
 
   def position_upstream?(pos)
@@ -95,4 +134,13 @@ class RegionList
   def position_downstream?(pos)
     all?{|region| region.position_downstream?(pos) }
   end
+
+  def most_upstream_region
+    list_of_regions.first
+  end
+
+  def most_downstream_region
+    list_of_regions.last
+  end
+  
 end

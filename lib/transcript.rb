@@ -25,8 +25,10 @@ class Transcript
   end
 
   def to_s
-    "Transcript<#{name}; #{chromosome},#{strand}; with coding_region #{coding_region}>"
+    protein_infos = protein_id ? "(#{protein_id})" : ""
+    "Transcript<#{name}(#{protein_infos}); #{full_gene_region}; coding_region #{coding_region}; exons #{exons}>"
   end
+  alias_method :inspect, :to_s
 
   # region_length is length of region before txStart(start of transcript) where we are looking for peaks
   def peaks_associated(peaks, region_length)
@@ -44,11 +46,14 @@ class Transcript
     ## How the hell should I recalculate expression of peak here?!
 
     ##
-    if strand == '+'
-      region_of_interest = Region.new(chromosome, strand, full_gene_region.pos_start - region_length, coding_region.pos_start)
-    else
-      region_of_interest = Region.new(chromosome, strand, coding_region.pos_end, full_gene_region.pos_end + region_length)
-    end
+    full_gene_region_with_upstream = full_gene_region.with_upstream(region_length)
+    coding_region_with_downstream = coding_region.with_downstream(Float::INFINITY)
+    region_of_interest = full_gene_region_with_upstream.subtract(coding_region_with_downstream)
+    
+    peaks.map{|peak| 
+      #peak.region.intersection(region_of_interest)
+      
+    }
     peaks.select{|peak| region_of_interest.intersect?(peak.region)}
   end
 

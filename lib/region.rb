@@ -22,6 +22,7 @@ class Region
   # region represented a semi-interval: [pos_start; pos_end) Positions are 0-based
   def initialize(chromosome, strand, pos_start, pos_end)
     @chromosome, @strand, @pos_start, @pos_end = chromosome, strand, pos_start, pos_end
+    pos_start = 0  if @pos_start < 0
     raise "Strand can be only + or - but was #{strand.inspect}"  unless ["+", "-"].include?(strand)
     raise "Negative length for region #{annotation}"  if length <= 0
   end
@@ -163,6 +164,13 @@ class Region
     end
   end
 
+  def with_upstream(len)
+    self.union(self.upstream(len))
+  end
+  def with_downstream(len)
+    self.union(self.downstream(len))
+  end
+
   # is pos upstream/downstream of region
   def position_upstream?(pos)
     (strand == '+') ? pos < pos_start : pos >= pos_end
@@ -170,4 +178,44 @@ class Region
   def position_downstream?(pos)
     (strand == '+') ? pos >= pos_end : pos < pos_start
   end
+
+  def splice(associated_data, region_list)
+    raise 'list of regions for splicing should be on the same strand as source region' unless same_strand?(region_list)
+    spliced_data = []
+    local_pos = 0
+    region.each do |pos|
+      spliced_data << associated_data[local_pos]  if region_list.include_position?(pos)
+      local_pos += 1
+    end
+    strand == '+' ? spliced_data : spliced_data.reverse
+  end
+
+  def union(other_region)
+    RegionList.new(self).union(other_region)
+  end
+  alias_method :+, :union
+  
+  def subtract(other_region)
+    case other_region
+    when NilClass
+      self
+    when Region
+      return self  unless intersect?(other_region)
+      return RegionList.new()  if other_region.contain?(self)
+      if contain?(other_region) && pos_start != other_region.pos_start && pos_end != other_region.pos_end
+        RegionList.new(Region.new(chromosome, strand, pos_start, other_region.pos_start), Region.new(chromosome, strand, other_region.pos_end, pos_end) )
+      elsif include_position?(other_region.pos_end)
+        RegionList.new( Region.new(chromosome, strand, other_region.pos_end, pos_end) )
+      elsif include_position?(other_region.pos_start)
+        RegionList.new( Region.new(chromosome, strand, pos_start, other_region.pos_start) )
+      else
+        raise 'My algorithm failed being crushed by my stupidity'
+      end
+    when RegionList
+      other_region.list_of_regions.inject(self){|result, region| result.subtract(region) }
+    else
+      raise 'unsupported object to subtract'
+    end
+  end
+  alias_method :-, :subtract
 end
