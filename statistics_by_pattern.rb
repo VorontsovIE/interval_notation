@@ -10,6 +10,9 @@
 # in this particular tissue
 # 4) Extract rate evaluators to classes to encapsulate caching results and so on
 # 5) fix scoring N in Bioinform::PWM (should it be average of all scores or weighted average or smth different)
+#
+# 6) Add poly-N head of length about 10nt to RNA transcript in order to be able to work with motifs with biased start
+#
 
 $:.unshift File.join(File.dirname(File.expand_path(__FILE__)), 'lib')
 require 'matching_rate'
