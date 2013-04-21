@@ -87,7 +87,6 @@ class SemiInterval
     else raise 'Unsupported type'
     end
   end
-  alias_method :&, :intersection
   
   def union_with_region(other)
     case mutual_alignment(other)
@@ -108,7 +107,6 @@ class SemiInterval
     else raise 'Unsupported type'
     end
   end
-  alias_method :|, :union
   
   def subtract_with_region(other)
     case mutual_alignment(other)
@@ -131,7 +129,6 @@ class SemiInterval
     else raise 'Unsupported type'
     end
   end
-  alias_method :-, :subtract
 
   def intersect?(other)
     ! intersection(other).empty?
@@ -223,6 +220,9 @@ class SemiInterval
   def covering_interval; self; end
   def leftmost_position; pos_start; end
   def rightmost_position; pos_end; end
+  alias_method :|, :union
+  alias_method :&, :intersection
+  alias_method :-, :subtract
 end
 
 class EmptySemiInterval < SemiInterval
@@ -250,6 +250,9 @@ class EmptySemiInterval < SemiInterval
   def <=>(other); self == other ? 0 : nil; end
   def to_s; "[empty)"; end
   def covering_interval; self; end
+  alias_method :|, :union
+  alias_method :&, :intersection
+  alias_method :-, :subtract
 end
 
 # List of non-intersecting SemiIntervals.
