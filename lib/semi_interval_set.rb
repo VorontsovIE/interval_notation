@@ -9,6 +9,7 @@
 # 1) whether region+left_adjacent.contain?( (region+left.adjacent).unite_adjacent )
 # 2) (region+left_adjacent).contigious?
 
+# add operator ~ (interval complement)
 
 class SemiInterval
   attr_reader :pos_start, :pos_end
@@ -107,7 +108,7 @@ class SemiInterval
     else raise 'Unsupported type'
     end
   end
-  alias_method :+, :union
+  alias_method :|, :union
   
   def subtract_with_region(other)
     case mutual_alignment(other)
@@ -400,7 +401,7 @@ class SemiIntervalSet
   def rightmost_position; interval_list.last.pos_end; end
   
   
-  alias_method :+, :union
+  alias_method :|, :union
   alias_method :&, :intersection
   alias_method :-, :subtract
 end

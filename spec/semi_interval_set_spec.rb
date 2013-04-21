@@ -149,6 +149,10 @@ describe SemiInterval do
   specify{ subject.to_s.should == '[10;20)' }
   
   specify{  subject.covering_interval.should == subject }
+
+  # specs for precedence
+  specify{ (interval(:central) & interval(:central) | interval(:left)).should == (interval(:central) & interval(:central)) | interval(:left)}
+  specify{ (interval(:central) & interval(:central) | interval(:left)).should_not == interval(:central) & (interval(:central) | interval(:left)) }
 end
 
 describe EmptySemiInterval do
@@ -305,8 +309,8 @@ describe SemiIntervalSet do
     }.each do |(first_arg, second_arg), result|
       specify{ first_arg.union(second_arg).should == result }
       specify{ second_arg.union(first_arg).should == result }
-      specify{ (first_arg + second_arg).should == result }
-      specify{ (second_arg + first_arg).should == result }
+      specify{ (first_arg | second_arg).should == result }
+      specify{ (second_arg | first_arg).should == result }
     end
     
   end
@@ -345,8 +349,8 @@ describe SemiIntervalSet do
   
   describe '#unite_adjacent' do
     specify{ region_set(:left_adjacent, :central, :right).unite_adjacent.should == region_set(:region_expanded_left, :right) }
-    specify{ (region_set(:contact_left_inside, :contact_right_inside) + interval(:inside)).should_not == region_set(:central) }
-    specify{ (region_set(:contact_left_inside, :contact_right_inside) + interval(:inside)).unite_adjacent.should == region_set(:central) }
+    specify{ (region_set(:contact_left_inside, :contact_right_inside) | interval(:inside)).should_not == region_set(:central) }
+    specify{ (region_set(:contact_left_inside, :contact_right_inside) | interval(:inside)).unite_adjacent.should == region_set(:central) }
   end
   
   describe '#==' do
