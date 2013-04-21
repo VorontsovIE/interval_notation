@@ -61,9 +61,17 @@ class RegionList
     to_s.hash
   end
 
-  def intersection(other_region)
-    intersected_regions = list_of_regions.map{|region| region.intersect?(other_region) ? region.intersection(other_region) : nil }.compact
-    RegionList.new(*intersected_regions)
+  def intersection(other)
+    case other
+    when Region
+      intersected_regions = list_of_regions.map{|region| region.intersect?(other) ? region.intersection(other) : nil }.compact
+      RegionList.new(*intersected_regions)
+    when RegionList
+      intersected_regions = list_of_regions.map{|region| other.intersect?(region) ? other.intersection(region) : nil }.compact
+      RegionList.new(*intersected_regions)
+    else
+      raise 'Unsupported type'
+    end
   end
 
   def each(&block)
