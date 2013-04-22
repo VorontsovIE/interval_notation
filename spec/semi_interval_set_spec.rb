@@ -65,10 +65,6 @@ describe SemiInterval do
     end
   end
 
-  specify{ interval(:central).hash.should == interval(:central).hash }
-  specify{ empty_interval.hash.should == empty_interval.hash }
-  specify{ region_set(:left, :central, :right).hash.should == region_set(:left, :central, :right).hash }
-
   describe '#<=>' do
     all_types_of_non_empty_regions.each do |region_type|
       region = interval(:central)
@@ -114,8 +110,6 @@ describe EmptySemiInterval do
 
   specify{ subject.to_s.should == '[empty)' }
 end
-
-
 
 describe SemiIntervalSet do
   extend SemiIntervalHelpers
@@ -185,16 +179,25 @@ describe SemiIntervalSet do
   specify{ subject.should_not respond_to :adjacent? }
 
   describe '#contigious?' do
-    specify{ subject.should_not be_contigious }
+    specify{ region_set(:left, :central, :right).should_not be_contigious }
     specify{ region_set(:left_adjacent, :central).should be_contigious }
+    specify{ region_set(:left_adjacent, :central, :right_adjacent).should be_contigious }
+    specify{ region_set(:left_adjacent, :central, :right).should_not be_contigious }
   end
 
-  specify{ subject.should == interval(:same_region_set) }
-  specify{ subject.should be_eql interval(:same_region_set) }
+  specify{ region_set(:left, :central, :right).should == region_set(:left, :central, :right) }
+  specify{ region_set(:left, :central, :right).should be_eql region_set(:left, :central, :right) }
 
-  specify{ subject.should_not == build(:another_region_set_1) }
-  specify{ subject.should_not == build(:another_region_set_2) }
+  specify{ region_set(:left, :central, :right).should_not == region_set(:left, :central) }
+  specify{ region_set(:left, :central, :right).should_not == region_set(:region_expanded, :far_region) }
 
+  specify{ subject.covering_interval.should == build(:region_expanded) }
+  specify{ subject.to_s.should == "[3;8)U[10;20)U[25;30)" }
+end
+
+########################
+
+describe 'Regions and region sets' do
   describe '#intersection' do
     {
       [empty_interval, interval(:central)] => empty_interval,
@@ -330,21 +333,57 @@ describe SemiIntervalSet do
     end
   end
 
+
+  describe '#complement' do
+    { empty_interval => SemiInterval.new(-Float::INFINITY, Float::INFINITY),
+      interval(:central) => SemiIntervalSet.new( SemiInterval.new(-Float::INFINITY, 10), SemiInterval.new(20, Float::INFINITY) ),
+      region_set(:left, :right) => SemiIntervalSet.new( SemiInterval.new(-Float::INFINITY, 3), SemiInterval.new(8, 25), SemiInterval.new(30, Float::INFINITY) ),
+      SemiInterval.new(-Float::INFINITY, 10) => SemiInterval.new(10, Float::INFINITY)
+    }.each do |region, result|
+      specify("#{region} complement should be #{result}"){ region.complement.should == result }
+      specify("#{result} complement should be #{region}"){ result.complement.should == region }
+      specify("~#{region} should be #{result}"){ (~region).should == result }
+      specify("~#{result} should be #{region}"){ (~result).should == region }
+    end
+  end
+
   describe '#unite_adjacent' do
+    specify{ empty_interval.unite_adjacent.should == empty_interval }
+    specify{ interval(:central).unite_adjacent.should == interval(:central) }
+    specify{ region_set(:left, :central, :right).unite_adjacent.should == region_set(:left, :central, :right) }
     specify{ region_set(:left_adjacent, :central, :right).unite_adjacent.should == region_set(:region_expanded_left, :right) }
-    specify{ (region_set(:contact_left_inside, :contact_right_inside) | interval(:inside)).should_not == region_set(:central) }
-    specify{ (region_set(:contact_left_inside, :contact_right_inside) | interval(:inside)).unite_adjacent.should == region_set(:central) }
+    specify{ (region_set(:left_adjacent, :right_adjacent) | interval(:central)).should_not == region_set(:region_expanded) }
+    specify{ (region_set(:left_adjacent, :right_adjacent) | interval(:central)).unite_adjacent.should == region_set(:region_expanded) }
   end
 
   describe '#==' do
-    specify{ region_set(:central).should == interval(:central) }
-    specify{ region_set(:left, :central, :right).should == region_set(:left, :central, :right) }
-    specify{ region_set(:left_adjacent, :central).should == region_set(:left_adjacent, :central) }
-    specify{ region_set(:left_adjacent, :central, :right_adjacent).should_not == region_set(:left, :central, :right) }
-    specify{ region_set(:left_adjacent, :central, :right_adjacent).should_not == interval(:region_expanded) }
-    specify{ region_set(:left_adjacent, :central).should_not == interval(:region_expanded_left) }
+    { [interval(:central), interval(:central)] => true,
+      [region_set(:left, :central, :right), region_set(:left, :central, :right)] => true,
+      [region_set(:left_adjacent, :central, :right_adjacent), region_set(:left_adjacent, :central, :right_adjacent)] => true,
+      [empty_interval, empty_interval] => true,
+
+      [interval(:central), interval(:right)] => false,
+      [interval(:central), empty_interval] => false,
+      [interval(:central), region_set(:left, :central)] => false,
+      [interval(:central), region_set(:left, :right)] => false,
+      [interval(:central), interval(:inside)] => false,
+      [interval(:central), interval(:containing)] => false,
+
+      [region_set(:left, :central, :right), region_set(:left, :right)] => false,
+      [region_set(:left, :central, :right), region_set(:far_left, :far_right)] => false,
+      [region_set(:left, :central, :right), empty_interval] => false,
+      [region_set(:left_adjacent, :central, :right_adjacent), interval(:region_expanded)] => false,
+      [region_set(:left_adjacent, :central), interval(:region_expanded_left)] => false,
+      [region_set(:left_adjacent, :central, :right_adjacent), region_set(:left, :central, :right)] => false
+    }.each do |(first_region, second_region), result|
+      specify("#{first_region} == #{second_region} should be #{result}") { (first_region == second_region).should == result }
+      specify("#{second_region} == #{first_region} should be #{result}") { (second_region == first_region).should == result }
+      specify("#{first_region} eql? #{second_region} should be #{result}") { (first_region.eql? second_region).should == result }
+      specify("#{second_region} eql? #{first_region} should be #{result}") { (second_region.eql? first_region).should == result }
+      if result
+        specify("#{first_region}.hash should be equal to #{second_region}.hash"){ first_region.hash.should == second_region.hash }
+      end
+    end
   end
 
-  specify{ subject.covering_interval.should == build(:region_expanded) }
-  specify{ subject.to_s.should == "[3;8)U[10;20)U[25;30)" }
 end
