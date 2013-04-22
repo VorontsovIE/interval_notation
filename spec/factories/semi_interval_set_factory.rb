@@ -32,7 +32,6 @@ FactoryGirl.define do
     factory(:contact_left_inside) { region 10..13 }
     factory(:contact_right_inside) { region 17..20 }
     factory(:containing) { region 9..23 }
-    factory(:containing_all) { region 1..100 }
     factory(:same_region, aliases: [:same_as_central]) { region 10..20 }
 
     factory(:whole_numeric_axis) { region (-Float::INFINITY)..(Float::INFINITY) }
@@ -42,12 +41,10 @@ FactoryGirl.define do
     factory(:infinite_to_right) { region 20..(Float::INFINITY) }
 
     # helper factories
-    factory(:another_region, aliases: [:far_region, :far_right]) { region 110..120 }
-    factory(:another_region_2) { region 120..220 }
+    factory(:far_right, aliases: [:far_region]) { region 110..120 }
     factory(:far_left) { region (-100)..(-90) }
     factory(:left_intersection) { region 10..13 }
     factory(:right_intersection) { region 17..20 }
-    factory(:central_shortened_from_right) { region 10..17 }
     factory(:region_expanded_left) { region 3..20 }
     factory(:region_expanded_right) { region 10..30 }
     factory(:region_expanded) { region 3..30 }

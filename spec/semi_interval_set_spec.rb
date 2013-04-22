@@ -175,11 +175,13 @@ describe 'Regions and region sets' do
 
       [region_set(:left, :central, :right), interval(:central)] => interval(:central),
       [region_set(:left, :central, :right), region_set(:left, :central)] => region_set(:left, :central),
+      [region_set(:left, :central, :right), region_set(:left, :right)] => region_set(:left, :right),
       [region_set(:left, :central), region_set(:left, :central)] => region_set(:left, :central),
       [region_set(:left, :central, :right), region_set(:contact_left_inside, :contact_right_inside)] => region_set(:contact_left_inside, :contact_right_inside),
       [region_set(:left, :central), region_set(:central, :right)] => interval(:central),
       [region_set(:central, :right), interval(:region_expanded_left)] => interval(:central),
-      [interval(:left_intersecting), region_set(:left, :central)] => region_set(:left, :left_intersection)
+      [interval(:left_intersecting), region_set(:left, :central)] => region_set(:left, :left_intersection),
+      [region_set(:left_intersecting, :right_intersecting), region_set(:left, :central)] => region_set(:left, :left_intersection, :right_intersection)
     }.each do |(first_arg, second_arg), result|
       specify("#{first_arg} intersection #{second_arg} should be #{result}"){ first_arg.intersection(second_arg).should == result }
       specify("#{second_arg} intersection #{first_arg} should be #{result}"){ second_arg.intersection(first_arg).should == result }
@@ -226,13 +228,14 @@ describe 'Regions and region sets' do
       [interval(:left), interval(:right)] => region_set(:left, :right),
 
       [region_set(:central, :right), interval(:left_intersecting)] => region_set(:region_expanded_left, :right),
+      [region_set(:central, :right), interval(:left_adjacent)] => region_set(:region_expanded_left, :right),
       [region_set(:left_intersecting, :right_intersecting), interval(:central)] => interval(:region_expanded),
       [region_set(:contact_left_inside, :contact_right_inside), interval(:central)] => interval(:central),
-      [region_set(:contact_left_inside, :contact_right_inside), interval(:inside)] => region_set(:central),
+      [region_set(:contact_left_inside, :contact_right_inside), interval(:inside)] => interval(:central),
       [region_set(:left_adjacent, :right_adjacent), interval(:central)] => interval(:region_expanded),
 
       [region_set(:central, :right), interval(:left_adjacent)] => region_set(:left_adjacent, :central, :right),
-      [region_set(:left_adjacent, :central), region_set(:central, :right)] => region_set(:region_expanded_left, :right),
+      [interval(:region_expanded_left), region_set(:central, :right)] => region_set(:region_expanded_left, :right),
       [region_set(:left_adjacent, :right), region_set(:central, :right)] => region_set(:region_expanded_left, :right)
     }.each do |(first_arg, second_arg), result|
       specify("#{first_arg} union #{second_arg} should be #{result}"){ first_arg.union(second_arg).should == result }
@@ -271,14 +274,14 @@ describe 'Regions and region sets' do
       [interval(:central), region_set(:left_intersecting, :contact_right_inside)] => interval(:inside),
 
       [region_set(:left, :central, :right), region_set(:left, :central, :right)] => empty_interval,
-      [region_set(:left, :central, :right), interval(:containing_all)] => empty_interval,
+      [region_set(:left, :central, :right), interval(:region_expanded)] => empty_interval,
       [region_set(:left, :central, :right), interval(:far_region)] => region_set(:left, :central, :right),
       [region_set(:left, :central, :right), region_set(:far_left, :far_right)] => region_set(:left, :central, :right),
       [region_set(:left, :central, :right), interval(:right)] => region_set(:left, :central),
       [region_set(:left, :central, :right), interval(:right_adjacent)] => region_set(:left, :central),
       [region_set(:left, :central, :right), interval(:central)] => region_set(:left, :right),
       [region_set(:left, :central, :right), interval(:containing)] => region_set(:left, :right),
-      [region_set(:left, :central, :right), interval(:right_intersecting)] => region_set(:left, :central_shortened_from_right),
+      [region_set(:left, :central, :right), interval(:right_intersecting)] => region_set(:left, :region_cutted_right),
       [region_set(:left, :central, :right), interval(:inside)] => region_set(:left, :contact_left_inside, :contact_right_inside, :right),
       [region_set(:left, :central, :right), region_set(:contact_left_inside, :contact_right_inside)] => region_set(:left, :inside, :right)
     }.each do |(first_arg, second_arg), result|
@@ -327,6 +330,7 @@ describe 'Regions and region sets' do
       [region_set(:left, :central, :right), empty_interval] => false,
       [region_set(:left_adjacent, :central, :right_adjacent), interval(:region_expanded)] => true,
       [region_set(:left_adjacent, :central), interval(:region_expanded_left)] => true,
+      [region_set(:left_adjacent, :central, :right), region_set(:region_expanded_left, :right)] => true,
       [region_set(:left_adjacent, :central, :right_adjacent), region_set(:left, :central, :right)] => false
     }.each do |(first_region, second_region), result|
       specify("#{first_region} == #{second_region} should be #{result}") { (first_region == second_region).should == result }
