@@ -3,13 +3,17 @@
 # SemiIntervalSet -- set of several(more than one) non-intersecting (but possibly adjacent) contigious semi-intervals
 
 # pos_start and pos_end possibly can be of any class (for example GenomePosition class) but positions shpuld be compabale and pos_start should be less then pos_end
-# pos_start, pos_end, adjacent? are not common
+# pos_start, pos_end are not common
 
 # Non-obvious:
 # 1) whether region+left_adjacent.contain?( (region+left.adjacent).unite_adjacent )
 # 2) (region+left_adjacent).contigious?
 
 # add operator ~ (interval complement)
+
+ImpossibleComparison = Class.new(StandardError)
+UnsupportedType = Class.new(TypeError)
+InternalError = Class.new(StandardError)
 
 class SemiInterval
   attr_reader :pos_start, :pos_end
@@ -23,7 +27,7 @@ class SemiInterval
     elsif pos_start == pos_end
       EmptySemiInterval.new
     else
-      raise 'Order of ends of an interval changed'
+      raise ArgumentError, 'Order of ends of an interval changed'
     end
   end
 
@@ -34,7 +38,7 @@ class SemiInterval
 
   # self is <mutual_alignment(other)> to other
   def mutual_alignment(other)
-    raise "Unsupported class #{other.class}"  unless other.is_a?(SemiInterval)
+    raise UnsupportedType  unless other.is_a?(SemiInterval)
     return  :undefined if other.empty?
     if pos_start == other.pos_start && pos_end == other.pos_end
       :equal
@@ -63,10 +67,9 @@ class SemiInterval
     elsif pos_start > other.pos_start && pos_start < other.pos_end && pos_end > other.pos_end
       :right_intersect
     else
-      raise 'Mutual alignment failed. Logic error: this branch of code should never work'
+      raise InternalError, 'Mutual alignment failed. Logic error: this branch of code should never work'
     end
   end
-  private :mutual_alignment
 
   def intersection_with_region(other)
     case mutual_alignment(other)
@@ -79,15 +82,6 @@ class SemiInterval
     when :right_intersect   then SemiInterval.new(pos_start, other.pos_end)
     end
   end
-  private :intersection_with_region
-  def intersection(other)
-    case other
-    when SemiInterval then intersection_with_region(other)
-    when SemiIntervalSet then other.intersection(self)
-    else raise 'Unsupported type'
-    end
-  end
-
   def union_with_region(other)
     case mutual_alignment(other)
     when :undefined  then self
@@ -99,15 +93,6 @@ class SemiInterval
     when :left, :right   then SemiIntervalSet.new( self, other )
     end
   end
-  private :union_with_region
-  def union(other)
-    case other
-    when SemiInterval then union_with_region(other)
-    when SemiIntervalSet then other.union(self)
-    else raise 'Unsupported type'
-    end
-  end
-
   def subtract_with_region(other)
     case mutual_alignment(other)
     when :undefined  then self
@@ -121,12 +106,30 @@ class SemiInterval
     when :left, :right, :outside_left_adjacent, :outside_right_adjacent  then self
     end
   end
+  private :mutual_alignment
+  private :intersection_with_region
+  private :union_with_region
   private :subtract_with_region
+
+  def intersection(other)
+    case other
+    when SemiInterval then intersection_with_region(other)
+    when SemiIntervalSet then other.intersection(self)
+    else raise UnsupportedType
+    end
+  end
+  def union(other)
+    case other
+    when SemiInterval then union_with_region(other)
+    when SemiIntervalSet then other.union(self)
+    else raise UnsupportedType
+    end
+  end
   def subtract(other)
     case other
     when SemiInterval then subtract_with_region(other)
     when SemiIntervalSet then other.interval_list.inject(self){|result, interval| result.subtract(interval) }
-    else raise 'Unsupported type'
+    else raise UnsupportedType
     end
   end
 
@@ -139,53 +142,63 @@ class SemiInterval
   end
   def contain?(other)
     case other
+    when EmptySemiInterval
+      true
     when SemiInterval
       pos_start <= other.pos_start && other.pos_end <= pos_end
     when SemiIntervalSet
       other.interval_list.all?{|interval| self.contain?(interval)}
     else
-      raise 'Unsupported type'
+      raise UnsupportedType
     end
   end
   def inside?(other)
     case other
+    when EmptySemiInterval
+      false
     when SemiInterval
       other.pos_start <= pos_start && pos_end <= other.pos_end
     when SemiIntervalSet
       other.interval_list.any?{|interval| self.inside?(interval)}
     else
-      raise 'Unsupported type'
+      raise UnsupportedType
     end
   end
   def from_left?(other)
     case other
+    when EmptySemiInterval
+      raise ImpossibleComparison, "#{self}.from_left?(#{other}) failed"
     when SemiInterval, SemiIntervalSet
       self.rightmost_position <= other.leftmost_position
     else
-      raise 'Unsupported type'
+      raise UnsupportedType
     end
   end
   def from_right?(other)
     case other
+    when EmptySemiInterval
+      raise ImpossibleComparison, "#{self}.from_right?(#{other}) failed"
     when SemiInterval, SemiIntervalSet
       other.rightmost_position <= self.leftmost_position
     else
-      raise 'Unsupported type'
+      raise UnsupportedType
     end
   end
-  def adjacent?(other)
+  def region_adjacent?(other)
     case other
+    when EmptySemiInterval
+      raise ImpossibleComparison, "#{self}.region_adjacent?(#{other}) failed"
     when SemiInterval
       [:outside_left_adjacent, :outside_right_adjacent].include?  mutual_alignment(other)
-    when SemiInterval
-      raise 'adjacent? not supported for SemiIntervalSet'
     else
-      raise 'Unsupported type'
+      raise UnsupportedType
     end
   end
 
   def ==(other)
     case other
+    when EmptySemiInterval
+      false
     when SemiInterval
       pos_start == other.pos_start && pos_end == other.pos_end
     else
@@ -205,7 +218,7 @@ class SemiInterval
       return 1 if other.interval_list.all?{|interval| self.from_right?(interval)}
       nil
     else
-      raise 'Unsupported type'
+      raise UnsupportedType
     end
   end
   include Comparable
@@ -247,13 +260,22 @@ class EmptySemiInterval < SemiInterval
   def subtract(other); self; end
   def contain?(other); nil; end
   def inside?(other); nil; end
-  def adjacent?(other); nil; end
+  def region_adjacent?(other)
+    case other
+    when SemiInterval
+      raise ImpossibleComparison, "#{self}.region_adjacent?(#{other}) failed"
+    when SemiIntervalSet
+      raise UnsupportedType
+    end
+  end
   def from_left?(other); nil; end
   def from_right?(other); nil; end
   def intersect?(other); nil; end
   def ==(other); other.empty?; end
+  alias_method :eql? , :==
   def <=>(other); self == other ? 0 : nil; end
   def to_s; "[empty)"; end
+  alias_method :inspect, :to_s
   def covering_interval; self; end
   def complement; SemiInterval.new(-Float::INFINITY, Float::INFINITY); end
 
@@ -298,7 +320,7 @@ class SemiIntervalSet
         list.push(interval)
         next
       end
-      if list.last.adjacent?(interval)
+      if list.last.region_adjacent?(interval)
         list.push( list.pop.union(interval) )
       else
         list.push(interval)
@@ -316,7 +338,7 @@ class SemiIntervalSet
     when SemiIntervalSet
       other.interval_list.inject(self){|result, interval| result.union(interval) }
     else
-      raise 'Unsupported type'
+      raise UnsupportedType
     end
   end
   def intersection(other)
@@ -324,7 +346,7 @@ class SemiIntervalSet
     when SemiInterval, SemiIntervalSet
       SemiIntervalSet.new( interval_list.map{|interval| other.intersection(interval)} )
     else
-      raise 'Unsupported type'
+      raise UnsupportedType
     end
   end
   def subtract(other)
@@ -334,12 +356,12 @@ class SemiIntervalSet
     when SemiIntervalSet
       other.interval_list.inject(self){|result, interval| result.subtract(interval) }
     else
-      raise 'Unsupported type'
+      raise UnsupportedType
     end
   end
   def empty?; false; end
   def contigious?;
-    interval_list.each_cons(2).all?{|region_l, region_r| region_l.adjacent?(region_r) }
+    interval_list.each_cons(2).all?{|region_l, region_r| region_l.region_adjacent?(region_r) }
   end
 
   def intersect?(other)
@@ -347,7 +369,7 @@ class SemiIntervalSet
     when SemiInterval, SemiIntervalSet
       interval_list.any?{|interval| other.intersect?(interval)}
     else
-      raise 'Unsupported type'
+      raise UnsupportedType
     end
   end
 
@@ -358,7 +380,7 @@ class SemiIntervalSet
     when SemiIntervalSet
       other.interval_list.all?{|other_interval| self.contain?(other_interval) }
     else
-      raise 'Unsupported type'
+      raise UnsupportedType
     end
   end
   def inside?(other)
@@ -366,7 +388,7 @@ class SemiIntervalSet
     when SemiInterval, SemiIntervalSet
       interval_list.all?{|interval| interval.inside?(other) }
     else
-      raise 'Unsupported type'
+      raise UnsupportedType
     end
   end
   def from_left?(other)
@@ -374,7 +396,7 @@ class SemiIntervalSet
     when SemiInterval, SemiIntervalSet
       self.rightmost_position <= other.leftmost_position
     else
-      raise 'Unsupported type'
+      raise UnsupportedType
     end
   end
   def from_right?(other)
@@ -382,7 +404,7 @@ class SemiIntervalSet
     when SemiInterval, SemiIntervalSet
       other.rightmost_position <= self.leftmost_position
     else
-      raise 'Unsupported type'
+      raise UnsupportedType
     end
   end
 
@@ -393,7 +415,7 @@ class SemiIntervalSet
     when SemiInterval
       false
     else
-      raise 'Unsupported type'
+      raise UnsupportedType
     end
   end
   alias_method :eql? , :==
@@ -413,6 +435,10 @@ class SemiIntervalSet
 
   def complement
     SemiInterval.new(-Float::INFINITY, Float::INFINITY) - self
+  end
+
+  def region_adjacent?(other)
+    raise UnsupportedType, 'Unsupported type of receiver'
   end
 
   alias_method :|, :union

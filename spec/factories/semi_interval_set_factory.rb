@@ -18,14 +18,7 @@ def interval(interval_name)
 end
 
 FactoryGirl.define do
-  factory :empty_region, class: EmptySemiInterval do
-    initialize_with{ new() }
-  end
-  factory :same_empty_region, class: EmptySemiInterval do
-    initialize_with{ new() }
-  end
-
-  factory :region, aliases: [:central], class: SemiInterval do
+  factory :central, class: SemiInterval do
     initialize_with{ SemiInterval.new(region.begin, region.end) }
 
     region 10..20
@@ -42,6 +35,11 @@ FactoryGirl.define do
     factory(:containing_all) { region 1..100 }
     factory(:same_region, aliases: [:same_as_central]) { region 10..20 }
 
+    factory(:whole_numeric_axis) { region (-Float::INFINITY)..(Float::INFINITY) }
+    factory(:infinite_to_left) { region (-Float::INFINITY)..10 }
+    factory(:infinite_to_right_from_left_boundary) { region 10..(Float::INFINITY) }
+    factory(:infinite_to_right) { region 20..(Float::INFINITY) }
+
     # helper factories
     factory(:another_region, aliases: [:far_region, :far_right]) { region 110..120 }
     factory(:another_region_2) { region 120..220 }
@@ -55,14 +53,5 @@ FactoryGirl.define do
 
     factory(:region_cutted_left) { region 13..20 }
     factory(:region_cutted_right) { region 10..17 }
-  end
-
-  factory :region_set, class: SemiIntervalSet do
-    initialize_with{ new(*interval_list) }
-    with_interval_list :left, :central, :right
-
-    factory(:same_region_set){ with_interval_list :left, :region, :right }
-    factory(:another_region_set_1){ with_interval_list :region, :right }
-    factory(:another_region_set_2){ with_interval_list :containing, :far_region }
   end
 end
