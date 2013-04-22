@@ -16,7 +16,7 @@ module SemiIntervalHelpers
 end
 
 shared_examples 'alignment predicate' do |meth, regions_yielding_true|
-  
+
   describe "##{meth}" do
     {true => regions_yielding_true, false => all_types_of_non_empty_regions - regions_yielding_true}.each do |result, region_types|
       region_types.each do |region_type|
@@ -85,14 +85,11 @@ describe EmptySemiInterval do
   specify{ (empty_interval <=> interval(:central)).should be_nil }
   specify{ empty_interval.should_not == interval(:central) }
   specify{ empty_interval.should == empty_interval }
-  
-  #specify{ empty_interval.region_adjacent?( interval(:central) ).should be_nil }
 end
 
 describe SemiIntervalSet do
   extend SemiIntervalHelpers
   describe '.new' do
-    
     context 'with empty interval list' do
       [
       arglist(),
@@ -129,8 +126,14 @@ describe SemiIntervalSet do
       specify 'order of arguments doesn\'t matter' do
         SemiIntervalSet.new(interval(:central), interval(:left), interval(:right)).should == SemiIntervalSet.new(interval(:left), interval(:central), interval(:right))
       end
-      specify 'adjacent regions don\'t become glued together' do
-        SemiIntervalSet.new(interval(:left_adjacent), interval(:central)).interval_list.should == [interval(:left_adjacent), interval(:central)]
+      specify 'adjacent regions become glued together' do
+        SemiIntervalSet.new(interval(:left_adjacent), interval(:central)).should be_kind_of(SemiInterval)
+        SemiIntervalSet.new(interval(:left_adjacent), interval(:central)).interval_list.should == [interval(:region_expanded_left)]
+
+        SemiIntervalSet.new(interval(:left_adjacent), interval(:central), interval(:right)).should be_kind_of(SemiIntervalSet)
+        SemiIntervalSet.new(interval(:left_adjacent), interval(:central), interval(:right)).interval_list.should == [interval(:region_expanded_left), interval(:right)]
+        SemiIntervalSet.new(interval(:left_adjacent), interval(:right), interval(:central)).should be_kind_of(SemiIntervalSet)
+        SemiIntervalSet.new(interval(:left_adjacent), interval(:right), interval(:central)).interval_list.should == [interval(:region_expanded_left), interval(:right)]
       end
       specify 'regions goes in left-to-right direction' do
         SemiIntervalSet.new(interval(:central), interval(:left), interval(:right)).interval_list.should == [interval(:left), interval(:central), interval(:right)]
@@ -139,19 +142,13 @@ describe SemiIntervalSet do
     context 'with several intersecting non-equal intervals' do
       specify{ expect{ SemiIntervalSet.new(interval(:central), interval(:intersecting_left)) }.to raise_error }
     end
-    context 'with several adjacent intervals' do
-      specify{ SemiIntervalSet.new(interval(:left_adjacent), interval(:central)).should be_kind_of(SemiIntervalSet) }
-      specify{ SemiIntervalSet.new(interval(:left_adjacent), interval(:central)).interval_list.should == [interval(:left_adjacent), interval(:central)] }
-    end
+
     context 'with several equal intervals' do
       specify 'should ignore duplicates' do
         SemiIntervalSet.new(interval(:central), interval(:left), interval(:central)).should == region_set(:left, :central)
       end
     end
   end
-
-
-
 end
 
 ########################
@@ -181,8 +178,6 @@ describe 'Regions and region sets' do
       [region_set(:left, :central), region_set(:left, :central)] => region_set(:left, :central),
       [region_set(:left, :central, :right), region_set(:contact_left_inside, :contact_right_inside)] => region_set(:contact_left_inside, :contact_right_inside),
       [region_set(:left, :central), region_set(:central, :right)] => interval(:central),
-      [region_set(:left_adjacent, :central), region_set(:left_adjacent, :central)] => region_set(:left_adjacent, :central),
-      [region_set(:left_adjacent, :central), interval(:containing_all)] => region_set(:left_adjacent, :central),
       [region_set(:central, :right), interval(:region_expanded_left)] => interval(:central),
       [interval(:left_intersecting), region_set(:left, :central)] => region_set(:left, :left_intersection)
     }.each do |(first_arg, second_arg), result|
@@ -228,23 +223,23 @@ describe 'Regions and region sets' do
       [region_set(:left, :central), region_set(:left, :right)] => region_set(:left, :central, :right),
 
       [region_set(:left, :central), interval(:right)] => region_set(:left, :central, :right),
-      [region_set(:left_adjacent, :central), region_set(:left_adjacent, :central)] => region_set(:left_adjacent, :central),
       [interval(:left), interval(:right)] => region_set(:left, :right),
 
       [region_set(:central, :right), interval(:left_intersecting)] => region_set(:region_expanded_left, :right),
       [region_set(:left_intersecting, :right_intersecting), interval(:central)] => interval(:region_expanded),
       [region_set(:contact_left_inside, :contact_right_inside), interval(:central)] => interval(:central),
-      [region_set(:contact_left_inside, :contact_right_inside), interval(:inside)] => region_set(:contact_left_inside, :inside, :contact_right_inside),
+      [region_set(:contact_left_inside, :contact_right_inside), interval(:inside)] => region_set(:central),
+      [region_set(:left_adjacent, :right_adjacent), interval(:central)] => interval(:region_expanded),
 
       [region_set(:central, :right), interval(:left_adjacent)] => region_set(:left_adjacent, :central, :right),
-      [region_set(:left_adjacent, :central), region_set(:central, :right)] => region_set(:left_adjacent, :central, :right)
+      [region_set(:left_adjacent, :central), region_set(:central, :right)] => region_set(:region_expanded_left, :right),
+      [region_set(:left_adjacent, :right), region_set(:central, :right)] => region_set(:region_expanded_left, :right)
     }.each do |(first_arg, second_arg), result|
       specify("#{first_arg} union #{second_arg} should be #{result}"){ first_arg.union(second_arg).should == result }
       specify("#{second_arg} union #{first_arg} should be #{result}"){ second_arg.union(first_arg).should == result }
       specify("#{first_arg} | #{second_arg} should be #{result}"){ (first_arg | second_arg).should == result }
       specify("#{second_arg} | #{first_arg} should be #{result}"){ (second_arg | first_arg).should == result }
     end
-
   end
 
   describe '#subtract' do
@@ -292,10 +287,10 @@ describe 'Regions and region sets' do
     end
   end
 
-
   describe '#complement' do
     { empty_interval => interval(:whole_numeric_axis),
       interval(:central) => region_set(:infinite_to_left, :infinite_to_right),
+      region_set(:left_adjacent, :central) => region_set(:infinite_to_left_from_left_region, :infinite_to_right),
       region_set(:contact_left_inside, :contact_right_inside) => region_set(:infinite_to_left, :inside, :infinite_to_right),
       interval(:infinite_to_left) => interval(:infinite_to_right_from_left_boundary)
     }.each do |region, result|
@@ -307,18 +302,16 @@ describe 'Regions and region sets' do
   end
 
   describe '#unite_adjacent' do
-    specify{ empty_interval.unite_adjacent.should == empty_interval }
-    specify{ interval(:central).unite_adjacent.should == interval(:central) }
-    specify{ region_set(:left, :central, :right).unite_adjacent.should == region_set(:left, :central, :right) }
-    specify{ region_set(:left_adjacent, :central, :right).unite_adjacent.should == region_set(:region_expanded_left, :right) }
-    specify{ (region_set(:left_adjacent, :right_adjacent) | interval(:central)).should_not == region_set(:region_expanded) }
-    specify{ (region_set(:left_adjacent, :right_adjacent) | interval(:central)).unite_adjacent.should == region_set(:region_expanded) }
+    specify{ SemiIntervalSet.unite_adjacent([empty_interval]).should == [empty_interval] }
+    specify{ SemiIntervalSet.unite_adjacent([interval(:central)]).should == [interval(:central)] }
+    specify{ SemiIntervalSet.unite_adjacent([interval(:left), interval(:central), interval(:right)]).should == [interval(:left), interval(:central), interval(:right)] }
+    specify{ SemiIntervalSet.unite_adjacent([interval(:left_adjacent), interval(:central), interval(:right)]).should == [interval(:region_expanded_left), interval(:right)] }
   end
 
   describe '#==' do
     { [interval(:central), interval(:central)] => true,
       [region_set(:left, :central, :right), region_set(:left, :central, :right)] => true,
-      [region_set(:left_adjacent, :central, :right_adjacent), region_set(:left_adjacent, :central, :right_adjacent)] => true,
+      [region_set(:left_adjacent, :central, :right), region_set(:left_adjacent, :central, :right)] => true,
       [empty_interval, empty_interval] => true,
 
       [interval(:central), interval(:right)] => false,
@@ -332,8 +325,8 @@ describe 'Regions and region sets' do
       [region_set(:left, :central, :right), region_set(:region_expanded, :far_region)] => false,
       [region_set(:left, :central, :right), region_set(:far_left, :far_right)] => false,
       [region_set(:left, :central, :right), empty_interval] => false,
-      [region_set(:left_adjacent, :central, :right_adjacent), interval(:region_expanded)] => false,
-      [region_set(:left_adjacent, :central), interval(:region_expanded_left)] => false,
+      [region_set(:left_adjacent, :central, :right_adjacent), interval(:region_expanded)] => true,
+      [region_set(:left_adjacent, :central), interval(:region_expanded_left)] => true,
       [region_set(:left_adjacent, :central, :right_adjacent), region_set(:left, :central, :right)] => false
     }.each do |(first_region, second_region), result|
       specify("#{first_region} == #{second_region} should be #{result}") { (first_region == second_region).should == result }
@@ -365,7 +358,6 @@ describe 'Regions and region sets' do
     specify{ interval(:whole_numeric_axis).length.should == Float::INFINITY }
     specify{ empty_interval.length.should == 0 }
     specify{ region_set(:left, :central, :right).should_not respond_to :length }
-    specify{ region_set(:left_adjacent, :central, :right_adjacent).should_not respond_to :length }
   end
 
   describe '#contigious?' do

@@ -1,15 +1,9 @@
 # EmptySemiInterval -- empty region
 # SemiInterval -- single contigious semi-interval
-# SemiIntervalSet -- set of several(more than one) non-intersecting (but possibly adjacent) contigious semi-intervals
+# SemiIntervalSet -- set of several(more than one) non-intersecting contigious semi-intervals. Adjacent regions're glued together
 
 # pos_start and pos_end possibly can be of any class (for example GenomePosition class) but positions shpuld be compabale and pos_start should be less then pos_end
 # pos_start, pos_end are not common
-
-# Non-obvious:
-# 1) whether region+left_adjacent.contain?( (region+left.adjacent).unite_adjacent )
-# 2) (region+left_adjacent).contigious?
-
-# add operator ~ (interval complement)
 
 ImpossibleComparison = Class.new(StandardError)
 UnsupportedType = Class.new(TypeError)
@@ -294,7 +288,7 @@ class SemiIntervalSet
   attr_reader :interval_list
 
   def initialize(*interval_list)
-    @interval_list = interval_list.sort
+    @interval_list = interval_list
   rescue
     raise 'Intervals cannot be ordered without intersections'
   end
@@ -303,6 +297,7 @@ class SemiIntervalSet
   # returns union of them
   def self.new(*arglist)
     interval_list = arglist.flatten.map(&:interval_list).flatten.reject(&:empty?).uniq
+    interval_list = unite_adjacent(interval_list.sort)
     case interval_list.size
     when 0
       EmptySemiInterval.new # returns EmptySemiInterval instead of empty SemiIntervalSet
@@ -313,7 +308,7 @@ class SemiIntervalSet
     end
   end
 
-  def unite_adjacent
+  def self.unite_adjacent(interval_list)
     list = []
     interval_list.each{|interval|
       if list.empty?
@@ -326,8 +321,7 @@ class SemiIntervalSet
         list.push(interval)
       end
     }
-
-    SemiIntervalSet.new(list)
+    list
   end
 
   def union(other)

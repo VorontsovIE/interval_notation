@@ -37,6 +37,7 @@ FactoryGirl.define do
 
     factory(:whole_numeric_axis) { region (-Float::INFINITY)..(Float::INFINITY) }
     factory(:infinite_to_left) { region (-Float::INFINITY)..10 }
+    factory(:infinite_to_left_from_left_region) { region (-Float::INFINITY)..3 }
     factory(:infinite_to_right_from_left_boundary) { region 10..(Float::INFINITY) }
     factory(:infinite_to_right) { region 20..(Float::INFINITY) }
 
