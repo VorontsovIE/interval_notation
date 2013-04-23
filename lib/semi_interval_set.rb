@@ -216,25 +216,33 @@ class SemiInterval
     end
   end
   include Comparable
-  alias_method :eql? , :==
+  def eql?(other); self == other; end
   def hash
-    (pos_start...pos_end).hash
+    [pos_start,pos_end].hash
   end
 
   def to_s
     "[#{pos_start};#{pos_end})"
   end
-  alias_method :inspect, :to_s
+  def inspect; to_s; end
+
+  def to_range
+    pos_start...pos_end
+  end
+  def include_position?(pos)
+    pos_start <= pos && pos < pos_end
+  end
 
   def interval_list; [self]; end
   def unite_adjacent; self; end
   def covering_interval; self; end
   def leftmost_position; pos_start; end
   def rightmost_position; pos_end; end
-  alias_method :|, :union
-  alias_method :&, :intersection
-  alias_method :-, :subtract
-  alias_method :~, :complement
+
+  def |(other); union(other); end
+  def &(other); intersection(other); end
+  def -(other); subtract(other); end
+  def ~; complement; end
 end
 
 class EmptySemiInterval < SemiInterval
@@ -266,17 +274,10 @@ class EmptySemiInterval < SemiInterval
   def from_right?(other); nil; end
   def intersect?(other); nil; end
   def ==(other); other.empty?; end
-  alias_method :eql? , :==
   def <=>(other); self == other ? 0 : nil; end
   def to_s; "[empty)"; end
-  alias_method :inspect, :to_s
   def covering_interval; self; end
   def complement; SemiInterval.new(-Float::INFINITY, Float::INFINITY); end
-
-  alias_method :|, :union
-  alias_method :&, :intersection
-  alias_method :-, :subtract
-  alias_method :~, :complement
 end
 
 # List of non-intersecting SemiIntervals.
@@ -412,7 +413,7 @@ class SemiIntervalSet
       raise UnsupportedType
     end
   end
-  alias_method :eql? , :==
+  def eql?(other); self == other; end
   def hash
     interval_list.hash
   end
@@ -420,7 +421,7 @@ class SemiIntervalSet
   def to_s
     interval_list.map(&:to_s).join('U')
   end
-  alias_method :inspect, :to_s
+  def inspect; to_s; end
 
   def covering_interval; SemiInterval.new(interval_list.first.pos_start, interval_list.last.pos_end); end
 
@@ -435,8 +436,12 @@ class SemiIntervalSet
     raise UnsupportedType, 'Unsupported type of receiver'
   end
 
-  alias_method :|, :union
-  alias_method :&, :intersection
-  alias_method :-, :subtract
-  alias_method :~, :complement
+  def include_position?(pos)
+    interval_list.any?{|interval| interval.include_position?(pos)}
+  end
+
+  def |(other); union(other); end
+  def &(other); intersection(other); end
+  def -(other); subtract(other); end
+  def ~; complement; end
 end
