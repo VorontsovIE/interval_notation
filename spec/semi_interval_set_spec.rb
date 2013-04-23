@@ -34,6 +34,17 @@ describe SemiInterval do
   specify{ interval(:central).pos_start.should == 10 }
   specify{ interval(:central).pos_end.should == 20 }
 
+  { empty_interval => {[0, 5, 9, 10, 15, 19] => false},
+    interval(:central) => {[10,15,19] => true, [5,9,20,25] => false},
+    region_set(:left, :central) => { [3,5,7,10,15,19] => true, [-10,0,1,2,8,9,20,21,25] => false }
+  }.each do |region, cases|
+    cases.each do |positions, result|
+      positions.each do |position|
+        specify("#{region}.include_position?(#{position}) should be #{result}"){ region.include_position?(position).should == result }
+      end
+    end
+  end
+
   include_examples 'alignment predicate', :contain? , [:inside, :contact_left_inside, :contact_right_inside, :same_region]
   include_examples 'alignment predicate', :inside? , [:containing, :same_region]
   include_examples 'alignment predicate', :region_adjacent? , [:left_adjacent, :right_adjacent]

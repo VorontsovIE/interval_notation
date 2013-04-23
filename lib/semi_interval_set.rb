@@ -278,6 +278,7 @@ class EmptySemiInterval < SemiInterval
   def to_s; "[empty)"; end
   def covering_interval; self; end
   def complement; SemiInterval.new(-Float::INFINITY, Float::INFINITY); end
+  def include_position?(pos); false; end
 end
 
 # List of non-intersecting SemiIntervals.
