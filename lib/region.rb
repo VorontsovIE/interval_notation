@@ -194,7 +194,7 @@ class Region
     RegionList.new(self).union(other_region)
   end
   alias_method :+, :union
-  
+
   def subtract(other_region)
     case other_region
     when NilClass
@@ -218,4 +218,16 @@ class Region
     end
   end
   alias_method :-, :subtract
+
+  def list_of_regions
+    [self]
+  end
+  def most_upstream_region
+    self
+  end
+
+  def most_downstream_region
+    self
+  end
+
 end

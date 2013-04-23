@@ -102,7 +102,7 @@ class RegionList
     end
   end
   alias_method :+, :union
-  
+
   def subtract(other_region)
     case other_region
     when NilClass # subtracting empty region
@@ -150,5 +150,5 @@ class RegionList
   def most_downstream_region
     list_of_regions.last
   end
-  
+
 end
