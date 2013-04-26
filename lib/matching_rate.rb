@@ -9,17 +9,8 @@ module Bioinform
       raise ArgumentError, 'word in PWM#score(word) should have the same length as matrix'  unless word.length == length
       #raise ArgumentError, 'word in PWM#score(word) should have only ACGT-letters'  unless word.each_char.all?{|letter| %w{A C G T}.include? letter}
       (0...length).map do |pos|
-        begin
-        # Need support of N-letters and other IUPAC
-          letter = word[pos]
-          matrix[pos][IndexByLetter[letter]]
-        rescue
-          if letter == 'N'
-            puts word
-            return matrix[pos].inject(&:+).to_f / 4
-          end
-          raise ArgumentError, 'word in PWM#score(word) should have only ACGT-letters'
-        end
+        letter = word[pos]
+        letter == 'N' ? matrix[pos].inject(&:+).to_f / 4 : matrix[pos][IndexByLetter[letter]]
       end.inject(&:+)
     end
   end
@@ -75,8 +66,8 @@ def windows_saturations(sequence, window_size, cumulative_ct_saturation)
   }
 end
 
-def percent_of_starts_matching_motif(sequence, cages, max_distance_from_start, match_at_position)
-  positions = 0...sequence.length
+def percent_of_starts_matching_motif(len, cages, max_distance_from_start, match_at_position)
+  positions = 0...len
   sum_of_all_cages = cages.inject(0, &:+)
   sum_of_matching_cages = 0
   positions.each{|pos|
