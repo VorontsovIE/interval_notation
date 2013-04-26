@@ -41,7 +41,7 @@ class Gene
       transcript = all_transcripts[ucsc_id]
       if !transcript
         $logger.error "#{self}'s transcript with #{ucsc_id} wasn't found. Skip transcript"
-      elsif ! transcript.coding_region #.length == 0
+      elsif ! transcript.coding?
         $logger.warn "#{self}'s #{transcript} has no coding region. Skip transcript"
       else
         transcripts << transcript
@@ -71,9 +71,17 @@ class Gene
     group_associated_peaks = {}
     transcripts.each do |transcript|
       associated_peaks = transcript.peaks_associated(peaks, region_length)
-      utr = transcript.utr_region(associated_peaks)
-      next  unless utr
-      exon_intron_structure_on_utr = [utr, transcript.exons.intersection(utr)]  # utr should be here to know boundaries
+      utr = transcript.utr_region(peaks, region_length)
+      exons_on_utr = transcript.exons_on_utr(peaks, region_length)
+      if utr.empty? || exons_on_utr.empty?
+        puts "#{transcript} with utr #{utr} has no exons on utr #{exons_on_utr}"
+        next
+      end
+      if associated_peaks.empty?
+        $logger.info "#{transcript} has no associated peaks on utr"
+        next
+      end
+      exon_intron_structure_on_utr = [utr, exons_on_utr]  # utr should be here to know boundaries
       groups_of_transcripts[exon_intron_structure_on_utr] ||= []
       groups_of_transcripts[exon_intron_structure_on_utr] << transcript
       group_associated_peaks[exon_intron_structure_on_utr] = associated_peaks
