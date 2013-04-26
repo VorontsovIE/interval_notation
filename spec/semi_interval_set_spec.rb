@@ -46,7 +46,7 @@ describe SemiInterval do
   end
 
   specify{ interval(:central).to_range.should == (10...20)}
-  
+
   include_examples 'alignment predicate', :contain? , [:inside, :contact_left_inside, :contact_right_inside, :same_region]
   include_examples 'alignment predicate', :inside? , [:containing, :same_region]
   include_examples 'alignment predicate', :region_adjacent? , [:left_adjacent, :right_adjacent]

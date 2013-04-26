@@ -53,7 +53,7 @@ module UpDownStream
   def with_downstream(len)
     self | downstream(len)
   end
-  
+
   def expand_upstream_with_peaks(peaks)
     peaks_intersecting_region = peaks.select{|peak| self.intersect?(peak.region) }
     if peaks_intersecting_region.empty?
