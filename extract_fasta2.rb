@@ -31,7 +31,7 @@ genes_to_extract = framework.genes_to_process.select{|hgnc_id, gene| mtor_target
 
 File.open('weighted_5-utr.txt', 'w') do |fw|
   framework.output_all_5utr(genes_to_extract, fw)
-  
+
   # genes_to_extract.each do |hgnc_id, gene|
     # gene_expression = transcript_groups[hgnc_id].map(&:summary_expression).inject(&:+).to_f
     # transcript_groups[hgnc_id].each do |transcript_group|
@@ -47,6 +47,14 @@ File.open('weighted_5-utr.txt', 'w') do |fw|
       # #fw.puts ">#{transcript_rate}\n#{sequence}"
     # end
   # end
+end
+
+File.open('weighted_5-utr-polyN-masked.txt', 'w') do |fw|
+  framework.output_all_5utr(genes_to_extract, fw) do |output_stream, gene_info, transcript_group, peaks_info, summary_expression, spliced_sequence, spliced_cages|
+    output_stream.puts ">#{gene_info}\t#{transcript_group}\t#{peaks_info}\t#{summary_expression}"
+    output_stream.puts mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7)
+    output_stream.puts spliced_cages.join("\t")
+  end
 end
 
 # File.open('longest_5-utr.txt', 'w') do |fw|
