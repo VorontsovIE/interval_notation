@@ -18,62 +18,46 @@ class Transcript
     exon_starts = exon_starts.split(',').map(&:strip).reject(&:empty?).map(&:to_i)
     exon_ends = exon_ends.split(',').map(&:strip).reject(&:empty?).map(&:to_i)
     full_gene_region = Region.new(chromosome, strand, tx_start.to_i, tx_end.to_i)
-    coding_region = Region.new(chromosome, strand, cds_start.to_i, cds_end.to_i)  rescue nil
-    exons = exon_count.to_i.times.map{|index| Region.new(chromosome, strand, exon_starts[index], exon_ends[index]) }
-    exons = RegionList.new(*exons)
+    coding_region = Region.new(chromosome, strand, cds_start.to_i, cds_end.to_i)  ### rescue nil
+    exon_regions = exon_count.to_i.times.map{|index| SemiInterval.new(exon_starts[index], exon_ends[index])}
+    exons = RegionList.new(chromosome, strand, SemiIntervalSet.new(exon_regions))
     self.new(name, chromosome, strand, full_gene_region, coding_region, exons, protein_id, align_id)
   end
 
+  def coding?
+    ! coding_region.empty?
+  end
   def to_s
     protein_infos = protein_id ? "(#{protein_id})" : ""
-    "Transcript<#{name}(#{protein_infos}); #{full_gene_region}; coding_region #{coding_region}; exons #{exons}>"
+    "Transcript<#{name}#{protein_infos}; #{full_gene_region}; coding_region #{coding_region}; exons #{exons}>"
   end
   alias_method :inspect, :to_s
 
+
+  def utr_5_with_upstream(region_length)
+    full_gene_region_w_upstream = full_gene_region.with_upstream(region_length)
+    coding_region_w_downstream = coding_region.with_downstream(Float::INFINITY)
+    full_gene_region_w_upstream.subtract(coding_region_w_downstream)
+  end
+  private :utr_5_with_upstream
+
   # region_length is length of region before txStart(start of transcript) where we are looking for peaks
   def peaks_associated(peaks, region_length)
-    ##
-    ## ??? What to do if peak is on the boundary of exon and intron?
-    # # # peaks.each do |peak|
-      # # # exons.each do |exon|
-        # # # puts "#{self}'s #{peak} intersect exon #{exon} but is not inside of it"  if full_gene_region.contain?(peak) && !coding_region.intersect?(peak) && exon.intersect?(peak) && ! exon.contain?(peak)
-      # # # end
-    # # # end
-
-    peaks = peaks.reject{|peak| full_gene_region.contain?(peak) && exons.none?{|exon| exon.intersect?(peak) } }
-
-    ## I must intersect peak to exons
-    ## How the hell should I recalculate expression of peak here?!
-
-    ##
-    full_gene_region_with_upstream = full_gene_region.with_upstream(region_length)
-    coding_region_with_downstream = coding_region.with_downstream(Float::INFINITY)
-    region_of_interest = full_gene_region_with_upstream.subtract(coding_region_with_downstream)
-    
-    peaks.map{|peak| 
-      #peak.region.intersection(region_of_interest)
-      
-    }
-    peaks.select{|peak| region_of_interest.intersect?(peak.region)}
+    region_of_interest = exons_on_utr(peaks, region_length)
+    peaks.select{|peak| region_of_interest.intersect?(peak.region) }
   end
 
-  # region_length is length of region before txStart(start of transcript) where we are looking for peaks
+  def exons_on_utr(peaks, region_length)
+    utr = utr_5_with_upstream(region_length)
+
+    exons_on_utr_unexpanded = exons.with_upstream(region_length).intersection(utr)
+    # expand ROI to include those peaks that intersect ROI
+    exons_on_utr_unexpanded.expand_upstream_with_peaks(peaks)
+  end
+
   # utr_region is defined by leftmost peak intersecting region [txStart-region_length; coding_region_start) and by start of coding region
-  def utr_region(associated_peaks)
-    if associated_peaks.empty?
-      $logger.warn "#{self} has no associated peaks"
-      return nil
-    end
-
-    if strand == '+'
-      utr_start = associated_peaks.map{|peak| peak.region.pos_start}.min
-      utr_end = coding_region.pos_start
-    else
-      utr_end = associated_peaks.map{|peak| peak.region.pos_end}.max
-      utr_start = coding_region.pos_end
-    end
-
-    Region.new(chromosome, strand, utr_start, utr_end)
+  def utr_region(peaks, region_length)
+    utr_5_with_upstream(region_length).expand_upstream_with_peaks(peaks)
   end
 
   # ucsc_id => transcript
@@ -87,5 +71,4 @@ class Transcript
     end
     transcripts
   end
-
 end

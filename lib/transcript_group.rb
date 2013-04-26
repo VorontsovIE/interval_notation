@@ -22,7 +22,7 @@ class TranscriptGroup
   #   transcripts.first.peaks_associated(peaks, region_length)
   # end
   def to_s
-    exon_infos = exons_on_utr.map(&:to_s).join(';')
+    exon_infos = exons_on_utr.map{|interval| "#{interval.pos_start}..#{interval.pos_end}"}.join(';')
     transcripts_infos = transcripts.map{|transcript| transcript.name }.join(';')
     "#{utr}\t#{exon_infos}\t#{transcripts_infos}"
   end
