@@ -1,4 +1,7 @@
 $:.unshift File.dirname(File.expand_path(__FILE__))
+require 'genome_region'
+RegionList = GenomeRegion
+=begin
 require 'region'
 require 'bioinform/support/same_by'
 
@@ -152,3 +155,4 @@ class RegionList
   end
 
 end
+=end

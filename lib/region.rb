@@ -1,3 +1,7 @@
+$:.unshift File.dirname(File.expand_path(__FILE__))
+require 'genome_region'
+Region = GenomeRegion
+=begin
 # Region is immutable structure
 #
 # It contains semi-interval [pos_start; pos_end) on specified chromosome and strand('+'/'-')
@@ -231,3 +235,4 @@ class Region
   end
 
 end
+=end
