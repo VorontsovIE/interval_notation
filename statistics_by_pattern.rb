@@ -114,7 +114,7 @@ def calculate_transcript_matching_rates_for_motif(transcript_infos, max_distance
 
     positions = 0..(sequence.length - pwm.length)
     transcript_info[:match_at_position] ||= positions.map{|pos| pwm.score(sequence[pos, pwm.length]) >= threshold ? true : nil}
-    matching_rate = percent_of_starts_matching_motif(sequence.upcase, cages, max_distance_from_start, transcript_info[:match_at_position]) || 0
+    matching_rate = percent_of_starts_matching_motif(sequence.length, cages, max_distance_from_start, transcript_info[:match_at_position]) || 0
 
     transcript_info[:matching_rate] = matching_rate
   end
@@ -141,6 +141,34 @@ def gene_matching_rate(transcript_infos, gene_expression)
 end
 
 
+def percent_of_starts_matching_motif_pos(len, cages, distance_from_start, match_at_position)
+  positions = 0...len
+  sum_of_all_cages = cages.inject(0, &:+)
+  sum_of_matching_cages = 0
+  positions.each{|pos|
+    sum_of_matching_cages += cages[pos]  if (pos - distance_from_start >= 0 && match_at_position[pos - distance_from_start])
+  }
+  (sum_of_all_cages != 0)  ?  sum_of_matching_cages.to_f / sum_of_all_cages  :  nil
+end
+
+POLY_N_SEQ = 'N'*10
+POLY_N_CAGES = [0]*10
+
+def calculate_transcript_matching_rates_for_motif_pos(transcript_infos, max_distance_from_start, pwm, threshold)
+  transcript_infos.each do |transcript_info|
+    sequence = transcript_info[:sequence] + POLY_N_SEQ
+    cages = transcript_info[:cages] + POLY_N_CAGES
+
+    positions = 0..(sequence.length - pwm.length)
+    transcript_info[:match_at_position] ||= positions.map{|pos| pwm.score(sequence[pos, pwm.length]) >= threshold ? true : nil}
+    matching_rate = percent_of_starts_matching_motif_pos(sequence.length, cages, max_distance_from_start, transcript_info[:match_at_position]) || 0
+
+    transcript_info[:matching_rate] = matching_rate
+  end
+  transcript_infos
+end
+
+
 
 #max_distance_from_start, min_length = ARGV.first(2).map(&:to_i)
 #raise 'Specify max_distance_from_start and min_length as command-line args' unless max_distance_from_start && min_length
@@ -154,24 +182,27 @@ transcript_infos = read_transcript_infos('transcripts_after_splicing.txt')
 gene_names = collect_gene_names(transcript_infos)
 gene_expression = collect_gene_expression(transcript_infos)
 
+pwm = Bioinform::PWM.new(File.read('top_motif/longest_5-utr_10.xml.pat'))
+threshold = 1.04538 #4.74935
+#(0..10).each do |max_distance_from_start|
 
-pwm = Bioinform::PWM.new( [[0, 4, 0 ,2], [0, 2, 0, 2], [0, 2, 0, 2], [0, 2, 0, 2], [0, 0.5, 0, 0.5]] )
-threshold = 9
-(0..10).each do |max_distance_from_start|
-  calculate_transcript_matching_rates_for_motif(transcript_infos, max_distance_from_start, pwm, threshold)
+  distance_from_start = 3
+  calculate_transcript_matching_rates_for_motif_pos(transcript_infos, distance_from_start, pwm, threshold)
 
   gene_matching_rate = gene_matching_rate(transcript_infos, gene_expression)
 
   roc_points = roc_curve(gene_matching_rate, mtor_targets)
   auc = area_under_curve(roc_points)
-  puts "#{max_distance_from_start}\t#{auc}"
+  puts "#{distance_from_start}\t#{auc}"
 
   output_curve_data('roc.txt', roc_points)
-  # print_transcript_matching_rates_infos('transcript_matching_rates.out', transcript_infos, mtor_targets, translational_genes)
-  # print_gene_matching_rates_infos('gene_matching_rates.out', gene_names, gene_expression, gene_matching_rate, mtor_targets, translational_genes)
-end
+  print_transcript_matching_rates_infos('transcript_matching_rates.out', transcript_infos, mtor_targets, translational_genes)
+  print_gene_matching_rates_infos('gene_matching_rates.out', gene_names, gene_expression, gene_matching_rate, mtor_targets, translational_genes)
+#end
 
 
+
+=begin
 
 (0..10).each do |max_distance_from_start|
   (1..10).each do |window_size|
@@ -191,4 +222,37 @@ end
   end
 end
 
+=end
 
+=begin
+pwm = Bioinform::PWM.new(File.read('top_motif/longest_5-utr_10.xml.pat'))
+threshold = 5.66224
+
+distribution_count_motif_dist_from_max_peak = Hash.new{|hsh,key| hsh[key] = 0}
+distribution_expression_motif_dist_from_max_peak = Hash.new{|hsh,key| hsh[key] = 0}
+distribution_expression_unnormalized_motif_dist_from_max_peak = Hash.new{|hsh,key| hsh[key] = 0}
+
+transcript_infos.each do |transcript_info|
+  next unless  mtor_targets.has_key?(transcript_info[:hgnc_id])
+  sequence = transcript_info[:sequence]
+  cages = transcript_info[:cages]
+  pos_of_max_peak = cages.each_with_index.max_by{|v, pos| v}.last
+
+  positions = 0..(sequence.length - pwm.length)
+  pos_of_best_match = positions.max_by{|pos| pwm.score(sequence[pos, pwm.length]) }
+  next  unless pos_of_max_peak && pos_of_best_match
+
+  distribution_count_motif_dist_from_max_peak[pos_of_best_match - pos_of_max_peak] += 1
+  distribution_expression_motif_dist_from_max_peak[pos_of_best_match - pos_of_max_peak] += transcript_info[:expression].to_f / gene_expression[transcript_info[:hgnc_id]]
+  distribution_expression_unnormalized_motif_dist_from_max_peak[pos_of_best_match - pos_of_max_peak] += transcript_info[:expression].to_f
+end
+File.open('count_distribution.txt','w'){|f|
+  distribution_count_motif_dist_from_max_peak.sort_by{|k,v| k}.each{|k,v| f.puts "#{k}\t#{v}"}
+}
+File.open('expression_distribution.txt','w'){|f|
+  distribution_expression_motif_dist_from_max_peak.sort_by{|k,v| k}.each{|k,v| f.puts "#{k}\t#{v}"}
+}
+File.open('expression_distribution_unnormalized.txt','w'){|f|
+  distribution_expression_unnormalized_motif_dist_from_max_peak.sort_by{|k,v| k}.each{|k,v| f.puts "#{k}\t#{v}"}
+}
+=end
