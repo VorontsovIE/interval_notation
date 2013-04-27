@@ -36,21 +36,6 @@ class Peak
   def pos_start; region.pos_start; end
   def pos_end; region.pos_end; end
 
-  # region_length is length of region before txStart(start of transcript) where we are looking for peaks
-  def transcripts_associated(transcripts, region_length)
-    # if strand == '+'
-      # region_of_possibly_associated_trascripts = Region.new(chromosome, strand, pos_start, pos_end + region_length)
-    # else
-      # region_of_possibly_associated_trascripts = Region.new(chromosome, strand, pos_start - region_length, pos_end)
-    # end
-    # transcripts.select{|ucsc_id, transcript| transcript.full_gene_region.intersect?(region_of_possibly_associated_trascripts)}
-    
-    transcripts.select{|ucsc_id, transcript|
-      full_gene_region_with_upstream = transcript.full_gene_region.with_upstream(region_length)
-      full_gene_region_with_upstream.intersect?(self.region)
-    }
-  end
-
   # hgnc_id => [peaks]
   def self.peaks_from_file(input_file, hgnc_to_entrezgene, entrezgene_to_hgnc)
     peaks = {}
