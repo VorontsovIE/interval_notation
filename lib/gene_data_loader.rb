@@ -41,12 +41,10 @@ class GeneDataLoader
 
   def calculate_summary_expressions_for_transcript_group(transcript_group)
     peaks_expression = transcript_group.associated_peaks.map{|peak|
-      # peak.intersection(transcript_group.exons_on_utr)
-      sum_cages_on_exon = peak.region.intersection(transcript_group.exons_on_utr).map{|interval| Region.new(peak.chromosome, peak.strand, interval).load_cages(all_cages).inject(0,:+) }.inject(0, :+)
-      sum_cages_on_peak = peak.region.load_cages(all_cages).inject(0, :+)
-
-      percent_of_starts_in_intron = sum_cages_on_exon.to_f / sum_cages_on_peak
-      ###transcript_group.intersection(peak.region)
+      peaks_on_exons = peak.region.intersection(transcript_group.exons_on_utr)
+      sum_cages_on_exons = peaks_on_exons.map{|interval| Region.new(peak.chromosome, peak.strand, interval).load_cages(all_cages).inject(0,:+) }.inject(0, :+)
+      sum_cages_on_peaks = peak.region.load_cages(all_cages).inject(0, :+)
+      percent_of_starts_in_intron = sum_cages_on_exons.to_f / sum_cages_on_peaks
       tpm = peak.tpm.to_f * percent_of_starts_in_intron
       tpm / (number_of_genes_for_a_peak[peak] * num_of_transcript_groups_associated_to_peak(peak))
     }
@@ -70,7 +68,7 @@ class GeneDataLoader
   def collect_transcript_groups(group_of_genes)
     transcript_groups = {}
     group_of_genes.each do |hgnc_id, gene|
-      transcript_groups[hgnc_id] = gene.transcripts_grouped_by_common_exon_structure_on_utr(region_length)
+      transcript_groups[hgnc_id] = gene.transcripts_grouped_by_common_exon_structure_on_utr(region_length, all_cages)
     end
     transcript_groups
   end
