@@ -31,7 +31,7 @@ end
 
 transcript_groups = {}
 genes_to_process.each do |hgnc_id, gene|
-  transcript_groups[hgnc_id] = gene.transcripts_grouped_by_common_exon_structure_on_utr(REGION_LENGTH)
+  transcript_groups[hgnc_id] = gene.transcripts_grouped_by_common_exon_structure_on_utr(REGION_LENGTH, all_cages)
 end
 
 
