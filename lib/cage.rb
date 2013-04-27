@@ -1,5 +1,5 @@
 $:.unshift File.dirname(File.expand_path(__FILE__))
-require 'region'
+require 'genome_region'
 
 # returns {strand => {chromosome => {position => num_reads} } } structure
 def read_cages(input_file)

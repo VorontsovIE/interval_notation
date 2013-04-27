@@ -1,6 +1,5 @@
 $:.unshift File.dirname(File.expand_path(__FILE__))
-require 'region'
-require 'region_list'
+require 'genome_region'
 require 'peak'
 
 class Transcript
@@ -17,10 +16,10 @@ class Transcript
     name, chromosome, strand, tx_start, tx_end, cds_start, cds_end, exon_count, exon_starts, exon_ends, protein_id, align_id = info.split("\t")
     exon_starts = exon_starts.split(',').map(&:strip).reject(&:empty?).map(&:to_i)
     exon_ends = exon_ends.split(',').map(&:strip).reject(&:empty?).map(&:to_i)
-    full_gene_region = Region.new(chromosome, strand, tx_start.to_i, tx_end.to_i)
-    coding_region = Region.new(chromosome, strand, cds_start.to_i, cds_end.to_i)  ### rescue nil
-    exon_regions = exon_count.to_i.times.map{|index| SemiInterval.new(exon_starts[index], exon_ends[index])}
-    exons = RegionList.new(chromosome, strand, SemiIntervalSet.new(exon_regions))
+    full_gene_region = GenomeRegion.new(chromosome, strand, tx_start.to_i, tx_end.to_i)
+    coding_region = GenomeRegion.new(chromosome, strand, cds_start.to_i, cds_end.to_i)  ### rescue nil
+    exon_regions = exon_count.to_i.times.map{|index| SemiInterval.new(exon_starts[index], exon_ends[index])} ##############
+    exons = GenomeRegion.new(chromosome, strand, SemiIntervalSet.new(exon_regions))
     self.new(name, chromosome, strand, full_gene_region, coding_region, exons, protein_id, align_id)
   end
 

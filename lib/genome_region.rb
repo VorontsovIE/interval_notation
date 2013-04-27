@@ -1,3 +1,7 @@
+# GenomeRegion is immutable structure. It's composed of interval / set of intervals, chromosome and strand
+# It can be constructed using chromosome, strand and either pos_start,pos_end pair or interval/interval set
+# All intervals in genome region should be on the same strand
+
 $:.unshift File.dirname(File.expand_path(__FILE__))
 require 'semi_interval_set'
 
@@ -220,7 +224,7 @@ class GenomeRegion
   def each_region(&block)
     if block_given?
       list_of_regions.each do |interval|
-        block.call Region.new(chromosome, strand, interval)
+        block.call GenomeRegion.new(chromosome, strand, interval)
       end
     else
       self.enum_for(:each_region)
@@ -290,7 +294,7 @@ class GenomeRegionList
   def each_region(&block)
     if block_given?
       list_of_regions.each do |interval|
-        block.call Region.new(chromosome, strand, interval)
+        block.call GenomeRegion.new(chromosome, strand, interval)
       end
     else
       self.enum_for(:each_region)

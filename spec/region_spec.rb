@@ -1,43 +1,43 @@
 $:.unshift File.dirname(File.expand_path(__FILE__, '../lib'))
-require 'region'
+require 'genome_region'
 require 'rspec/given'
 
-describe Region do
+describe GenomeRegion do
   describe '#initialize' do
     context 'with start < end' do
-      When(:region) { Region.new('chr1', '+', 100, 110) }
+      When(:region) { GenomeRegion.new('chr1', '+', 100, 110) }
       Then { region.should_not have_failed }
     end
     context 'with start > end' do
-      When(:region) { Region.new('chr1', '+', 100, 97) }
+      When(:region) { GenomeRegion.new('chr1', '+', 100, 97) }
       Then { region.should have_failed }
     end
     context 'with start == end' do
-      When(:region) { Region.new('chr1', '+', 100, 100) }
+      When(:region) { GenomeRegion.new('chr1', '+', 100, 100) }
       Then { region.should have_failed }
     end
   end
 
-  Given(:region) { Region.new('chr1', '+', 100, 110) }
+  Given(:region) { GenomeRegion.new('chr1', '+', 100, 110) }
 
-  Given(:same_region) { Region.new('chr1', '+', 100, 110) }
+  Given(:same_region) { GenomeRegion.new('chr1', '+', 100, 110) }
 
-  Given(:region_inside) { Region.new('chr1', '+', 103, 107) }
-  Given(:region_inside_extend_to_end) { Region.new('chr1', '+', 103, 110) }
-  Given(:region_inside_extend_from_start) { Region.new('chr1', '+', 100, 103) }
+  Given(:region_inside) { GenomeRegion.new('chr1', '+', 103, 107) }
+  Given(:region_inside_extend_to_end) { GenomeRegion.new('chr1', '+', 103, 110) }
+  Given(:region_inside_extend_from_start) { GenomeRegion.new('chr1', '+', 100, 103) }
 
-  Given(:region_on_another_strand) { Region.new('chr1', '-', 103, 107) }
-  Given(:region_on_another_chromosome) { Region.new('chr2', '+', 103, 107) }
+  Given(:region_on_another_strand) { GenomeRegion.new('chr1', '-', 103, 107) }
+  Given(:region_on_another_chromosome) { GenomeRegion.new('chr2', '+', 103, 107) }
 
-  Given(:region_from_inside_to_outside_after_end) { Region.new('chr1', '+', 103, 113) }
-  Given(:region_from_outside_before_start_to_inside) { Region.new('chr1', '+', 97, 103) }
+  Given(:region_from_inside_to_outside_after_end) { GenomeRegion.new('chr1', '+', 103, 113) }
+  Given(:region_from_outside_before_start_to_inside) { GenomeRegion.new('chr1', '+', 97, 103) }
 
-  Given(:region_containing) { Region.new('chr1', '+', 97, 113) }
+  Given(:region_containing) { GenomeRegion.new('chr1', '+', 97, 113) }
 
-  Given(:region_outside_left) { Region.new('chr1', '+', 97, 99) }
-  Given(:region_outside_right) { Region.new('chr1', '+', 113, 117) }
-  Given(:region_outside_extend_from_end) { Region.new('chr1', '+', 110, 113) }
-  Given(:region_outside_extend_to_start) { Region.new('chr1', '+', 97, 100) }
+  Given(:region_outside_left) { GenomeRegion.new('chr1', '+', 97, 99) }
+  Given(:region_outside_right) { GenomeRegion.new('chr1', '+', 113, 117) }
+  Given(:region_outside_extend_from_end) { GenomeRegion.new('chr1', '+', 110, 113) }
+  Given(:region_outside_extend_to_start) { GenomeRegion.new('chr1', '+', 97, 100) }
 
   Given(:all_region_types) {
     [ region, same_region, region_inside, region_inside_extend_to_end, region_inside_extend_from_start,
@@ -77,8 +77,8 @@ describe Region do
     Then{ region.intersection(region_on_another_strand).should == nil }
     Then{ region.intersection(region_on_another_chromosome).should == nil }
 
-    Then{ region.intersection(region_from_inside_to_outside_after_end).should == Region.new('chr1', '+', 103, 110) }
-    Then{ region.intersection(region_from_outside_before_start_to_inside).should == Region.new('chr1', '+', 100, 103) }
+    Then{ region.intersection(region_from_inside_to_outside_after_end).should == GenomeRegion.new('chr1', '+', 103, 110) }
+    Then{ region.intersection(region_from_outside_before_start_to_inside).should == GenomeRegion.new('chr1', '+', 100, 103) }
 
     Then{ region.intersection(region_containing).should == region }
 
@@ -126,24 +126,24 @@ describe Region do
   end
 
   describe '#length' do
-    Then {Region.new('chr1', '+', 103, 104).length == 1 }
-    Then {Region.new('chr1', '+', 103, 106).length == 3 }
-    Then {Region.new('chr1', '-', 103, 106).length == 3 }
+    Then {GenomeRegion.new('chr1', '+', 103, 104).length == 1 }
+    Then {GenomeRegion.new('chr1', '+', 103, 106).length == 3 }
+    Then {GenomeRegion.new('chr1', '-', 103, 106).length == 3 }
   end
 
   describe '.new_by_annotation' do
     Then {
       all_region_types.each{|region|
-        region.should == Region.new_by_annotation(region.annotation)
+        region.should == GenomeRegion.new_by_annotation(region.annotation)
       }
     }
   end
 
   describe '==' do
-    Given(:another_pos_start) { Region.new('chr1', '+', 103, 110) }
-    Given(:another_pos_end) { Region.new('chr1', '+', 100, 107) }
-    Given(:another_chromosome) { Region.new('chrY', '+', 100, 110) }
-    Given(:another_strand) { Region.new('chr1', '-', 100, 110) }
+    Given(:another_pos_start) { GenomeRegion.new('chr1', '+', 103, 110) }
+    Given(:another_pos_end) { GenomeRegion.new('chr1', '+', 100, 107) }
+    Given(:another_chromosome) { GenomeRegion.new('chrY', '+', 100, 110) }
+    Given(:another_strand) { GenomeRegion.new('chr1', '-', 100, 110) }
 
     Then{ region.should == same_region}
     Then{ region.should_not == another_pos_start}
@@ -194,35 +194,35 @@ describe Region do
     end
 
     context "On + strand" do
-      Given(:subject_region) { Region.new('chr1', '+', 100, 110) }
-      Given(:same_as_subject_region) { Region.new('chr1', '+', 100, 110) }
-      Given(:region_right_to_subject) { Region.new('chr1', '+', 113, 117) }
-      Given(:region_left_to_subject) { Region.new('chr1', '+', 93, 97) }
-      Given(:region_right_to_subject_joint) { Region.new('chr1', '+', 110, 117) }
-      Given(:region_left_to_subject_joint) { Region.new('chr1', '+', 93, 100) }
+      Given(:subject_region) { GenomeRegion.new('chr1', '+', 100, 110) }
+      Given(:same_as_subject_region) { GenomeRegion.new('chr1', '+', 100, 110) }
+      Given(:region_right_to_subject) { GenomeRegion.new('chr1', '+', 113, 117) }
+      Given(:region_left_to_subject) { GenomeRegion.new('chr1', '+', 93, 97) }
+      Given(:region_right_to_subject_joint) { GenomeRegion.new('chr1', '+', 110, 117) }
+      Given(:region_left_to_subject_joint) { GenomeRegion.new('chr1', '+', 93, 100) }
 
-      Given(:region_inside_of_subject) { Region.new('chr1', '+', 103, 107) }
-      Given(:region_inside_of_subject_left_joint) { Region.new('chr1', '+', 100, 107) }
-      Given(:region_inside_of_subject_right_joint) { Region.new('chr1', '+', 103, 110) }
-      Given(:region_inside_to_outside_of_subject) { Region.new('chr1', '+', 103, 113) }
-      Given(:region_outside_to_inside_of_subject) { Region.new('chr1', '+', 97, 103) }
+      Given(:region_inside_of_subject) { GenomeRegion.new('chr1', '+', 103, 107) }
+      Given(:region_inside_of_subject_left_joint) { GenomeRegion.new('chr1', '+', 100, 107) }
+      Given(:region_inside_of_subject_right_joint) { GenomeRegion.new('chr1', '+', 103, 110) }
+      Given(:region_inside_to_outside_of_subject) { GenomeRegion.new('chr1', '+', 103, 113) }
+      Given(:region_outside_to_inside_of_subject) { GenomeRegion.new('chr1', '+', 97, 103) }
 
       include_examples 'compare regions'
     end
 
     context "On - strand" do
-      Given(:subject_region) { Region.new('chr1', '-', 100, 110) }
-      Given(:same_as_subject_region) { Region.new('chr1', '-', 100, 110) }
-      Given(:region_left_to_subject) { Region.new('chr1', '-', 113, 117) }
-      Given(:region_right_to_subject) { Region.new('chr1', '-', 93, 97) }
-      Given(:region_left_to_subject_joint) { Region.new('chr1', '-', 110, 117) }
-      Given(:region_right_to_subject_joint) { Region.new('chr1', '-', 93, 100) }
+      Given(:subject_region) { GenomeRegion.new('chr1', '-', 100, 110) }
+      Given(:same_as_subject_region) { GenomeRegion.new('chr1', '-', 100, 110) }
+      Given(:region_left_to_subject) { GenomeRegion.new('chr1', '-', 113, 117) }
+      Given(:region_right_to_subject) { GenomeRegion.new('chr1', '-', 93, 97) }
+      Given(:region_left_to_subject_joint) { GenomeRegion.new('chr1', '-', 110, 117) }
+      Given(:region_right_to_subject_joint) { GenomeRegion.new('chr1', '-', 93, 100) }
 
-      Given(:region_inside_of_subject) { Region.new('chr1', '-', 103, 107) }
-      Given(:region_inside_of_subject_right_joint) { Region.new('chr1', '-', 100, 107) }
-      Given(:region_inside_of_subject_left_joint) { Region.new('chr1', '-', 103, 110) }
-      Given(:region_outside_to_inside_of_subject) { Region.new('chr1', '-', 103, 113) }
-      Given(:region_inside_to_outside_of_subject) { Region.new('chr1', '-', 97, 103) }
+      Given(:region_inside_of_subject) { GenomeRegion.new('chr1', '-', 103, 107) }
+      Given(:region_inside_of_subject_right_joint) { GenomeRegion.new('chr1', '-', 100, 107) }
+      Given(:region_inside_of_subject_left_joint) { GenomeRegion.new('chr1', '-', 103, 110) }
+      Given(:region_outside_to_inside_of_subject) { GenomeRegion.new('chr1', '-', 103, 113) }
+      Given(:region_inside_to_outside_of_subject) { GenomeRegion.new('chr1', '-', 97, 103) }
 
       include_examples 'compare regions'
     end

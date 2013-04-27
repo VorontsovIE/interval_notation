@@ -1,5 +1,5 @@
 $:.unshift File.dirname(File.expand_path(__FILE__))
-require 'region'
+require 'genome_region'
 require 'transcript'
 
 class Peak
@@ -11,7 +11,7 @@ class Peak
   end
 
   def region
-    @region ||= Region.new_by_annotation(annotation)
+    @region ||= GenomeRegion.new_by_annotation(annotation)
   end
 
   # Returns an array of peaks (for each hgnc and entrezgene sticking hgnc and entrezgene together accordantly) basically the same but linked to different genes

@@ -1,5 +1,5 @@
 $:.unshift File.dirname(File.expand_path(__FILE__))
-require 'region'
+require 'genome_region'
 
 def splice_sequence(sequence, utr, exons_on_utr)
   spliced_sequence = utr.splice(sequence, exons_on_utr).join  

@@ -5,7 +5,7 @@ require 'logger'
 $logger = Logger.new($stderr)
 
 $:.unshift File.join(File.dirname(File.expand_path(__FILE__)), 'lib')
-require 'region'
+require 'genome_region'
 require 'transcript'
 require 'gene'
 require 'peak'
@@ -40,13 +40,13 @@ genes_to_process.each do |hgnc_id, gene|
   transcript_groups[hgnc_id].each do |transcript_group|
     sample_transcript = transcript_group.transcripts.first
     if sample_transcript.strand == '+'
-      kozak_region = Region.new(sample_transcript.chromosome,
+      kozak_region = GenomeRegion.new(sample_transcript.chromosome,
                               sample_transcript.strand,
                               sample_transcript.coding_region.pos_start - 10,
                               sample_transcript.coding_region.pos_start + 10)
       sequence = kozak_region.load_sequence('./genome/hg19/')
     else
-      kozak_region = Region.new(sample_transcript.chromosome,
+      kozak_region = GenomeRegion.new(sample_transcript.chromosome,
                               sample_transcript.strand,
                               sample_transcript.coding_region.pos_end - 10,
                               sample_transcript.coding_region.pos_end + 10)
