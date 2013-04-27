@@ -63,7 +63,7 @@ class Peak
 
   def coerce(other)
     case other
-    when GenomeRegion
+    when GenomeRegion, GenomeRegionList
       [other, self.region]
     else
       raise "Can't coerce Peak to #{other.class}"
@@ -72,7 +72,7 @@ class Peak
 
   # returns just regions not peaks
   def intersection(other)
-    region.intersect(other)
+    region.intersection(other)
   end
   def union(other)
     region.union(other)

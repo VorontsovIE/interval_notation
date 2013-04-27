@@ -8,7 +8,7 @@ require 'semi_interval_set'
 module GenomeRegionOperations
   def intersection(other)
     case other
-    when GenomeRegion
+    when GenomeRegion, GenomeRegionList
       raise ImpossibleComparison, 'Different strands or chromosomes'  unless same_strand?(other)
       GenomeRegion.new(chromosome, strand, region.intersection(other.region))
     else
@@ -19,7 +19,7 @@ module GenomeRegionOperations
   end
   def union(other)
     case other
-    when GenomeRegion
+    when GenomeRegion, GenomeRegionList
       raise ImpossibleComparison, 'Different strands or chromosomes'  unless same_strand?(other)
       GenomeRegion.new(chromosome, strand, region.union(other.region))
     else
@@ -30,7 +30,7 @@ module GenomeRegionOperations
   end
   def subtract(other)
     case other
-    when GenomeRegion
+    when GenomeRegion, GenomeRegionList
       raise ImpossibleComparison, 'Different strands or chromosomes'  unless same_strand?(other)
       GenomeRegion.new(chromosome, strand, region.subtract(other.region))
     else
@@ -98,14 +98,26 @@ module RegionConditionals
     chromosome == other.chromosome && strand == other.strand
   end
   def intersect?(other)
-    #raise ImpossibleComparison, 'Different strands or chromosomes'  unless same_strand?(other)
-    return false  unless same_strand?(other)
-    region.intersect?(other.region)
+    case other
+    when GenomeRegion, GenomeRegionList
+      #raise ImpossibleComparison, 'Different strands or chromosomes'  unless same_strand?(other)
+      return false  unless same_strand?(other)
+      region.intersect?(other.region)
+    else
+      compatible_l, compatible_r = other.coerce(self)
+      compatible_l.intersect?(compatible_r)
+    end
   end
   def contain?(other)
-    #raise ImpossibleComparison, 'Different strands or chromosomes'  unless same_strand?(other)
-    return false  unless same_strand?(other)
-    region.contain?(other.region)
+    case other
+    when GenomeRegion, GenomeRegionList
+      #raise ImpossibleComparison, 'Different strands or chromosomes'  unless same_strand?(other)
+      return false  unless same_strand?(other)
+      region.contain?(other.region)
+    else
+      compatible_l, compatible_r = other.coerce(self)
+      compatible_l.contain?(compatible_r)
+    end
   end
   def include_position?(pos)
     region.include_position?(pos)
