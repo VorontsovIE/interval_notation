@@ -214,7 +214,16 @@ class GenomeRegion
         block.call(region)
       end
     else
-      Enumerator.new(list_of_regions)
+      list_of_regions.enum_for(:each)
+    end
+  end
+  def each_region(&block)
+    if block_given?
+      list_of_regions.each do |interval|
+        block.call Region.new(chromosome, strand, interval)
+      end
+    else
+      self.enum_for(:each_region)
     end
   end
   include Enumerable
@@ -275,7 +284,16 @@ class GenomeRegionList
         block.call(region)
       end
     else
-      Enumerator.new(list_of_regions)
+      list_of_regions.enum_for(:each)
+    end
+  end
+  def each_region(&block)
+    if block_given?
+      list_of_regions.each do |interval|
+        block.call Region.new(chromosome, strand, interval)
+      end
+    else
+      self.enum_for(:each_region)
     end
   end
   include Enumerable
