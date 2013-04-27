@@ -7,3 +7,5 @@ robust_set.freeze1.reduced.pc-3
 *.out
 *.log
 *.sav
+*.fasta
+*.rar
