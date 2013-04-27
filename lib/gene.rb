@@ -66,26 +66,40 @@ class Gene
   end
 
   # {[utr, exons_on_utr] => [transcripts]}
-  def transcripts_grouped_by_common_exon_structure_on_utr(region_length)
+  def transcripts_grouped_by_common_exon_structure_on_utr(region_length, all_cages)
     groups_of_transcripts = {}
     group_associated_peaks = {}
     transcripts.each do |transcript|
-      associated_peaks = transcript.peaks_associated(peaks, region_length)
       utr = transcript.utr_region(peaks, region_length)
       exons_on_utr = transcript.exons_on_utr(peaks, region_length)
+
       if utr.empty? || exons_on_utr.empty?
         puts "#{transcript} with utr #{utr} has no exons on utr #{exons_on_utr}"
         next
       end
+
+      associated_peaks = transcript.peaks_associated(peaks, region_length).select do |peak|
+        peaks_on_exons = peak.region.intersection(exons_on_utr)
+        sum_cages_on_exons = peaks_on_exons.each_region.map{|region| region.load_cages(all_cages).inject(0,:+) }.inject(0, :+)
+        if sum_cages_on_exons == 0
+          $logger.info "#{transcript}\tpeaks_on_exons: #{peaks_on_exons}\t has zero sum of cages on exons"
+          false
+        else
+          true
+        end
+      end
+
       if associated_peaks.empty?
         $logger.info "#{transcript} has no associated peaks on utr"
         next
       end
+
       exon_intron_structure_on_utr = [utr, exons_on_utr]  # utr should be here to know boundaries
       groups_of_transcripts[exon_intron_structure_on_utr] ||= []
       groups_of_transcripts[exon_intron_structure_on_utr] << transcript
       group_associated_peaks[exon_intron_structure_on_utr] = associated_peaks
     end
+
     groups_of_transcripts.map{|exon_intron_structure_on_utr, transcripts|
       utr, exons_on_utr = exon_intron_structure_on_utr
       TranscriptGroup.new(utr, exons_on_utr, transcripts, group_associated_peaks[exon_intron_structure_on_utr])
