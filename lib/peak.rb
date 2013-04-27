@@ -87,4 +87,7 @@ class Peak
   def &(other); region.intersection(other); end
   def -(other); region.subtract(other); end
   def ~; region.complement; end
+  def intersect?(other)
+    ! intersection(other).empty?
+  end
 end
