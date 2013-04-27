@@ -43,7 +43,7 @@ class Transcript
   # region_length is length of region before txStart(start of transcript) where we are looking for peaks
   def peaks_associated(peaks, region_length)
     region_of_interest = exons_on_utr(peaks, region_length)
-    peaks.select{|peak| region_of_interest.intersect?(peak.region) }
+    peaks.select{|peak| region_of_interest.intersect?(peak) }
   end
 
   def exons_on_utr(peaks, region_length)

@@ -79,7 +79,7 @@ class Gene
       end
 
       associated_peaks = transcript.peaks_associated(peaks, region_length).select do |peak|
-        peaks_on_exons = peak.region.intersection(exons_on_utr)
+        peaks_on_exons = peak.intersection(exons_on_utr)
         sum_cages_on_exons = peaks_on_exons.each_region.map{|region| region.load_cages(all_cages).inject(0,:+) }.inject(0, :+)
         if sum_cages_on_exons == 0
           $logger.info "#{transcript}\tpeaks_on_exons: #{peaks_on_exons}\t has zero sum of cages on exons"
