@@ -60,4 +60,31 @@ class Peak
   def hash
     annotation.hash
   end
+
+  def coerce(other)
+    case other
+    when GenomeRegion
+      [other, self.region]
+    else
+      raise "Can't coerce Peak to #{other.class}"
+    end
+  end
+
+  # returns just regions not peaks
+  def intersection(other)
+    region.intersect(other)
+  end
+  def union(other)
+    region.union(other)
+  end
+  def subtract(other)
+    region.subtract(other)
+  end
+  def complement
+    region.complement
+  end
+  def |(other); region.union(other); end
+  def &(other); region.intersection(other); end
+  def -(other); region.subtract(other); end
+  def ~; region.complement; end
 end

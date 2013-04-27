@@ -7,17 +7,37 @@ require 'semi_interval_set'
 
 module GenomeRegionOperations
   def intersection(other)
-    raise ImpossibleComparison, 'Different strands or chromosomes'  unless same_strand?(other)
-    #return nil unless same_strand?(other)
-    GenomeRegion.new(chromosome, strand, region.intersection(other.region))
+    case other
+    when GenomeRegion
+      raise ImpossibleComparison, 'Different strands or chromosomes'  unless same_strand?(other)
+      GenomeRegion.new(chromosome, strand, region.intersection(other.region))
+    else
+      compatible_l, compatible_r = other.coerce(self)
+      raise ImpossibleComparison, 'Different strands or chromosomes'  unless compatible_l.same_strand?(compatible_r)
+      GenomeRegion.new(chromosome, strand, compatible_l.region.intersection(compatible_r.region))
+    end
   end
   def union(other)
-    raise ImpossibleComparison, 'Different strands or chromosomes'  unless same_strand?(other)
-    GenomeRegion.new(chromosome, strand, region.union(other.region))
+    case other
+    when GenomeRegion
+      raise ImpossibleComparison, 'Different strands or chromosomes'  unless same_strand?(other)
+      GenomeRegion.new(chromosome, strand, region.union(other.region))
+    else
+      compatible_l, compatible_r = other.coerce(self)
+      raise ImpossibleComparison, 'Different strands or chromosomes'  unless compatible_l.same_strand?(compatible_r)
+      GenomeRegion.new(chromosome, strand, compatible_l.region.union(compatible_r.region))
+    end
   end
   def subtract(other)
-    raise ImpossibleComparison, 'Different strands or chromosomes'  unless same_strand?(other)
-    GenomeRegion.new(chromosome, strand, region.subtract(other.region))
+    case other
+    when GenomeRegion
+      raise ImpossibleComparison, 'Different strands or chromosomes'  unless same_strand?(other)
+      GenomeRegion.new(chromosome, strand, region.subtract(other.region))
+    else
+      compatible_l, compatible_r = other.coerce(self)
+      raise ImpossibleComparison, 'Different strands or chromosomes'  unless compatible_l.same_strand?(compatible_r)
+      GenomeRegion.new(chromosome, strand, compatible_l.region.subtract(compatible_r.region))
+    end
   end
   def complement
     GenomeRegion.new(chromosome, strand, region.complement)
