@@ -3,19 +3,8 @@ require 'identificator_mapping'
 require 'bioinform'
 require 'classifier_quality'
 
-module Bioinform
-  class PWM
-    def score(word)
-      word = word.upcase
-      raise ArgumentError, 'word in PWM#score(word) should have the same length as matrix'  unless word.length == length
-      #raise ArgumentError, 'word in PWM#score(word) should have only ACGT-letters'  unless word.each_char.all?{|letter| %w{A C G T}.include? letter}
-      (0...length).map do |pos|
-        letter = word[pos]
-        letter == 'N' ? matrix[pos].inject(&:+).to_f / 4 : matrix[pos][IndexByLetter[letter]]
-      end.inject(&:+)
-    end
-  end
-end
+POLY_N_SEQ = 'N'*20
+POLY_N_CAGES = [0]*20
 
 def print_transcript_matching_rates_infos(output_file, transcript_infos, mtor_targets, translational_genes)
   File.open(output_file, 'w') do |fw|
@@ -105,22 +94,14 @@ def gene_matching_rate(transcript_infos, gene_expression)
   ]
 end
 
-
-POLY_N_SEQ = 'N'*10
-POLY_N_CAGES = [0]*10
-
-def calculate_transcript_matching_rates_for_motif_pos(transcript_infos, max_distance_from_start, pwm, threshold)
+def calculate_transcript_scores(transcript_infos, pwm)
   transcript_infos.each do |transcript_info|
-    sequence = POLY_N_SEQ + transcript_info[:sequence]
-    cages = POLY_N_CAGES + transcript_info[:cages]
+    sequence = transcript_info[:sequence] = POLY_N_SEQ + transcript_info[:sequence]
+    transcript_info[:cages] = POLY_N_CAGES + transcript_info[:cages]
 
     positions = 0..(sequence.length - pwm.length)
-    transcript_info[:match_at_position] ||= positions.map{|pos| pwm.score(sequence[pos, pwm.length]) >= threshold ? true : nil}
-    matching_rate = percent_of_starts_matching_motif_pos(sequence.length, cages, max_distance_from_start, transcript_info[:match_at_position]) || 0
-
-    transcript_info[:matching_rate] = matching_rate
+    transcript_info[:score_at_position] = positions.map{|pos| pwm.score(sequence[pos, pwm.length])}
   end
-  transcript_infos
 end
 
 def percent_of_starts_matching_motif_pos(len, cages, distance_from_start, match_at_position)
@@ -134,24 +115,32 @@ def percent_of_starts_matching_motif_pos(len, cages, distance_from_start, match_
 end
 
 
-
 mtor_targets, translational_genes = read_mtor_mapping("mTOR_mapping.txt")
 transcript_infos = read_transcript_infos('transcripts_after_splicing.txt')
 gene_names = collect_gene_names(transcript_infos)
 gene_expression = collect_gene_expression(transcript_infos)
 
-pwm = Bioinform::PWM.new(File.read('top_motif/longest_5-utr_10.xml.pat'))
-threshold = 1.04538 #4.74935
+pwm = Bioinform::PWM.new(File.read('top_motif/torte2_ar_15re_t2.pwm'))
 
-distance_from_start = 3 # upstream direction
-calculate_transcript_matching_rates_for_motif_pos(transcript_infos, distance_from_start, pwm, threshold)
+calculate_transcript_scores(transcript_infos, pwm)
+(pwm.worst_score..pwm.best_score).step(1).each do |threshold|
+  transcript_infos.each do |transcript_info|
+    transcript_info[:match_at_position] = transcript_info[:score_at_position].map{|score| score >= threshold ? true : nil}
+  end
+  (0..pwm.length).each do |distance_from_start| # distance in upstream direction
+    transcript_infos.each do |transcript_info|
+      transcript_info[:matching_rate] = percent_of_starts_matching_motif_pos(transcript_info[:sequence].length, transcript_info[:cages],
+                                                                            distance_from_start, transcript_info[:match_at_position]) || 0
+    end
 
-gene_matching_rate = gene_matching_rate(transcript_infos, gene_expression)
+    gene_matching_rate = gene_matching_rate(transcript_infos, gene_expression)
 
-roc_points = roc_curve(gene_matching_rate, mtor_targets)
-auc = area_under_curve(roc_points)
-puts "#{distance_from_start}\t#{auc}"
-
-output_curve_data('roc.txt', roc_points)
-print_transcript_matching_rates_infos('transcript_matching_rates.out', transcript_infos, mtor_targets, translational_genes)
-print_gene_matching_rates_infos('gene_matching_rates.out', gene_names, gene_expression, gene_matching_rate, mtor_targets, translational_genes)
+    roc_points = roc_curve(gene_matching_rate, mtor_targets)
+    auc = area_under_curve(roc_points)
+    puts "#{threshold}\t#{distance_from_start}\t#{auc}"
+  end
+  $stdout.flush
+end
+# output_curve_data('roc.txt', roc_points)
+# print_transcript_matching_rates_infos('transcript_matching_rates.out', transcript_infos, mtor_targets, translational_genes)
+# print_gene_matching_rates_infos('gene_matching_rates.out', gene_names, gene_expression, gene_matching_rate, mtor_targets, translational_genes)
