@@ -30,50 +30,15 @@ mtor_targets, translational_genes = read_mtor_mapping('mTOR_mapping.txt')
 genes_to_extract = framework.genes_to_process.select{|hgnc_id, gene| mtor_targets.has_key?(hgnc_id)}
 
 File.open('weighted_5-utr.txt', 'w') do |fw|
-  framework.output_all_5utr(genes_to_extract, fw) do |output_stream, gene_info, transcript_group, peaks_info, summary_expression, spliced_sequence, spliced_cages|
-    output_stream.puts ">#{gene_info}\t#{transcript_group}\t#{summary_expression}"
+  framework.output_all_5utr(genes_to_extract, fw) do |output_stream, gene_info, transcript_group, peaks_info, expression, spliced_sequence, spliced_cages|
+    output_stream.puts ">#{gene_info}\t#{transcript_group}\t#{expression}"
     output_stream.puts spliced_sequence
   end
-  # genes_to_extract.each do |hgnc_id, gene|
-    # gene_expression = transcript_groups[hgnc_id].map(&:summary_expression).inject(&:+).to_f
-    # transcript_groups[hgnc_id].each do |transcript_group|
-      # utr = transcript_group.utr
-      # exons_on_utr = transcript_group.exons_on_utr
-
-      # spliced_sequence = splice_sequence(utr.load_sequence('genome/hg19/'), utr, exons_on_utr)
-      # spliced_cages = splice_array(utr.load_cages(all_cages), utr, exons_on_utr)
-      # sequence_with_polyN_starts = mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7)
-      # transcript_rate = transcript_group.summary_expression.to_f / gene_expression
-      # sequence, cages = sequence_with_polyN_starts, spliced_cages
-      # fw.puts ">#{sequence.length}\t#{hgnc_id}\t#{transcript_group}\t#{transcript_rate}\n#{sequence}\n#{cages.join ' '}"
-      # #fw.puts ">#{transcript_rate}\n#{sequence}"
-    # end
-  # end
 end
 
 File.open('weighted_5-utr-polyN-masked.txt', 'w') do |fw|
-  framework.output_all_5utr(genes_to_extract, fw) do |output_stream, gene_info, transcript_group, peaks_info, summary_expression, spliced_sequence, spliced_cages|
-    output_stream.puts ">#{gene_info}\t#{transcript_group}\t#{summary_expression}"
+  framework.output_all_5utr(genes_to_extract, fw) do |output_stream, gene_info, transcript_group, peaks_info, expression, spliced_sequence, spliced_cages|
+    output_stream.puts ">#{gene_info}\t#{transcript_group}\t#{expression}"
     output_stream.puts mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7)
-    #output_stream.puts spliced_cages.join("\t")
   end
 end
-
-# File.open('longest_5-utr.txt', 'w') do |fw|
-  # # framework.output_all_5utr(genes_to_extract, fw)
-  # genes_to_extract.each do |hgnc_id, gene|
-
-    # transcript_group_long, longest_utr, cages = transcript_groups[hgnc_id].map{|transcript_group|
-      # utr = transcript_group.utr
-      # exons_on_utr = transcript_group.exons_on_utr
-
-      # spliced_sequence = splice_sequence(utr.load_sequence('genome/hg19/'), utr, exons_on_utr)
-      # spliced_cages = splice_array(utr.load_cages(all_cages), utr, exons_on_utr)
-      # sequence_with_polyN_starts = mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7)
-
-      # [transcript_group, sequence_with_polyN_starts, spliced_cages]
-    # }.max_by{|transcript_group, sequence, cages| sequence.length }
-    # fw.puts ">#{longest_utr.length}\t#{hgnc_id}\t#{transcript_group_long.transcripts}\t1.0\n#{longest_utr}\n#{cages.join ' '}"
-    # #fw.puts ">1.0\n#{longest_utr}"
-  # end
-# end
