@@ -78,7 +78,7 @@ class Gene
       exons_on_utr = transcript.exons_on_utr(peaks, region_length)
 
       if utr.empty? || exons_on_utr.empty?
-        puts "#{transcript} with utr #{utr} has no exons on utr #{exons_on_utr}"
+        $logger.info "#{transcript} with utr #{utr} has no exons on utr #{exons_on_utr}"
         next
       end
 

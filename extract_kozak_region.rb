@@ -50,7 +50,7 @@ genes_to_process.each do |hgnc_id, gene|
                               sample_transcript.strand,
                               sample_transcript.coding_region.pos_end - 10,
                               sample_transcript.coding_region.pos_end + 10)
-      sequence = kozak_region.load_sequence('./genome/hg19/').reverse.tr('acgtACGT', 'tgcaTGCA')
+      sequence = complement(kozak_region.load_sequence('./genome/hg19/').reverse)
     end
     puts "HGNC:#{hgnc_id}\t#{mtor_targets[hgnc_id]}\t#{translational_genes[hgnc_id]}\t#{sequence.each_char.to_a.join("\t")}"
   end

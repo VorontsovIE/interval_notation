@@ -36,13 +36,14 @@ def read_hgnc_entrezgene_mappings(input_file)
       line_of_data = line.strip.split("\t")
       hgnc_id, entrezgene_id = line_of_data[0], line_of_data[4]
       hgnc_id = hgnc_id.split(':').last.to_i
-      entrezgene_id = entrezgene_id.to_i
-      
+
       if !entrezgene_id || entrezgene_id.empty?
         $logger.info "HGNC:#{hgnc_id} has no entrezgene_id"
         next
       end
-      raise "HGNC:#{hgnc_id} occurs more than once"  if hgnc_to_entrezgene.has_key?(hgnc_id) 
+      raise "HGNC:#{hgnc_id} occurs more than once"  if hgnc_to_entrezgene.has_key?(hgnc_id)
+
+      entrezgene_id = entrezgene_id.to_i
       hgnc_to_entrezgene[hgnc_id] = entrezgene_id
       
       raise "entrezgene:#{entrezgene_id} occurs more than once"  if entrezgene_to_hgnc.has_key?(entrezgene_id) 
