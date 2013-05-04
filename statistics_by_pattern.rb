@@ -31,7 +31,8 @@ def read_transcript_infos(input_file)
       utr, exon_structure_on_utr_info, transcripts_names, \
       peaks_info, expression = line_infos.split("\t")
 
-      hgnc_id = hgnc_id.split(':').last
+      hgnc_id = hgnc_id.split(':').last.to_i
+      entrezgene_id = entrezgene_id.to_i
       expression = expression.to_f
       transcript_infos << {hgnc_id: hgnc_id, name: approved_symbol,
                           transcript_names: transcripts_names, expression: expression,

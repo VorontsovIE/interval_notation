@@ -20,8 +20,8 @@ class Peak
   def self.new_peaks_by_infos(infos, hgnc_to_entrezgene, entrezgene_to_hgnc)
     annotation, short_description, description, association_with_transcript, entrezgene, hgnc, uniprot_id, tpm = infos.strip.split("\t")
     tpm = tpm.to_f
-    hgnc_ids = hgnc.split(',').map{|hgnc_id| hgnc_id.split(':').last}
-    entrezgene_ids = entrezgene.split(',').map{|entrezgene_id| entrezgene_id.split(':').last}
+    hgnc_ids = hgnc.split(',').map{|hgnc_id| hgnc_id.split(':').last.to_i}
+    entrezgene_ids = entrezgene.split(',').map{|entrezgene_id| entrezgene_id.split(':').last.to_i}
     hgnc_entrezgene_combine(hgnc_to_entrezgene, entrezgene_to_hgnc, hgnc_ids, entrezgene_ids).map{|hgnc_id, entrezgene_id|
       self.new(annotation, short_description, description, association_with_transcript, entrezgene_id, hgnc_id, uniprot_id, tpm)
     }

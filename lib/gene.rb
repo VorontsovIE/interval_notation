@@ -19,8 +19,12 @@ class Gene
   # Gene.new_by_infos('HGNC:10000 RGS4  regulator of G-protein signaling 4  1q23.3  5999')
   def self.new_by_infos(infos)
     hgnc_id, approved_symbol, approved_name, chromosome_map, entrezgene_id = infos.strip.split("\t")
-    hgnc_id = hgnc_id.split(':',2).last
-    entrezgene_id = nil  if entrezgene_id && entrezgene_id.empty?
+    hgnc_id = hgnc_id.split(':',2).last.to_i
+    if entrezgene_id && entrezgene_id.empty?
+      entrezgene_id = nil
+    else
+      entrezgene_id = entrezgene_id.to_i
+    end
     self.new(hgnc_id, approved_symbol, approved_name, chromosome_map, entrezgene_id)
   end
 

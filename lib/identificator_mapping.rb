@@ -17,6 +17,7 @@ def read_entrezgene_transcript_ids(input_file)
     f.each_line do |line|
       # we don't remove version (part of name after dot)
       transcript_id, entrezgene_id = line.strip.split("\t")
+      entrezgene_id = entrezgene_id.to_i
       transcripts[entrezgene_id] ||= []
       transcripts[entrezgene_id] << transcript_id
     end
@@ -34,7 +35,8 @@ def read_hgnc_entrezgene_mappings(input_file)
       next  if f.lineno == 1
       line_of_data = line.strip.split("\t")
       hgnc_id, entrezgene_id = line_of_data[0], line_of_data[4]
-      hgnc_id = hgnc_id.split(':').last
+      hgnc_id = hgnc_id.split(':').last.to_i
+      entrezgene_id = entrezgene_id.to_i
       
       if !entrezgene_id || entrezgene_id.empty?
         $logger.info "HGNC:#{hgnc_id} has no entrezgene_id"
@@ -57,7 +59,7 @@ def read_mtor_mapping(input_file)
     f.each_line do |line|
       next if f.lineno == 1
       hsieh_name, hgnc_name, hgnc_id = line.strip.split("\t")
-      hgnc_id = hgnc_id.split(':').last
+      hgnc_id = hgnc_id.split(':').last.to_i
       mtor_targets[hgnc_id] = hgnc_name
       translational_genes[hgnc_id] = hgnc_name  if hsieh_name.end_with?('=')
     end
