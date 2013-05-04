@@ -7,8 +7,8 @@ def roc_curve(classifier_values, marks)
   tp, fp = 0, 0
   result = []
   ids = classifier_values.sort_by{|k,v| v}.reverse.map{|k,v| k}
-  num_positives = marks.count{|k,v| v}
-  num_negatives = classifier_values.size - num_positives
+  num_positives = classifier_values.count{|k,v| marks[k]}
+  num_negatives = classifier_values.count{|k,v| !marks[k]}
   ids.each do |k|
     if marks[k]
       tp += 1
