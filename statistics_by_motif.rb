@@ -114,6 +114,7 @@ def percent_of_starts_matching_motif_pos(len, cages, window_start, window_end, m
     (window_start..window_end).each do |distance_from_start|
       sum_of_matching_cages += cages[pos]  if (pos + distance_from_start >= 0 && match_at_position[pos + distance_from_start])
     end
+    # sum_of_matching_cages += cages[pos]  if  (window_start..window_end).any?{|distance_from_start|  pos + distance_from_start >= 0 && match_at_position[pos + distance_from_start]  }
   }
   (sum_of_all_cages != 0)  ?  sum_of_matching_cages.to_f / sum_of_all_cages  :  nil
 end
@@ -136,6 +137,9 @@ end
 
 motif_name = ARGV.shift #'rectified_motif_10_zoops'
 raise 'Specify motif name (from top_motif folder, without extension)'  unless motif_name
+window_left_size, window_right_size = ARGV.first(2)
+raise 'Specify width of window to left and to right from best position'  unless window_left_size && window_right_size
+window_left_size, window_right_size = window_left_size.to_i, window_right_size.to_i
 
 mtor_targets, translational_genes = read_mtor_mapping('mTOR_mapping.txt');
 transcript_infos = read_transcript_infos('transcripts_after_splicing.txt');
@@ -195,7 +199,7 @@ thresholds.each do |threshold|
 
   #(0..pwm.length).each do |distance_from_start| # distance in upstream direction
     transcript_infos.each do |transcript_info|
-      transcript_info[:matching_rate] = percent_of_starts_matching_motif_pos(transcript_info[:sequence].length, transcript_info[:cages], distance_from_start, distance_from_start, transcript_info[:match_at_position]) || 0
+      transcript_info[:matching_rate] = percent_of_starts_matching_motif_pos(transcript_info[:sequence].length, transcript_info[:cages], distance_from_start - window_left_size, distance_from_start + window_right_size, transcript_info[:match_at_position]) || 0
     end;
 
     gene_matching_rate = gene_matching_rate(transcript_infos, gene_expression);
