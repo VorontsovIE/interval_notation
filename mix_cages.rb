@@ -6,6 +6,9 @@ cage_files.each do |filename|
   raise ArgumentError, "File #{filename} doesn't exist"  unless File.exist?(filename)
 end
 
-pack_of_cages = cage_files.inject({}) {|result, filename| sum_cages(result, read_cages(filename)) }
-cages = mul_cages(pack_of_cages, 1.0 / cage_files.size)
+cages = {}
+cage_files.each do |filename|
+  add_cages(cages, read_cages(filename))
+end
+mul_cages_inplace(cages, 1.0 / cage_files.size)
 print_cages(cages, $stdout)

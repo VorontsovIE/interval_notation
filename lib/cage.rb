@@ -60,3 +60,30 @@ def mul_cages(cages, multiplier)
   end
   result
 end
+
+def add_cages(initial_cages, *pack_of_cages)
+  pack_of_cages.flatten.each do |cages|
+    cages.each do |strand_key, strand|
+      initial_cages[strand_key] ||= {}
+      cages[strand_key].each do |chromosome_key, chromosome|
+        initial_cages[strand_key][chromosome_key] ||= {}
+        cages[strand_key][chromosome_key].each do |pos, cage_value|
+          initial_cages[strand_key][chromosome_key][pos] ||= 0
+          initial_cages[strand_key][chromosome_key][pos] += cage_value
+        end
+      end
+    end
+  end
+  initial_cages
+end
+
+def mul_cages_inplace(cages, multiplier)
+  cages.each do |strand_key, strand|
+    cages[strand_key].each do |chromosome_key, chromosome|
+      cages[strand_key][chromosome_key].each do |pos, cage_value|
+        cages[strand_key][chromosome_key][pos] *= multiplier
+      end
+    end
+  end
+  cages
+end
