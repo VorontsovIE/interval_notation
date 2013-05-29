@@ -74,15 +74,15 @@ class Gene
     groups_of_transcripts = {}
     group_associated_peaks = {}
     transcripts.each do |transcript|
-      utr = transcript.utr_region(peaks, region_length)
-      exons_on_utr = transcript.exons_on_utr(peaks, region_length)
+      utr = transcript.utr_region
+      exons_on_utr = transcript.exons_on_utr
 
       if utr.empty? || exons_on_utr.empty?
         $logger.info "#{transcript} with utr #{utr} has no exons on utr #{exons_on_utr}"
         next
       end
 
-      associated_peaks = transcript.peaks_associated(peaks, region_length).select do |peak|
+      associated_peaks = transcript.peaks_associated.select do |peak|
         peaks_on_exons = peak.intersection(exons_on_utr)
         sum_cages_on_exons = peaks_on_exons.each_region.map{|region| region.load_cages(all_cages).inject(0,:+) }.inject(0, :+)
         if sum_cages_on_exons == 0

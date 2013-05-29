@@ -4,6 +4,8 @@ require 'peak'
 
 class Transcript
   attr_reader :name, :chromosome, :strand, :full_gene_region, :coding_region, :exons, :protein_id, :align_id
+  attr_accessor :peaks_associated, :region_length
+  attr_accessor :exons_on_utr
 
   def initialize(name, chromosome, strand, full_gene_region, coding_region, exons, protein_id, align_id)
     @name, @chromosome, @strand, @full_gene_region, @coding_region, @exons, @protein_id, @align_id  = name, chromosome, strand, full_gene_region, coding_region, exons, protein_id, align_id
@@ -32,31 +34,32 @@ class Transcript
   end
   alias_method :inspect, :to_s
 
-
-  def utr_5_with_upstream(region_length)
-    full_gene_region_w_upstream = full_gene_region.with_upstream(region_length)
-    coding_region_w_downstream = coding_region.with_downstream(Float::INFINITY)
-    full_gene_region_w_upstream.subtract(coding_region_w_downstream)
+  def utr_5_with_upstream
+    full_gene_region.with_upstream(region_length) - coding_region.with_downstream(Float::INFINITY)
   end
   private :utr_5_with_upstream
 
   # region_length is length of region before txStart(start of transcript) where we are looking for peaks
-  def peaks_associated(peaks, region_length)
-    region_of_interest = exons_on_utr(peaks, region_length)
-    peaks.select{|peak| region_of_interest.intersect?(peak) }
+  def associate_peaks(peaks, region_length)
+    @region_length = region_length
+    @peaks_associated ||= begin
+      region_of_interest = calculate_exons_on_utr(peaks)
+      peaks.select{|peak| region_of_interest.intersect?(peak) }
+    end
   end
 
-  def exons_on_utr(peaks, region_length)
-    utr = utr_5_with_upstream(region_length)
-
-    exons_on_utr_unexpanded = exons.with_upstream(region_length).intersection(utr)
-    # expand ROI to include those peaks that intersect ROI
-    exons_on_utr_unexpanded.expand_upstream_with_peaks(peaks)
+  def calculate_exons_on_utr(peaks)
+    @exons_on_utr = begin
+      exons_on_utr_unexpanded = exons.with_upstream(region_length) & utr_5_with_upstream
+      # expand ROI to include those peaks that intersect ROI
+      exons_on_utr_unexpanded.expand_upstream_with_peaks(peaks)
+    end
   end
+  private :calculate_exons_on_utr
 
   # utr_region is defined by leftmost peak intersecting region [txStart-region_length; coding_region_start) and by start of coding region
-  def utr_region(peaks, region_length)
-    utr_5_with_upstream(region_length).expand_upstream_with_peaks(peaks)
+  def utr_region
+    utr_5_with_upstream.expand_upstream_with_peaks(peaks_associated)
   end
 
   # ucsc_id => transcript

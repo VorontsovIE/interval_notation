@@ -18,6 +18,8 @@ class GeneDataLoader
     @all_peaks = Peak.peaks_from_file(peaks_for_tissue_file, hgnc_to_entrezgene, entrezgene_to_hgnc)
     @genes = Gene.genes_from_file(hgnc_entrezgene_mapping_file)
     @all_transcripts = Transcript.transcripts_from_file(transcript_infos_file)
+
+    # length of region upstream to txStart which is considered to have peaks corresponding to transcript
     @region_length = region_length
 
     @genes_to_process = collect_peaks_and_transcripts_for_genes(@genes)
@@ -55,8 +57,11 @@ class GeneDataLoader
   def collect_peaks_and_transcripts_for_genes(group_of_genes)
     genes_to_process = {}
     group_of_genes.each do |hgnc_id, gene|
-      $logger.warn "Skip #{gene}" and next  unless gene.collect_transcripts(entrezgene_transcripts, all_transcripts)
       $logger.warn "Skip #{gene}" and next  unless gene.collect_peaks(all_peaks)
+      $logger.warn "Skip #{gene}" and next  unless gene.collect_transcripts(entrezgene_transcripts, all_transcripts)
+      gene.transcripts.each do |transcript|
+        transcript.associate_peaks(gene.peaks, region_length)
+      end
       genes_to_process[hgnc_id] = gene
     end
     genes_to_process
