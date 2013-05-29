@@ -16,3 +16,47 @@ def read_cages(input_file)
   end
   cages
 end
+
+# chr1	19287	19288	chr1:19287..19288,+	1	+
+def print_cages(cages, out)
+  cages.each do |strand_key, strand|
+    strand.each do |chromosome_key, chromosome|
+      chromosome.each do |pos_start, cage_value|
+        pos_end = pos_start + 1
+        out.puts([chromosome_key, pos_start, pos_end, "#{chromosome_key}:#{pos_start}..#{pos_end},#{strand_key}", cage_value, strand_key].join("\t"))
+      end
+    end
+  end
+end
+
+# sum loaded in memory cage-hashes (not normalized)
+def sum_cages(*pack_of_cages)
+  result = {}
+  pack_of_cages.flatten.each do |cages|
+    cages.each do |strand_key, strand|
+      result[strand_key] ||= {}
+      strand.each do |chromosome_key, chromosome|
+        result[strand_key][chromosome_key] ||= Hash.new{|h,k| h[k] = 0 }
+        chromosome.each do |pos, cage_value|
+          result[strand_key][chromosome_key][pos] += cage_value
+        end
+      end
+    end
+  end
+  result
+end
+
+# multiply all cages with the same number (can be used to normalize sum of cages)
+def mul_cages(cages, multiplier)
+  result = {}
+  cages.each do |strand_key, strand|
+    result[strand_key] = {}
+    strand.each do |chromosome_key, chromosome|
+      result[strand_key][chromosome_key] = Hash.new{|h,k| h[k] = 0}
+      chromosome.each do |pos, cage_value|
+        result[strand_key][chromosome_key][pos] = cage_value * multiplier
+      end
+    end
+  end
+  result
+end
