@@ -1,19 +1,13 @@
 $:.unshift File.dirname(File.expand_path(__FILE__))
 require 'genome_region'
 
+def cages_initial_hash
+  cages = {'+' => Hash.new{|h, chromosome| h[chromosome] = Hash.new{|h2,pos| h2[pos] = 0 } },
+           '-' => Hash.new{|h, chromosome| h[chromosome] = Hash.new{|h2,pos| h2[pos] = 0 } } }
+end
 # returns {strand => {chromosome => {position => num_reads} } } structure
 def read_cages(input_file)
-  cages = {'+' => {}, '-' => {}}
-  File.open(input_file) do |f|
-    f.each_line do |line|
-      # chr1  564462  564463  chr1:564462..564463,+ 1 +
-      # pos_end is always pos_start+1 because each line is reads from the single position
-      chromosome, pos_start, pos_end, region_annotation, num_reads, strand = line.strip.split("\t")
-      pos_start, pos_end, num_reads = pos_start.to_i, pos_end.to_i, num_reads.to_i
-      cages[strand][chromosome] ||= {}
-      cages[strand][chromosome][pos_start] = num_reads
-    end
-  end
+  read_cages_to(input_file, cages = cages_initial_hash)
   cages
 end
 
@@ -29,54 +23,6 @@ def print_cages(cages, out)
   end
 end
 
-# sum loaded in memory cage-hashes (not normalized)
-def sum_cages(*pack_of_cages)
-  result = {}
-  pack_of_cages.flatten.each do |cages|
-    cages.each do |strand_key, strand|
-      result[strand_key] ||= {}
-      strand.each do |chromosome_key, chromosome|
-        result[strand_key][chromosome_key] ||= Hash.new{|h,k| h[k] = 0 }
-        chromosome.each do |pos, cage_value|
-          result[strand_key][chromosome_key][pos] += cage_value
-        end
-      end
-    end
-  end
-  result
-end
-
-# multiply all cages with the same number (can be used to normalize sum of cages)
-def mul_cages(cages, multiplier)
-  result = {}
-  cages.each do |strand_key, strand|
-    result[strand_key] = {}
-    strand.each do |chromosome_key, chromosome|
-      result[strand_key][chromosome_key] = Hash.new{|h,k| h[k] = 0}
-      chromosome.each do |pos, cage_value|
-        result[strand_key][chromosome_key][pos] = cage_value * multiplier
-      end
-    end
-  end
-  result
-end
-
-def add_cages(initial_cages, *pack_of_cages)
-  pack_of_cages.flatten.each do |cages|
-    cages.each do |strand_key, strand|
-      initial_cages[strand_key] ||= {}
-      cages[strand_key].each do |chromosome_key, chromosome|
-        initial_cages[strand_key][chromosome_key] ||= {}
-        cages[strand_key][chromosome_key].each do |pos, cage_value|
-          initial_cages[strand_key][chromosome_key][pos] ||= 0
-          initial_cages[strand_key][chromosome_key][pos] += cage_value
-        end
-      end
-    end
-  end
-  initial_cages
-end
-
 def mul_cages_inplace(cages, multiplier)
   cages.each do |strand_key, strand|
     cages[strand_key].each do |chromosome_key, chromosome|
@@ -86,4 +32,28 @@ def mul_cages_inplace(cages, multiplier)
     end
   end
   cages
+end
+
+# adds cages from new file to a hash (summing cages) and calculating number of files affected each position
+# input file has lines in format: chr1  564462  564463  chr1:564462..564463,+ 1 +
+# pos_end is always pos_start+1 because each line is reads from the single position
+def read_cages_to(input_file, cages, cage_count = nil)
+  File.open(input_file) do |f|
+    if cage_count 
+      f.each_line do |line|
+        chromosome, pos_start, _, _, num_reads, strand = line.strip.split("\t")
+        pos_start, num_reads = pos_start.to_i, num_reads.to_i
+        cages[strand][chromosome][pos_start] += num_reads
+        cage_count[strand][chromosome][pos_start] += 1
+      end
+      return cages, cage_count
+    else
+      f.each_line do |line|
+        chromosome, pos_start, _, _, num_reads, strand = line.strip.split("\t")
+        pos_start, num_reads = pos_start.to_i, num_reads.to_i
+        cages[strand][chromosome][pos_start] += num_reads
+      end
+      return cages
+    end
+  end
 end

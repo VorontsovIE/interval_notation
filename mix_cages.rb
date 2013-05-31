@@ -1,35 +1,42 @@
 $:.unshift File.join(File.dirname(File.expand_path(__FILE__)), 'lib')
 require 'cage'
-
+time_start = Time.now
 cage_files = ARGV
 cage_files.each do |filename|
   raise ArgumentError, "File #{filename} doesn't exist"  unless File.exist?(filename)
 end
 
-#cages = {}
-#cage_files.each do |filename|
-#  add_cages(cages, read_cages(filename))
-#end
+cages = cages_initial_hash
+cage_count = cages_initial_hash
+cage_files.each do |filename|
+  $stderr.puts "started reading #{filename} in #{Time.now - time_start}"
+  read_cages_to(filename, cages, cage_count)
+  $stderr.puts "finished reading #{filename} in #{Time.now - time_start}"
+end
+$stderr.puts "all cages read in #{Time.now - time_start}"
 
-all_cages = cage_files.map{|filename| read_cages(filename)}
-
-cages = sum_cages( all_cages )
-
-cages.keys.each do |strand|
-  cages[strand].keys.each do |chromosome|
-    cages[strand][chromosome].keys.each do |pos|
-      cages[strand][chromosome].delete(pos)  if all_cages.count{|cg| cg[strand][chromosome][pos] } <= 1
+# remove all cages that are in the only replica
+cages.each do |strand_key,strand|
+  strand.each do |chromosome_key,chromosome|
+    cage_count[strand_key][chromosome_key].each do |pos, cnt|
+      chromosome.delete(pos)  if cnt <= 1
     end
   end
 end
-
+$stderr.puts "removed all cages which are in the only replica in #{Time.now - time_start}"
+# mean cages
 mul_cages_inplace(cages, 1.0 / cage_files.size)
-
-cages.keys.each do |strand|
-  cages[strand].keys.each do |chromosome|
-    cages[strand][chromosome].each do |pos, val|
-      cages[strand][chromosome][pos] = val.floor
+$stderr.puts "cages averaged in #{Time.now - time_start}"
+# round cages down and remove all which are zeros
+cages.each do |strand_key, strand|
+  strand.each do |chromosome_key, chromosome|
+    chromosome.each_key do |pos|
+      chromosome[pos] = chromosome[pos].floor
+    end
+    chromosome.each_key do |pos|
+      chromosome.delete(pos)  if chromosome[pos] == 0
     end
   end
 end
+$stderr.puts "cages rounded down, zeros removed in #{Time.now - time_start}"
 print_cages(cages, $stdout)
