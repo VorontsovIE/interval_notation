@@ -41,7 +41,7 @@ def read_cages_to(input_file, cages, cage_count = nil)
   File.open(input_file) do |f|
     if cage_count 
       f.each_line do |line|
-        chromosome, pos_start, _, _, num_reads, strand = line.strip.split("\t")
+        chromosome, pos_start, pos_end, region_annotation, num_reads, strand = line.strip.split("\t")
         pos_start, num_reads = pos_start.to_i, num_reads.to_i
         cages[strand][chromosome][pos_start] += num_reads
         cage_count[strand][chromosome][pos_start] += 1
