@@ -1,6 +1,10 @@
 $:.unshift File.join(File.dirname(File.expand_path(__FILE__)), 'lib')
 require 'cage'
 time_start = Time.now
+
+# reject positions which're presented in the only replica
+reject_singular_positions = ARGV.delete('--reject-singular-positions')
+
 cage_files = ARGV
 cage_files.each do |filename|
   raise ArgumentError, "File #{filename} doesn't exist"  unless File.exist?(filename)
@@ -15,18 +19,23 @@ cage_files.each do |filename|
 end
 $stderr.puts "all cages read in #{Time.now - time_start}"
 
-# remove all cages that are in the only replica
-cages.each do |strand_key,strand|
-  strand.each do |chromosome_key,chromosome|
-    cage_count[strand_key][chromosome_key].each do |pos, cnt|
-      chromosome.delete(pos)  if cnt <= 1
+
+if reject_singular_positions
+  # remove all cages that are in the only replica
+  cages.each do |strand_key,strand|
+    strand.each do |chromosome_key,chromosome|
+      cage_count[strand_key][chromosome_key].each do |pos, cnt|
+        chromosome.delete(pos)  if cnt <= 1
+      end
     end
   end
+  $stderr.puts "removed all cages which are in the only replica in #{Time.now - time_start}"
 end
-$stderr.puts "removed all cages which are in the only replica in #{Time.now - time_start}"
+
 # mean cages
 mul_cages_inplace(cages, 1.0 / cage_files.size)
 $stderr.puts "cages averaged in #{Time.now - time_start}"
+
 # round cages down and remove all which are zeros
 cages.each do |strand_key, strand|
   strand.each do |chromosome_key, chromosome|
@@ -39,4 +48,5 @@ cages.each do |strand_key, strand|
   end
 end
 $stderr.puts "cages rounded down, zeros removed in #{Time.now - time_start}"
+
 print_cages(cages, $stdout)
