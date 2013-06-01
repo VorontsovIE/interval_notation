@@ -1,6 +1,9 @@
 $:.unshift File.join(File.dirname(File.expand_path(__FILE__)), 'lib')
 require 'identificator_mapping'
 
+# output only non-targets
+invert_selection = ARGV.delete('--invert-selection')
+
 # transcripts_after_splicing.txt  mTOR_mapping.txt
 input_file, targets_filename = ARGV.first(2)
 
@@ -13,7 +16,9 @@ File.open(input_file) do |f|
       # dump previous transcript infos
       unless gene_infos.empty?
         hgnc_id = gene_infos.shift
-        puts gene_infos.join if mtor_targets.has_key?(hgnc_id)
+        if !!mtor_targets.has_key?(hgnc_id) ^ !!invert_selection
+          puts gene_infos.join
+        end
       end
       # started reading new transcript infos
       hgnc_id = line[1..-1].strip.split("\t").first.split(':').last.to_i
