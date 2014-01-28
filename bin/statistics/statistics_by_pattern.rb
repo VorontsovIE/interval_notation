@@ -14,7 +14,7 @@
 # 6) Add poly-N head of length about 10nt to RNA transcript in order to be able to work with motifs with biased start
 #
 
-$:.unshift File.join(File.dirname(File.expand_path(__FILE__)), 'lib')
+$:.unshift '../../lib'
 require 'matching_rate'
 require 'classifier_quality'
 

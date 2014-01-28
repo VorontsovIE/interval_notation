@@ -1,4 +1,4 @@
-$:.unshift File.join(File.dirname(File.expand_path(__FILE__)), 'lib')
+$:.unshift '../../lib'
 require 'identificator_mapping'
 require 'bioinform'
 require 'macroape'

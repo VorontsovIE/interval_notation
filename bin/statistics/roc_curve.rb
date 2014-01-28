@@ -1,4 +1,4 @@
-$:.unshift File.join(File.dirname(File.expand_path(__FILE__)), 'lib')
+$:.unshift '../../lib'
 require 'classifier_quality'
 
 data = File.readlines('gene_matching_rates.out').map(&:strip).map(&:split)
