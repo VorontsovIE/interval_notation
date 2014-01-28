@@ -5,7 +5,7 @@ require 'logger'
 $logger = Logger.new($stderr)
 
 $:.unshift File.join(File.dirname(File.expand_path(__FILE__)), 'lib')
-require 'genome_region'
+require 'intervals/genome_region'
 require 'transcript'
 require 'gene'
 require 'peak'

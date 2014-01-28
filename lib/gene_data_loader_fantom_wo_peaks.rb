@@ -1,5 +1,5 @@
 $:.unshift File.dirname(File.expand_path(__FILE__))
-require 'genome_region'
+require 'intervals/genome_region'
 require 'transcript'
 require 'gene'
 require 'peak'

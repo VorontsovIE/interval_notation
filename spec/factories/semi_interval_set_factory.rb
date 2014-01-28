@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'semi_interval_set'
+require 'intervals/semi_interval_set'
 
 def empty_interval
   EmptySemiInterval.new

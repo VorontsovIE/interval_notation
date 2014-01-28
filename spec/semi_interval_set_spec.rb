@@ -4,7 +4,7 @@
 # from_left? from_right?
 
 require 'spec_helper.rb'
-require 'semi_interval_set'
+require 'intervals/semi_interval_set'
 
 module SemiIntervalHelpers
   def all_types_of_non_empty_regions

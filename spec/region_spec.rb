@@ -1,5 +1,5 @@
 $:.unshift File.dirname(File.expand_path(__FILE__, '../lib'))
-require 'genome_region'
+require 'intervals/genome_region'
 require 'rspec/given'
 
 describe GenomeRegion do
