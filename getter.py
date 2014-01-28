@@ -47,5 +47,3 @@ for dir in dirs:
     f.close()
     f1.close()
 print('Finished')
-
-
