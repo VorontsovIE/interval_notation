@@ -1,4 +1,5 @@
-# Don't collect peaks that have zero expression
+# Collect only peaks having non-zero exprewssion
+# Attention: this script is an OLD(!) Object Oriented version of select_tissues script
 
 class CagePeaksParser
   attr_reader :input_file, :sample_name_pattern, :data
