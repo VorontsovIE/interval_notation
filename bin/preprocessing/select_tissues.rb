@@ -13,7 +13,7 @@ File.open('robust_set.freeze1') do |f|
       column_is_tissue = true
       next
     end
-    
+
     if line.start_with?('##Col')
       if column_is_tissue
         name = line.match(/^##[^\[\]]+\[([^\[\]]+)\]/)[1]

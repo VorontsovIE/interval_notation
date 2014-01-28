@@ -8,7 +8,7 @@ class CagePeaksParser
     @param_read = false
     @data = []
   end
-  
+
   def header_line?(line)
     line.start_with? '##'
   end
@@ -24,13 +24,13 @@ class CagePeaksParser
   def header_row?(line)
     line.start_with? '00Annotation'
   end
-  
+
   def header_name(line)
     match = /##.*\[(.*)\]=/.match(line)
     return nil unless match
     match[1]
   end
-  
+
   def parse
     @columns = []
     index = 0
@@ -57,7 +57,7 @@ class CagePeaksParser
       end
     end
   end
-  
+
   def parse_writing_to(output_file)
     @columns = []
     index = 0
@@ -80,10 +80,10 @@ class CagePeaksParser
             end
             index += 1
           end
-          fw.puts line.strip.split("\t").values_at(*@columns).join("\t")  if header_row?(line) 
+          fw.puts line.strip.split("\t").values_at(*@columns).join("\t")  if header_row?(line)
           next  if  header_line?(line) || header_row?(line)
           next  unless line.start_with?('chr')
-          
+
           data_row = line.strip.split("\t").values_at(*@columns)
           unless data_row.last.to_f == 0
             @data << data_row
@@ -159,8 +159,4 @@ end
 
 puts 'peaks collected in a structure'
 
-
 CagePointsParser.new('prostate%20cancer%20cell%20line%253aPC-3.CNhs11243.10439-106E7.hg19.ctss.bed', peaks).parse
-
-# require 'pp'
-# pp peaks
