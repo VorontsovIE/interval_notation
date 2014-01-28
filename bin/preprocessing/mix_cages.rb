@@ -1,4 +1,6 @@
-$:.unshift File.join(File.dirname(File.expand_path(__FILE__)), 'lib')
+# make one cage file from several technical replicas with cages
+
+$:.unshift '../../lib'
 require 'cage'
 time_start = Time.now
 
