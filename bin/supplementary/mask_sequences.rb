@@ -1,4 +1,4 @@
-$:.unshift File.join(File.dirname(File.expand_path(__FILE__)), 'lib')
+$:.unshift '../../lib'
 require 'gene_data_loader'
 require 'splicing'
 

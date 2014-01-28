@@ -1,5 +1,5 @@
 rate = 0.2
-result = File.readlines('weighted_5-utr.txt').map(&:strip).each_slice(3).map.with_object([]) do |(infos, cages_line, sequence), result|
+result = File.readlines('../../weighted_5-utr.txt').map(&:strip).each_slice(3).map.with_object([]) do |(infos, cages_line, sequence), result|
   name = infos[1..-1].split("\t")[1]
   expression = infos.split.last.to_f
   next if expression < 1.0
