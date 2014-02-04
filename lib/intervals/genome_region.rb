@@ -2,8 +2,7 @@
 # It can be constructed using chromosome, strand and either pos_start,pos_end pair or interval/interval set
 # All intervals in genome region should be on the same strand
 
-$:.unshift File.dirname(File.expand_path(__FILE__))
-require 'semi_interval_set'
+require_relative 'semi_interval_set'
 
 module GenomeRegionOperations
   def intersection(other)

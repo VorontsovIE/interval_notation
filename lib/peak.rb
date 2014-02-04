@@ -1,6 +1,5 @@
-$:.unshift File.dirname(File.expand_path(__FILE__))
-require 'intervals/genome_region'
-require 'transcript'
+require_relative 'intervals/genome_region'
+require_relative 'transcript'
 
 class Peak
   attr_reader :annotation, :short_description, :description, :association_with_transcript,

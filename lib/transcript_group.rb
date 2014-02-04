@@ -1,7 +1,5 @@
-$:.unshift File.dirname(File.expand_path(__FILE__))
-require 'transcript'
-require 'peak'
-
+require_relative 'transcript'
+require_relative 'peak'
 
 # Group transcripts for a gene so that several transcripts having the same
 # exon-intron structure on UTR are taken altogether as a TranscriptGroup. Now

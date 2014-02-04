@@ -1,5 +1,4 @@
-$:.unshift './lib'
-require 'identificator_mapping'
+require_relative 'lib/identificator_mapping'
 
 # output only non-targets
 invert_selection = ARGV.delete('--invert-selection')

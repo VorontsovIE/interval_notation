@@ -1,8 +1,7 @@
-$:.unshift File.dirname(File.expand_path(__FILE__))
-require 'intervals/genome_region'
-require 'transcript'
-require 'peak'
-require 'transcript_group'
+require_relative 'intervals/genome_region'
+require_relative 'transcript'
+require_relative 'peak'
+require_relative 'transcript_group'
 
 class Gene
   attr_reader :hgnc_id, :approved_symbol, :approved_name

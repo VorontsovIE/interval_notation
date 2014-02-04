@@ -1,12 +1,11 @@
-$:.unshift File.dirname(File.expand_path(__FILE__))
-require 'intervals/genome_region'
-require 'transcript'
-require 'gene'
-require 'peak'
-require 'splicing'
-require 'cage'
-require 'identificator_mapping'
-require 'transcript_group'
+require_relative 'intervals/genome_region'
+require_relative 'transcript'
+require_relative 'gene'
+require_relative 'peak'
+require_relative 'splicing'
+require_relative 'cage'
+require_relative 'identificator_mapping'
+require_relative 'transcript_group'
 
 class GeneDataLoader
   attr_reader :all_cages, :hgnc_to_entrezgene, :entrezgene_to_hgnc, :entrezgene_transcripts, :all_peaks, :all_transcripts, :genes, :region_length

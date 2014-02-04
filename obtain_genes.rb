@@ -3,8 +3,7 @@
 require 'logger'
 $logger = Logger.new($stderr)
 
-$:.unshift File.join(File.dirname(File.expand_path(__FILE__)), 'lib')
-require 'gene_data_loader'
+require_relative 'lib/gene_data_loader'
 
 # class Sequence
 #   attr_reader :sequence, :markup

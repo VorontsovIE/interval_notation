@@ -1,5 +1,4 @@
-$:.unshift File.dirname(File.expand_path(__FILE__))
-require 'intervals/genome_region'
+require_relative 'intervals/genome_region'
 
 def cages_initial_hash
   cages = {'+' => Hash.new{|h, chromosome| h[chromosome] = Hash.new{|h2,pos| h2[pos] = 0 } },

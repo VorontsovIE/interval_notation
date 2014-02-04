@@ -4,11 +4,8 @@ $logger.formatter = proc do |severity, datetime, progname, msg|
   "#{severity}: #{msg}\n"
 end
 
-
-$:.unshift File.join(File.dirname(File.expand_path(__FILE__)), 'lib')
-require 'gene_data_loader'
-require 'splicing'
-
+require_relative 'lib/gene_data_loader'
+require_relative 'lib/splicing'
 
 min_expression = -1000.0
 
@@ -26,46 +23,21 @@ File.open('weighted_5-utr.txt', 'w') do |fw|
   end
 end
 
-File.open('weighted_5-utr-polyN-masked_1.txt', 'w') do |fw|
-  framework.output_all_5utr(genes_to_extract, fw) do |output_stream, gene_info, transcript_group, peaks_info, expression, spliced_sequence, spliced_cages|
-    next  unless expression >= min_expression
-    output_stream.puts ">#{gene_info}\t#{transcript_group}\t#{expression}"
-    output_stream.puts mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7, 0)
-  end
-end
+# File.open('weighted_5-utr-polyN-masked_1.txt', 'w') do |fw|
+#   framework.output_all_5utr(genes_to_extract, fw) do |output_stream, gene_info, transcript_group, peaks_info, expression, spliced_sequence, spliced_cages|
+#     next  unless expression >= min_expression
+#     output_stream.puts ">#{gene_info}\t#{transcript_group}\t#{expression}"
+#     output_stream.puts mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7, 0)
+#   end
+# end
 
-File.open('weighted_5-utr-polyN-masked_5.txt', 'w') do |fw|
-  framework.output_all_5utr(genes_to_extract, fw) do |output_stream, gene_info, transcript_group, peaks_info, expression, spliced_sequence, spliced_cages|
-    next  unless expression >= min_expression
-    output_stream.puts ">#{gene_info}\t#{transcript_group}\t#{expression}"
-    output_stream.puts mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7, 2)
-  end
-end
-
-File.open('weighted_5-utr-polyN-masked_11.txt', 'w') do |fw|
-  framework.output_all_5utr(genes_to_extract, fw) do |output_stream, gene_info, transcript_group, peaks_info, expression, spliced_sequence, spliced_cages|
-    next  unless expression >= min_expression
-    output_stream.puts ">#{gene_info}\t#{transcript_group}\t#{expression}"
-    output_stream.puts mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7, 5)
-  end
-end
-
-File.open('weighted_5-utr-polyN-masked_15.txt', 'w') do |fw|
-  framework.output_all_5utr(genes_to_extract, fw) do |output_stream, gene_info, transcript_group, peaks_info, expression, spliced_sequence, spliced_cages|
-    next  unless expression >= min_expression
-    output_stream.puts ">#{gene_info}\t#{transcript_group}\t#{expression}"
-    output_stream.puts mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7, 7)
-  end
-end
-
-File.open('weighted_5-utr-polyN-masked_21.txt', 'w') do |fw|
-  framework.output_all_5utr(genes_to_extract, fw) do |output_stream, gene_info, transcript_group, peaks_info, expression, spliced_sequence, spliced_cages|
-    next  unless expression >= min_expression
-    output_stream.puts ">#{gene_info}\t#{transcript_group}\t#{expression}"
-    output_stream.puts mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7, 10)
-  end
-end
-
+# File.open('weighted_5-utr-polyN-masked_5.txt', 'w') do |fw|
+#   framework.output_all_5utr(genes_to_extract, fw) do |output_stream, gene_info, transcript_group, peaks_info, expression, spliced_sequence, spliced_cages|
+#     next  unless expression >= min_expression
+#     output_stream.puts ">#{gene_info}\t#{transcript_group}\t#{expression}"
+#     output_stream.puts mark_best_starts_as_poly_n(spliced_sequence, spliced_cages, 0.7, 2)
+#   end
+# end
 
 # File.open('weighted_5-utr-polyN-masked_good.txt', 'w') do |fw|
   # framework.output_all_5utr(genes_to_extract, fw) do |output_stream, gene_info, transcript_group, peaks_info, expression, spliced_sequence, spliced_cages|
