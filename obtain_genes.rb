@@ -15,7 +15,7 @@ require_relative 'lib/gene_data_loader'
 cages_file, output_file = *ARGV
 raise "You should specify file with cages for a specific tissue(*.bed) and output file" unless cages_file && output_file
 
-framework = GeneDataLoader.new(cages_file, 'HGNC_protein_coding_22032013_entrez.txt', 'knownToLocusLink.txt', 'robust_set.freeze1.reduced.pc-3', 'knownGene.txt', 100)
+framework = GeneDataLoader.new(cages_file, 'HGNC_protein_coding_22032013_entrez.txt', 'knownToLocusLink.txt', 'robust_set.freeze1.reduced.pc-3', 'knownGene.txt', 100, 'source_data/genome/hg19')
 
 
 File.open(output_file, 'w') do |fw|
