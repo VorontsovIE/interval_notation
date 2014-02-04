@@ -1,7 +1,6 @@
 # make one cage file from several technical replicas with cages
 
-$:.unshift '../../lib'
-require 'cage'
+require_relative '../../lib/cage'
 time_start = Time.now
 
 # reject positions which're presented in the only replica
