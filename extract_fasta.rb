@@ -10,6 +10,7 @@ require_relative 'lib/splicing'
 min_expression = -1000.0
 
 cages_file = 'prostate%20cancer%20cell%20line%253aPC-3.CNhs11243.10439-106E7.hg19.ctss.bed'
+gene_by_hgnc_file            = 'HGNC_protein_coding_22032013_entrez.txt'
 hgnc_entrezgene_mapping_file = 'HGNC_protein_coding_22032013_entrez.txt'
 transcript_by_entrezgene_file = 'knownToLocusLink.txt'
 peaks_for_tissue_file = 'robust_set.freeze1.reduced.pc-3'
@@ -18,6 +19,7 @@ region_length = 100
 genome_folder = 'source_data/genome/hg19'
 
 framework = GeneDataLoader.new(cages_file,
+                              gene_by_hgnc_file,
                               hgnc_entrezgene_mapping_file,
                               transcript_by_entrezgene_file,
                               peaks_for_tissue_file,

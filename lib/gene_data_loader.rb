@@ -11,14 +11,17 @@ class GeneDataLoader
   attr_reader :all_cages, :entrezgene_transcript_mapping, :all_peaks, :all_transcripts, :genes, :region_length
   attr_reader :genes_to_process, :transcript_groups, :number_of_genes_for_a_peak
   attr_accessor :genome_folder
-  def initialize(cages_file, hgnc_entrezgene_mapping_file, transcript_by_entrezgene_file, peaks_for_tissue_file, transcript_infos_file, region_length, genome_folder)
+  def initialize(cages_file, gene_by_hgnc_file, hgnc_entrezgene_mapping_file, transcript_by_entrezgene_file, peaks_for_tissue_file, transcript_infos_file, region_length, genome_folder)
     @genome_folder = genome_folder
     @all_cages = read_cages(cages_file)
 
     hgnc_entrezgene_mapping = read_hgnc_entrezgene_mapping(hgnc_entrezgene_mapping_file)
     @entrezgene_transcript_mapping = read_entrezgene_transcript_mapping(transcript_by_entrezgene_file)
+
+    # Очень стремный момент! Мы делаем много клонов одного пика
     @all_peaks = Peak.peaks_from_file(peaks_for_tissue_file, hgnc_entrezgene_mapping)
-    @genes = Gene.genes_from_file(hgnc_entrezgene_mapping_file)
+
+    @genes = Gene.genes_from_file(gene_by_hgnc_file)
     @all_transcripts = Transcript.transcripts_from_file(transcript_infos_file)
 
     # length of region upstream to txStart which is considered to have peaks corresponding to transcript

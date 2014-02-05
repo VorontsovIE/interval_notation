@@ -11,6 +11,7 @@ require_relative 'lib/gene_data_loader'
 cages_file, output_file = *ARGV
 raise "You should specify file with cages for a specific tissue(*.bed) and output file" unless cages_file && output_file
 
+gene_by_hgnc_file            = 'HGNC_protein_coding_22032013_entrez.txt'
 hgnc_entrezgene_mapping_file = 'HGNC_protein_coding_22032013_entrez.txt'
 transcript_by_entrezgene_file = 'knownToLocusLink.txt'
 peaks_for_tissue_file = 'robust_set.freeze1.reduced.pc-3'
@@ -19,6 +20,7 @@ region_length = 100
 genome_folder = 'source_data/genome/hg19'
 
 framework = GeneDataLoader.new(cages_file,
+                              gene_by_hgnc_file,
                               hgnc_entrezgene_mapping_file,
                               transcript_by_entrezgene_file,
                               peaks_for_tissue_file,
