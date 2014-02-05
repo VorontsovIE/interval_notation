@@ -1,20 +1,23 @@
-tissue = ARGV.first
-raise ArgumentError, 'ruby filter_tissue.rb <tissue name pattern>'  unless tissue
+# peak_descriptions_filename = 'robust_phase1_pls_2.tpm.desc121113.osc.txt'
+# tissue = 'prostate%20cancer%20cell%20line%3aPC-3'
+peak_descriptions_filename, tissue = ARGV.first(2)
+
+raise ArgumentError, 'ruby select_tissues.rb <peak_descriptions file> <tissue name pattern>'  unless peak_descriptions_filename && tissue
 
 pattern = Regexp.new(tissue)
 
-File.open('robust_set.freeze1') do |f|
+File.open(peak_descriptions_filename) do |f|
   column_is_tissue = false
   column = 0
   columns = []
 
   f.each_line do |line|
-    if line.start_with?('##Par')
-      column_is_tissue = true
+    if line.start_with?('##ParemeterValue') # Yes, it has a typo!
+      column_is_tissue = true # latter lines contain tissue names
       next
     end
 
-    if line.start_with?('##Col')
+    if line.start_with?('##ColumnVariables')
       if column_is_tissue
         name = line.match(/^##[^\[\]]+\[([^\[\]]+)\]/)[1]
         if pattern.match(name)
