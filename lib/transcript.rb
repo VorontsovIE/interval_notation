@@ -2,26 +2,26 @@ require_relative 'intervals/genome_region'
 require_relative 'peak'
 
 class Transcript
-  attr_reader :name, :chromosome, :strand, :full_gene_region, :coding_region, :exons, :protein_id, :align_id
+  attr_reader :name, :chromosome, :strand, :full_gene_region, :coding_region, :exons, :protein_id
   attr_accessor :peaks_associated, :region_length
   attr_accessor :exons_on_utr
 
-  def initialize(name, chromosome, strand, full_gene_region, coding_region, exons, protein_id, align_id)
-    @name, @chromosome, @strand, @full_gene_region, @coding_region, @exons, @protein_id, @align_id  = name, chromosome, strand, full_gene_region, coding_region, exons, protein_id, align_id
+  def initialize(name, chromosome, strand, full_gene_region, coding_region, exons, protein_id)
+    @name, @chromosome, @strand, @full_gene_region, @coding_region, @exons, @protein_id  = name, chromosome, strand, full_gene_region, coding_region, exons, protein_id
   end
 
   # Transcript.new_by_infos('uc001aaa.3 chr1  + 11873 14409 11873 11873 3 11873,12612,13220,  12227,12721,14409,    uc001aaa.3')
   # We don't remove version from name not to have a bug with  uc010nxr.1(chr1)  and  uc010nxr.2(chrY)
   # Be careful about real versions of transcripts, use synchronized databases
   def self.new_by_infos(info)
-    name, chromosome, strand, tx_start, tx_end, cds_start, cds_end, exon_count, exon_starts, exon_ends, protein_id, align_id = info.split("\t")
+    name, chromosome, strand, tx_start, tx_end, cds_start, cds_end, exon_count, exon_starts, exon_ends, protein_id, _align_id = info.split("\t")
     exon_starts = exon_starts.split(',').map(&:strip).reject(&:empty?).map(&:to_i)
     exon_ends = exon_ends.split(',').map(&:strip).reject(&:empty?).map(&:to_i)
     full_gene_region = GenomeRegion.new(chromosome, strand, tx_start.to_i, tx_end.to_i)
     coding_region = GenomeRegion.new(chromosome, strand, cds_start.to_i, cds_end.to_i)  ### rescue nil
     exon_regions = exon_count.to_i.times.map{|index| SemiInterval.new(exon_starts[index], exon_ends[index])} ##############
     exons = GenomeRegion.new(chromosome, strand, SemiIntervalSet.new(exon_regions))
-    self.new(name, chromosome, strand, full_gene_region, coding_region, exons, protein_id, align_id)
+    self.new(name, chromosome, strand, full_gene_region, coding_region, exons, protein_id)
   end
 
   def coding?
