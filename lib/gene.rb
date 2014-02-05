@@ -41,7 +41,7 @@ class Gene
   end
 
   # returns loaded transripts or false if due to some reasons transcripts can't be collected
-  def collect_transcripts(entrezgene_transcripts, all_transcripts)
+  def collect_transcripts(entrezgene_transcript_mapping, all_transcripts)
     unless entrezgene_id
       logger.warn "#{self} has no entrezgene_id so we cannot find transcripts"
       return false
