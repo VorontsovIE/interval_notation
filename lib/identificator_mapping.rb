@@ -76,6 +76,11 @@ def read_hgnc_entrezgene_mapping(input_file)
   end
   mapping = Mapping.from_pairs(:hgnc, :entrezgene, hgnc_entrez_pairs)
   raise "HGNC <--> Entrezgene mapping is ambigous"  if mapping.ambigous?
+  if $logger
+    mapping.empty_links.each do |hgnc_id, entrezgene_id|
+      $logger.info "Incomplete pair: (HGNC:#{hgnc_id}; entrezgene #{entrezgene_id})"
+    end
+  end
   mapping
 end
 

@@ -94,6 +94,9 @@ class Mapping
     (pairs_of_hash(first_to_second_duplicates) + reverse_pairs_of_hash(second_to_first_duplicates)).to_a
   end
 
+  def empty_links
+    first_to_second.select{|k,v|v.empty?}.map{|k,v| [k,nil] } + second_to_first.select{|k,v|v.empty?}.map{|k,v| [nil, k] }
+  end
 
   # k=>[v1,v2] --> Set([k,v1],[k,v2])
   def pairs_of_hash(mappings)
