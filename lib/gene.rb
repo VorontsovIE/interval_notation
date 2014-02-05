@@ -42,7 +42,7 @@ class Gene
   end
 
   # {[utr, exons_on_utr] => [transcripts]}
-  def transcripts_grouped_by_common_exon_structure_on_utr(region_length, all_cages)
+  def transcripts_grouped_by_common_exon_structure_on_utr(all_cages)
     groups_of_transcripts = {}
     group_associated_peaks = {}
     transcripts.each do |transcript|

@@ -135,7 +135,7 @@ class GeneDataLoader
   def collect_transcript_groups(group_of_genes)
     transcript_groups = {}
     group_of_genes.each do |hgnc_id, gene|
-      transcript_groups[hgnc_id] = gene.transcripts_grouped_by_common_exon_structure_on_utr(region_length, all_cages)
+      transcript_groups[hgnc_id] = gene.transcripts_grouped_by_common_exon_structure_on_utr(all_cages)
     end
     transcript_groups
   end
