@@ -10,11 +10,10 @@ class Mapping
     @second_to_first = second_to_first
   end
 
-  def self.from_lines(identifier_first_type, identifier_second_type, lines)
+  def self.from_pairs(identifier_first_type, identifier_second_type, pairs)
     first_to_second = {}
     second_to_first = {}
-    lines.map(&:strip).reject(&:empty?).each do |line|
-      first_id, second_id = line.split("\t")
+    pairs.each do |first_id, second_id|
       first_to_second[first_id] ||= []
       first_to_second[first_id] << second_id
       second_to_first[second_id] ||= []
@@ -24,7 +23,8 @@ class Mapping
   end
 
   def self.from_file(identifier_first_type, identifier_second_type, filename)
-    from_lines(identifier_first_type, identifier_second_type, File.readlines(filename))
+    pairs = File.readlines(filename).map(&:strip).reject(&:empty?).map{|line| line.split("\t")}
+    from_pairs(identifier_first_type, identifier_second_type, pairs)
   end
 
   def get_second_by_first_id(id, raise_on_missing_id: true)
@@ -50,9 +50,9 @@ class Mapping
   def get_by(identifier_type, id, raise_on_missing_id: true)
     case identifier_type.to_sym
     when identifier_first_type
-      get_second_by_first_id(id, raise_on_missing_id)
+      get_second_by_first_id(id, raise_on_missing_id: raise_on_missing_id)
     when identifier_second_type
-      get_first_by_second_id(id, raise_on_missing_id)
+      get_first_by_second_id(id, raise_on_missing_id: raise_on_missing_id)
     else
       raise "Unknown identifier type #{identifier_type}; this mapping is #{identifier_first_type} <--> #{identifier_second_type}"
     end
@@ -81,21 +81,42 @@ class Mapping
   end
 
   def all_pairs
-    results = Set.new
-    first_to_second.each do |first_id, second_ids|
-      second_ids.each do |second_id|
-        results << [first_id, second_id]
-      end
-    end
-    second_to_first.each do |second_id, first_ids|
-      first_ids.each do |first_id|
-        results << [first_id, second_id]
-      end
-    end
-    results.to_a
+    (pairs_of_hash(first_to_second) + reverse_pairs_of_hash(second_to_first)).to_a
   end
 
   def unambiguous?
-    first_to_second.none?{|k,v| v.size > 1} && second_to_first.none?{|k,v| v.size > 1 }
+    ! ambiguous?
   end
+  def ambiguous?
+    first_to_second.any?{|k,v| v.size > 1} || second_to_first.any?{|k,v| v.size > 1 }
+  end
+  def ambiguities
+    first_to_second_duplicates = first_to_second.select{|k,v| v.size > 1}
+    second_to_first_duplicates = second_to_first.select{|k,v| v.size > 1 }
+    (pairs_of_hash(first_to_second_duplicates) + reverse_pairs_of_hash(second_to_first_duplicates)).to_a
+  end
+
+
+  # k=>[v1,v2] --> Set([k,v1],[k,v2])
+  def pairs_of_hash(mappings)
+    result = Set.new
+    mappings.each do |first_id, second_ids|
+      second_ids.each do |second_id|
+        result << [first_id, second_id]
+      end
+    end
+    result
+  end
+
+  # v=>[k1,k2] --> Set([k1,v],[k2,v])
+  def reverse_pairs_of_hash(mappings)
+    result = Set.new
+    mappings.each do |first_id, second_ids|
+      second_ids.each do |second_id|
+        result << [second_id, first_id]
+      end
+    end
+    result
+  end
+  private :pairs_of_hash, :reverse_pairs_of_hash
 end
