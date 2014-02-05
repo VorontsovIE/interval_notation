@@ -86,13 +86,40 @@ class GeneDataLoader
         logger.warn "Skip #{gene}"
         next
       end
-      logger.warn "Skip #{gene}" and next  unless gene.collect_transcripts(entrezgene_transcript_mapping, all_transcripts)
+      logger.warn "Skip #{gene}" and next  unless collect_transcripts(gene)
       gene.transcripts.each do |transcript|
         transcript.associate_peaks(all_peaks[hgnc_id], region_length)
       end
       genes_to_process[hgnc_id] = gene
     end
     genes_to_process
+  end
+
+  # returns loaded transripts or false if due to some reasons transcripts can't be collected
+  def collect_transcripts(gene)
+    unless gene.entrezgene_id
+      logger.warn "#{gene} has no entrezgene_id so we cannot find transcripts"
+      return false
+    end
+
+    transcripts = []
+    transcript_ucsc_ids = entrezgene_transcript_mapping.get_second_by_first_id(gene.entrezgene_id)
+    transcript_ucsc_ids.each do |ucsc_id|
+      transcript = all_transcripts[ucsc_id]
+      if !transcript
+        logger.error "#{gene}'s transcript with #{ucsc_id} wasn't found. Skip transcript"
+      elsif ! transcript.coding?
+        logger.warn "#{gene}'s #{transcript} has no coding region. Skip transcript"
+      else
+        transcripts << transcript
+      end
+    end
+
+    if transcripts.empty?
+      logger.error "No one transcript of #{gene} was found"
+      return false
+    end
+    gene.transcripts = transcripts
   end
 
   # We count all gene with the same UTR as the same transcript group and doesn't

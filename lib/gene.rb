@@ -40,33 +40,6 @@ class Gene
     "Gene<HGNC:#{hgnc_id}; #{approved_symbol}; entrezgene:#{entrezgene_id}; ensembl:#{ensembl_id}; #{transcripts.map(&:to_s).join(', ')}>"
   end
 
-  # returns loaded transripts or false if due to some reasons transcripts can't be collected
-  def collect_transcripts(entrezgene_transcript_mapping, all_transcripts)
-    unless entrezgene_id
-      logger.warn "#{self} has no entrezgene_id so we cannot find transcripts"
-      return false
-    end
-
-    transcripts = []
-    transcript_ucsc_ids = entrezgene_transcript_mapping.get_second_by_first_id(entrezgene_id)
-    transcript_ucsc_ids.each do |ucsc_id|
-      transcript = all_transcripts[ucsc_id]
-      if !transcript
-        logger.error "#{self}'s transcript with #{ucsc_id} wasn't found. Skip transcript"
-      elsif ! transcript.coding?
-        logger.warn "#{self}'s #{transcript} has no coding region. Skip transcript"
-      else
-        transcripts << transcript
-      end
-    end
-
-    if transcripts.empty?
-      logger.error "No one transcript of #{self} was found"
-      return false
-    end
-    self.transcripts = transcripts
-  end
-
   # {[utr, exons_on_utr] => [transcripts]}
   def transcripts_grouped_by_common_exon_structure_on_utr(region_length, all_cages)
     groups_of_transcripts = {}
