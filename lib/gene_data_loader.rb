@@ -81,10 +81,14 @@ class GeneDataLoader
   def collect_peaks_and_transcripts_for_genes(group_of_genes)
     genes_to_process = {}
     group_of_genes.each do |hgnc_id, gene|
-      logger.warn "Skip #{gene}" and next  unless gene.collect_peaks(all_peaks)
+      if !all_peaks[hgnc_id] || all_peaks[hgnc_id].empty?
+        logger.warn "#{gene} has no peaks in this cell line"
+        logger.warn "Skip #{gene}"
+        next
+      end
       logger.warn "Skip #{gene}" and next  unless gene.collect_transcripts(entrezgene_transcript_mapping, all_transcripts)
       gene.transcripts.each do |transcript|
-        transcript.associate_peaks(gene.peaks, region_length)
+        transcript.associate_peaks(all_peaks[hgnc_id], region_length)
       end
       genes_to_process[hgnc_id] = gene
     end

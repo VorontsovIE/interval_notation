@@ -6,7 +6,7 @@ require_relative 'logger_stub'
 
 class Gene
   attr_reader :hgnc_id, :entrezgene_id, :ensembl_id, :approved_symbol
-  attr_accessor :transcripts, :peaks
+  attr_accessor :transcripts
 
   def self.logger=(value)
     @logger = value
@@ -21,7 +21,6 @@ class Gene
   def initialize(hgnc_id, approved_symbol, entrezgene_id, ensembl_id)
     @hgnc_id, @approved_symbol, @entrezgene_id, @ensembl_id = hgnc_id, approved_symbol, entrezgene_id, ensembl_id
     @transcripts = []
-    @peaks = []
   end
 
   # Gene.new_by_infos('HGNC:10000 RGS4  regulator of G-protein signaling 4  1q23.3  5999', {hgnc: 0, approved_symbol: 1, approved_name: nil, entrez: 4})
@@ -38,7 +37,7 @@ class Gene
   end
 
   def to_s
-    "Gene<HGNC:#{hgnc_id}; #{approved_symbol}; entrezgene:#{entrezgene_id}; ensembl:#{ensembl_id}; #{transcripts.map(&:to_s).join(', ')}; have #{peaks.size} peaks>"
+    "Gene<HGNC:#{hgnc_id}; #{approved_symbol}; entrezgene:#{entrezgene_id}; ensembl:#{ensembl_id}; #{transcripts.map(&:to_s).join(', ')}>"
   end
 
   # returns loaded transripts or false if due to some reasons transcripts can't be collected
@@ -66,16 +65,6 @@ class Gene
       return false
     end
     self.transcripts = transcripts
-  end
-
-  # returns loaded peaks or false if due to some reasons peaks can't be collected
-  def collect_peaks(all_peaks)
-    if all_peaks.has_key?(hgnc_id)
-      self.peaks = all_peaks[hgnc_id]
-    else
-      logger.warn "#{self} has no peaks in this cell line"
-      false
-    end
   end
 
   # {[utr, exons_on_utr] => [transcripts]}
