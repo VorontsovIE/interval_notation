@@ -51,14 +51,27 @@ class Transcript
     @exons_on_utr = begin
       exons_on_utr_unexpanded = exons.with_upstream(region_length) & utr_5_with_upstream
       # expand ROI to include those peaks that intersect ROI
-      exons_on_utr_unexpanded.expand_upstream_with_peaks(peaks)
+      region_expanded_upstream_with_peaks(exons_on_utr_unexpanded, peaks)
     end
   end
   private :calculate_exons_on_utr
 
   # utr_region is defined by leftmost peak intersecting region [txStart-region_length; coding_region_start) and by start of coding region
   def utr_region
-    utr_5_with_upstream.expand_upstream_with_peaks(peaks_associated)
+    region_expanded_upstream_with_peaks(utr_5_with_upstream, peaks_associated)
+  end
+
+  # expand region to most upstream peaks and trim at that point (so result can be even shorter if peaks located downstream from start)
+  def region_expanded_upstream_with_peaks(region, peaks)
+    peaks_intersecting_region = peaks.select{|peak| region.intersect?(peak.region) }
+    if peaks_intersecting_region.empty?
+      region
+    else
+      most_upstream_peak = peaks_intersecting_region.map(&:region).min
+      peak_with_downstream = most_upstream_peak.with_downstream(Float::INFINITY)
+      region_expansion = region.most_upstream_region.upstream(Float::INFINITY).intersection(peak_with_downstream)
+      region.union(region_expansion).intersection(peak_with_downstream)
+    end
   end
 
   # ucsc_id => transcript

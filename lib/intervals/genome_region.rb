@@ -76,19 +76,6 @@ module UpDownStream
   def with_downstream(len)
     self | downstream(len)
   end
-
-  # expand region to most upstream peaks and trim at that point (so result can be even shorter if peaks located downstream from start)
-  def expand_upstream_with_peaks(peaks)
-    peaks_intersecting_region = peaks.select{|peak| self.intersect?(peak.region) }
-    if peaks_intersecting_region.empty?
-      self
-    else
-      most_upstream_peak = peaks_intersecting_region.map(&:region).min
-      peak_with_downstream = most_upstream_peak.with_downstream(Float::INFINITY)
-      region_expansion = self.most_upstream_region.upstream(Float::INFINITY).intersection(peak_with_downstream)
-      self.union(region_expansion).intersection(peak_with_downstream)
-    end
-  end
 end
 
 module RegionConditionals
