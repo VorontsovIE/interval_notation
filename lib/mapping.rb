@@ -97,7 +97,7 @@ class Mapping
   def ambiguities
     first_to_second_duplicates = first_to_second.select{|k,v| v.size > 1}
     second_to_first_duplicates = second_to_first.select{|k,v| v.size > 1 }
-    (pairs_of_hash(first_to_second_duplicates) + reverse_pairs_of_hash(second_to_first_duplicates)).to_a
+    first_to_second_duplicates.merge( second_to_first_duplicates.invert )
   end
 
   def empty_links
