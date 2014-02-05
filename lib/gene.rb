@@ -4,31 +4,30 @@ require_relative 'peak'
 require_relative 'transcript_group'
 
 class Gene
-  attr_reader :hgnc_id, :approved_symbol, :approved_name
-
-  attr_reader :chromosome_map, :entrezgene_id
+  attr_reader :hgnc_id, :entrezgene_id, :ensembl_id, :approved_symbol
   attr_accessor :transcripts, :peaks
 
-  def initialize(hgnc_id, approved_symbol, approved_name, chromosome_map, entrezgene_id)
-    @hgnc_id, @approved_symbol, @approved_name, @chromosome_map, @entrezgene_id = hgnc_id, approved_symbol, approved_name, chromosome_map, entrezgene_id
+  def initialize(hgnc_id, approved_symbol, entrezgene_id, ensembl_id)
+    @hgnc_id, @approved_symbol, @entrezgene_id, @ensembl_id = hgnc_id, approved_symbol, entrezgene_id, ensembl_id
     @transcripts = []
     @peaks = []
   end
 
-  # Gene.new_by_infos('HGNC:10000 RGS4  regulator of G-protein signaling 4  1q23.3  5999')
-  def self.new_by_infos(infos)
-    hgnc_id, approved_symbol, approved_name, chromosome_map, entrezgene_id = infos.strip.split("\t")
-    hgnc_id = hgnc_id.split(':',2).last.to_i
-    if entrezgene_id && entrezgene_id.empty?
-      entrezgene_id = nil
-    else
-      entrezgene_id = entrezgene_id.to_i
-    end
-    self.new(hgnc_id, approved_symbol, approved_name, chromosome_map, entrezgene_id)
+  # Gene.new_by_infos('HGNC:10000 RGS4  regulator of G-protein signaling 4  1q23.3  5999', {hgnc: 0, approved_symbol: 1, approved_name: nil, entrez: 4})
+  def self.new_by_infos(info_line, column_indices)
+    infos = info_line.strip.split("\t")
+    hgnc_id, approved_symbol, entrezgene_id, ensembl_id = [:hgnc, :approved_symbol, :entrezgene, :ensembl].map{|column_name|
+      idx = column_indices[column_name]
+      idx ? infos[idx] : nil
+    }
+    hgnc_id = (hgnc_id && !hgnc_id.empty?)  ?  hgnc_id.split(':', 2).last.to_i  :  nil
+    entrezgene_id = (entrezgene_id && !entrezgene_id.empty?)  ?  entrezgene_id.to_i  :  nil
+    ensembl_id = nil  if ensembl_id.empty?
+    self.new(hgnc_id, approved_symbol, entrezgene_id, ensembl_id)
   end
 
   def to_s
-    "Gene<HGNC:#{hgnc_id}; #{approved_symbol}; entrezgene:#{entrezgene_id}; #{transcripts.map(&:to_s).join(', ')}; have #{peaks.size} peaks>"
+    "Gene<HGNC:#{hgnc_id}; #{approved_symbol}; entrezgene:#{entrezgene_id}; ensembl:#{ensembl_id}; #{transcripts.map(&:to_s).join(', ')}; have #{peaks.size} peaks>"
   end
 
   # returns loaded transripts or false if due to some reasons transcripts can't be collected
@@ -110,13 +109,22 @@ class Gene
   end
 
   # hgnc_id => gene
-  def self.genes_from_file(input_file)
+  # columns is {column_name => column_header} i.e. {hgnc: 'HGNC ID', approved_symbol: 'Approved Symbol', entrezgene: 'Entrez Gene ID', ensembl: 'Ensembl Gene ID'}
+  def self.genes_from_file(input_file, columns)
+    column_indices = {}
     genes = {}
     File.open(input_file) do |fp|
       fp.each_line do |line|
-        next if fp.lineno == 1
-        gene = Gene.new_by_infos(line)
-        genes[gene.hgnc_id] = gene
+        if fp.lineno == 1
+          column_names = line.strip.split("\t")
+          column_indices = columns.inject(Hash.new) do |hsh, (column_name, column_header)|
+            idx = column_names.index(column_header)
+            hsh.merge(column_name => idx)
+          end
+        else
+          gene = Gene.new_by_infos(line, column_indices)
+          genes[gene.hgnc_id] = gene
+        end
       end
     end
     genes

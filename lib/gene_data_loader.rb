@@ -21,7 +21,7 @@ class GeneDataLoader
     # Очень стремный момент! Мы делаем много клонов одного пика
     @all_peaks = Peak.peaks_from_file(peaks_for_tissue_file, hgnc_entrezgene_mapping)
 
-    @genes = Gene.genes_from_file(gene_by_hgnc_file)
+    @genes = Gene.genes_from_file(gene_by_hgnc_file, {hgnc: 'HGNC ID', approved_symbol: 'Approved Symbol', entrezgene: 'Entrez Gene ID', ensembl: 'Ensembl Gene ID'})
     @all_transcripts = Transcript.transcripts_from_file(transcript_infos_file)
 
     # length of region upstream to txStart which is considered to have peaks corresponding to transcript
