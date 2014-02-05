@@ -20,7 +20,8 @@ File.open(input_file) do |f|
         end
       end
       # started reading new transcript infos
-      hgnc_id = line[1..-1].strip.split("\t").first.split(':').last.to_i
+      hgnc_id = line[1..-1].strip.split("\t").first
+      hgnc_id = hgnc_from_string(hgnc_id)
       gene_infos = [hgnc_id]
     end
     gene_infos << line

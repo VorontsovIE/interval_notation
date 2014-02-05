@@ -3,6 +3,7 @@ require_relative 'transcript'
 require_relative 'peak'
 require_relative 'transcript_group'
 require_relative 'logger_stub'
+require_relative 'identificator_mapping'
 
 class Gene
   attr_reader :hgnc_id, :entrezgene_id, :ensembl_id, :approved_symbol
@@ -30,9 +31,9 @@ class Gene
       idx = column_indices[column_name]
       idx ? infos[idx] : nil
     }
-    hgnc_id = (hgnc_id && !hgnc_id.empty?)  ?  hgnc_id.split(':', 2).last.to_i  :  nil
-    entrezgene_id = (entrezgene_id && !entrezgene_id.empty?)  ?  entrezgene_id.to_i  :  nil
-    ensembl_id = nil  if ensembl_id.empty?
+    hgnc_id = hgnc_from_string(hgnc_id)
+    entrezgene_id = entrezgene_from_string(entrezgene_id, with_prefix: false)
+    ensembl_id = ensembl_from_string(ensembl_id)
     self.new(hgnc_id, approved_symbol, entrezgene_id, ensembl_id)
   end
 

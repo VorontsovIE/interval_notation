@@ -1,5 +1,6 @@
 require_relative 'intervals/genome_region'
 require_relative 'transcript'
+require_relative 'identificator_mapping'
 
 class Peak
   attr_reader :annotation, :short_description, :description, :association_with_transcript,
@@ -19,8 +20,8 @@ class Peak
   def self.new_peaks_by_infos(infos, hgnc_entrezgene_mapping)
     annotation, short_description, description, association_with_transcript, entrezgene, hgnc, uniprot_id, tpm = infos.strip.split("\t")
     tpm = tpm.to_f
-    hgnc_ids = hgnc.split(',').map{|hgnc_id| hgnc_id.split(':').last.to_i}
-    entrezgene_ids = entrezgene.split(',').map{|entrezgene_id| entrezgene_id.split(':').last.to_i}
+    hgnc_ids = hgnc.split(',').map{|hgnc_id| hgnc_from_string(hgnc_id)}
+    entrezgene_ids = entrezgene.split(',').map{|entrezgene_id| entrezgene_from_string(entrezgene_id)}
     hgnc_entrezgene_mapping.combine(hgnc_ids, entrezgene_ids).map{|hgnc_id, entrezgene_id|
       self.new(annotation, short_description, description, association_with_transcript, entrezgene_id, hgnc_id, uniprot_id, tpm)
     }

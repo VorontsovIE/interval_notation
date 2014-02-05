@@ -77,7 +77,9 @@ class GeneDataLoader
     peaks_expression.inject(&:+)
   end
 
-  # collect peaks and transcripts for each gene and return hash {hgnc_id => gene} containing only those genes whose data can be collected
+  # collect peaks and transcripts for each gene gets {hgnc_id => gene} hash and return analogous hash {hgnc_id => gene}
+  # containing only those genes whose transcripts can be collected
+  # each gene became associated to transcripts and peaks
   def collect_peaks_and_transcripts_for_genes(group_of_genes)
     genes_to_process = {}
     group_of_genes.each do |hgnc_id, gene|
