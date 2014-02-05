@@ -1,7 +1,6 @@
 # We don't collect peaks that have zero expression
 
 require 'logger'
-$logger = Logger.new($stderr)
 
 require_relative 'lib/gene_data_loader'
 
@@ -27,6 +26,12 @@ framework = GeneDataLoader.new(cages_file,
                               transcript_infos_file,
                               region_length,
                               genome_folder)
+logger = Logger.new($stderr)
+framework.logger = logger
+Gene.logger = logger
+
+framework.setup!
+
 
 File.open(output_file, 'w') do |fw|
   framework.output_all_5utr(framework.genes_to_process, fw)

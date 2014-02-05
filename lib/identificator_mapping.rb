@@ -11,8 +11,6 @@ def read_entrezgene_transcript_mapping(input_file)
   Mapping.new(:entrezgene, :ucsc, entrez_ucsc_pairs)
 end
 
-
-# Don't allow dublicates of either hgnc or entrezgene
 def read_hgnc_entrezgene_mapping(input_file)
   hgnc_entrez_lines = File.readlines(input_file).map{|l| l.strip.split("\t")}
   column_names = hgnc_entrez_lines.shift
@@ -25,14 +23,7 @@ def read_hgnc_entrezgene_mapping(input_file)
     entrez = entrez_string.empty? ? nil : entrez_string.to_i
     [hgnc, entrez]
   end
-  mapping = Mapping.from_pairs(:hgnc, :entrezgene, hgnc_entrez_pairs)
-  raise "HGNC <--> Entrezgene mapping is ambigous"  if mapping.ambigous?
-  if $logger
-    mapping.empty_links.each do |hgnc_id, entrezgene_id|
-      $logger.info "Incomplete pair: (HGNC:#{hgnc_id}; entrezgene #{entrezgene_id})"
-    end
-  end
-  mapping
+  Mapping.from_pairs(:hgnc, :entrezgene, hgnc_entrez_pairs)
 end
 
 def read_mtor_mapping(input_file)

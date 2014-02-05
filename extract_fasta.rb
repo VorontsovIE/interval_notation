@@ -1,9 +1,4 @@
 require 'logger'
-$logger = Logger.new($stderr)
-$logger.formatter = proc do |severity, datetime, progname, msg|
-  "#{severity}: #{msg}\n"
-end
-
 require_relative 'lib/gene_data_loader'
 require_relative 'lib/splicing'
 
@@ -26,6 +21,12 @@ framework = GeneDataLoader.new(cages_file,
                               transcript_infos_file,
                               region_length,
                               genome_folder)
+logger = Logger.new($stderr)
+logger.formatter = ->(severity, datetime, progname, msg) { "#{severity}: #{msg}\n" }
+framework.logger = logger
+Gene.logger = logger
+
+framework.setup!
 
 
 

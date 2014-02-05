@@ -2,10 +2,21 @@ require_relative 'intervals/genome_region'
 require_relative 'transcript'
 require_relative 'peak'
 require_relative 'transcript_group'
+require_relative 'logger_stub'
 
 class Gene
   attr_reader :hgnc_id, :entrezgene_id, :ensembl_id, :approved_symbol
   attr_accessor :transcripts, :peaks
+
+  def self.logger=(value)
+    @logger = value
+  end
+  def self.logger
+    @logger ||= LoggerStub.new
+  end
+  def logger
+    self.class.logger
+  end
 
   def initialize(hgnc_id, approved_symbol, entrezgene_id, ensembl_id)
     @hgnc_id, @approved_symbol, @entrezgene_id, @ensembl_id = hgnc_id, approved_symbol, entrezgene_id, ensembl_id
@@ -33,7 +44,7 @@ class Gene
   # returns loaded transripts or false if due to some reasons transcripts can't be collected
   def collect_transcripts(entrezgene_transcripts, all_transcripts)
     unless entrezgene_id
-      $logger.warn "#{self} has no entrezgene_id so we cannot find transcripts"
+      logger.warn "#{self} has no entrezgene_id so we cannot find transcripts"
       return false
     end
 
@@ -42,16 +53,16 @@ class Gene
     transcript_ucsc_ids.each do |ucsc_id|
       transcript = all_transcripts[ucsc_id]
       if !transcript
-        $logger.error "#{self}'s transcript with #{ucsc_id} wasn't found. Skip transcript"
+        logger.error "#{self}'s transcript with #{ucsc_id} wasn't found. Skip transcript"
       elsif ! transcript.coding?
-        $logger.warn "#{self}'s #{transcript} has no coding region. Skip transcript"
+        logger.warn "#{self}'s #{transcript} has no coding region. Skip transcript"
       else
         transcripts << transcript
       end
     end
 
     if transcripts.empty?
-      $logger.error "No one transcript of #{self} was found"
+      logger.error "No one transcript of #{self} was found"
       return false
     end
     self.transcripts = transcripts
@@ -62,7 +73,7 @@ class Gene
     if all_peaks.has_key?(hgnc_id)
       self.peaks = all_peaks[hgnc_id]
     else
-      $logger.warn "#{self} has no peaks in this cell line"
+      logger.warn "#{self} has no peaks in this cell line"
       false
     end
   end
@@ -76,7 +87,7 @@ class Gene
       exons_on_utr = transcript.exons_on_utr
 
       if utr.empty? || exons_on_utr.empty?
-        $logger.info "#{transcript} with utr #{utr} has no exons on utr #{exons_on_utr}"
+        logger.info "#{transcript} with utr #{utr} has no exons on utr #{exons_on_utr}"
         next
       end
 
@@ -84,7 +95,7 @@ class Gene
         peaks_on_exons = peak.intersection(exons_on_utr)
         sum_cages_on_exons = peaks_on_exons.each_region.map{|region| region.load_cages(all_cages).inject(0,:+) }.inject(0, :+)
         if sum_cages_on_exons == 0
-          $logger.info "#{transcript}\tpeaks_on_exons: #{peaks_on_exons}\t has zero sum of cages on exons"
+          logger.info "#{transcript}\tpeaks_on_exons: #{peaks_on_exons}\t has zero sum of cages on exons"
           false
         else
           true
@@ -92,7 +103,7 @@ class Gene
       end
 
       if associated_peaks.empty?
-        $logger.info "#{transcript} has no associated peaks on utr"
+        logger.info "#{transcript} has no associated peaks on utr"
         next
       end
 

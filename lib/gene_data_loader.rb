@@ -6,16 +6,38 @@ require_relative 'splicing'
 require_relative 'cage'
 require_relative 'identificator_mapping'
 require_relative 'transcript_group'
+require_relative 'logger_stub'
 
 class GeneDataLoader
-  attr_reader :all_cages, :entrezgene_transcript_mapping, :all_peaks, :all_transcripts, :genes, :region_length
+  attr_reader :all_cages, :entrezgene_transcript_mapping, :all_peaks, :all_transcripts, :genes
   attr_reader :genes_to_process, :transcript_groups, :number_of_genes_for_a_peak
-  attr_accessor :genome_folder
+
+  attr_writer :logger
+  def logger; @logger ||= LoggerStub.new;  end
+
+  attr_reader :cages_file, :gene_by_hgnc_file, :hgnc_entrezgene_mapping_file, :transcript_by_entrezgene_file, :peaks_for_tissue_file, :transcript_infos_file, :region_length, :genome_folder
   def initialize(cages_file, gene_by_hgnc_file, hgnc_entrezgene_mapping_file, transcript_by_entrezgene_file, peaks_for_tissue_file, transcript_infos_file, region_length, genome_folder)
+    @cages_file = cages_file
+    @gene_by_hgnc_file = gene_by_hgnc_file
+    @hgnc_entrezgene_mapping_file = hgnc_entrezgene_mapping_file
+    @transcript_by_entrezgene_file = transcript_by_entrezgene_file
+    @peaks_for_tissue_file = peaks_for_tissue_file
+    @transcript_infos_file = transcript_infos_file
+    # length of region upstream to txStart which is considered to have peaks corresponding to transcript
+    @region_length = region_length
     @genome_folder = genome_folder
+  end
+
+  def setup!
     @all_cages = read_cages(cages_file)
 
     hgnc_entrezgene_mapping = read_hgnc_entrezgene_mapping(hgnc_entrezgene_mapping_file)
+    # Don't allow dublicates of either hgnc or entrezgene
+    raise "HGNC <--> Entrezgene mapping is ambigous"  if hgnc_entrezgene_mapping.ambigous?
+    hgnc_entrezgene_mapping.empty_links.each do |hgnc_id, entrezgene_id|
+      logger.info "Incomplete pair: (HGNC:#{hgnc_id}; entrezgene #{entrezgene_id})"
+    end
+
     @entrezgene_transcript_mapping = read_entrezgene_transcript_mapping(transcript_by_entrezgene_file)
 
     # Очень стремный момент! Мы делаем много клонов одного пика
@@ -23,9 +45,6 @@ class GeneDataLoader
 
     @genes = Gene.genes_from_file(gene_by_hgnc_file, {hgnc: 'HGNC ID', approved_symbol: 'Approved Symbol', entrezgene: 'Entrez Gene ID', ensembl: 'Ensembl Gene ID'})
     @all_transcripts = Transcript.transcripts_from_file(transcript_infos_file)
-
-    # length of region upstream to txStart which is considered to have peaks corresponding to transcript
-    @region_length = region_length
 
     @genes_to_process = collect_peaks_and_transcripts_for_genes(@genes)
     @transcript_groups = collect_transcript_groups(@genes_to_process)
@@ -62,8 +81,8 @@ class GeneDataLoader
   def collect_peaks_and_transcripts_for_genes(group_of_genes)
     genes_to_process = {}
     group_of_genes.each do |hgnc_id, gene|
-      $logger.warn "Skip #{gene}" and next  unless gene.collect_peaks(all_peaks)
-      $logger.warn "Skip #{gene}" and next  unless gene.collect_transcripts(entrezgene_transcript_mapping, all_transcripts)
+      logger.warn "Skip #{gene}" and next  unless gene.collect_peaks(all_peaks)
+      logger.warn "Skip #{gene}" and next  unless gene.collect_transcripts(entrezgene_transcript_mapping, all_transcripts)
       gene.transcripts.each do |transcript|
         transcript.associate_peaks(gene.peaks, region_length)
       end
