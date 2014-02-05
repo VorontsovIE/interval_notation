@@ -45,7 +45,7 @@ def read_hgnc_entrezgene_mappings(input_file)
 
       entrezgene_id = entrezgene_id.to_i
       hgnc_to_entrezgene[hgnc_id] = entrezgene_id
-      
+
       raise "entrezgene:#{entrezgene_id} occurs more than once"  if entrezgene_to_hgnc.has_key?(entrezgene_id) 
       entrezgene_to_hgnc[entrezgene_id] = hgnc_id
     end
