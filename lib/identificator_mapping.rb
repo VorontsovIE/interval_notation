@@ -1,20 +1,16 @@
 require_relative 'mapping'
 
 # input file of lines in format: uc021vde.1 10772
-# returns entrezgene_id => [transcript_ids]
-def read_entrezgene_transcript_ids(input_file)
-  transcripts = {}
-  File.open(input_file) do |f|
-    f.each_line do |line|
-      # we don't remove version (part of name after dot)
-      transcript_id, entrezgene_id = line.strip.split("\t")
-      entrezgene_id = entrezgene_id.to_i
-      transcripts[entrezgene_id] ||= []
-      transcripts[entrezgene_id] << transcript_id
-    end
+# returns entrezgene_id => [transcript_ids] mapping
+def read_entrezgene_transcript_mapping(input_file)
+  entrez_ucsc_pairs = File.readlines(input_file).map do |line|
+    # we don't remove version (part of name after dot)
+    transcript_id, entrezgene_id = line.strip.split("\t")
+    [transcript_id, entrezgene_id.to_i]
   end
-  transcripts
+  Mapping.new(:entrezgene, :ucsc, entrez_ucsc_pairs)
 end
+
 
 # Don't allow dublicates of either hgnc or entrezgene
 def read_hgnc_entrezgene_mapping(input_file)

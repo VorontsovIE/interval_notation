@@ -39,7 +39,7 @@ class Gene
     end
 
     transcripts = []
-    transcript_ucsc_ids = entrezgene_transcripts[entrezgene_id] || []
+    transcript_ucsc_ids = entrezgene_transcript_mapping.get_second_by_first_id(entrezgene_id)
     transcript_ucsc_ids.each do |ucsc_id|
       transcript = all_transcripts[ucsc_id]
       if !transcript

@@ -8,7 +8,7 @@ require_relative 'identificator_mapping'
 require_relative 'transcript_group'
 
 class GeneDataLoader
-  attr_reader :all_cages, :entrezgene_transcripts, :all_peaks, :all_transcripts, :genes, :region_length
+  attr_reader :all_cages, :entrezgene_transcript_mapping, :all_peaks, :all_transcripts, :genes, :region_length
   attr_reader :genes_to_process, :transcript_groups, :number_of_genes_for_a_peak
   attr_accessor :genome_folder
   def initialize(cages_file, hgnc_entrezgene_mapping_file, transcript_by_entrezgene_file, peaks_for_tissue_file, transcript_infos_file, region_length, genome_folder)
@@ -16,7 +16,7 @@ class GeneDataLoader
     @all_cages = read_cages(cages_file)
 
     hgnc_entrezgene_mapping = read_hgnc_entrezgene_mapping(hgnc_entrezgene_mapping_file)
-    @entrezgene_transcripts = read_entrezgene_transcript_ids(transcript_by_entrezgene_file)
+    @entrezgene_transcript_mapping = read_entrezgene_transcript_mapping(transcript_by_entrezgene_file)
     @all_peaks = Peak.peaks_from_file(peaks_for_tissue_file, hgnc_entrezgene_mapping)
     @genes = Gene.genes_from_file(hgnc_entrezgene_mapping_file)
     @all_transcripts = Transcript.transcripts_from_file(transcript_infos_file)
@@ -60,7 +60,7 @@ class GeneDataLoader
     genes_to_process = {}
     group_of_genes.each do |hgnc_id, gene|
       $logger.warn "Skip #{gene}" and next  unless gene.collect_peaks(all_peaks)
-      $logger.warn "Skip #{gene}" and next  unless gene.collect_transcripts(entrezgene_transcripts, all_transcripts)
+      $logger.warn "Skip #{gene}" and next  unless gene.collect_transcripts(entrezgene_transcript_mapping, all_transcripts)
       gene.transcripts.each do |transcript|
         transcript.associate_peaks(gene.peaks, region_length)
       end
