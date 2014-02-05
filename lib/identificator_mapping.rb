@@ -30,24 +30,31 @@ end
 def read_hgnc_entrezgene_mappings(input_file)
   hgnc_to_entrezgene = {}
   entrezgene_to_hgnc = {}
+  hgnc_column_number = nil
+  entrezgene_column_number = nil
   File.open(input_file) do |f|
     f.each_line do |line|
-      next  if f.lineno == 1
-      line_of_data = line.strip.split("\t")
-      hgnc_id, entrezgene_id = line_of_data[0], line_of_data[4]
-      hgnc_id = hgnc_id.split(':').last.to_i
-
-      if !entrezgene_id || entrezgene_id.empty?
-        $logger.info "HGNC:#{hgnc_id} has no entrezgene_id"
+      if f.lineno == 1
+        hgnc_column_number = line.strip.split("\t").index('HGNC ID')
+        entrezgene_column_number = line.strip.split("\t").index('Entrez Gene ID')
         next
+      else
+        line_of_data = line.strip.split("\t")
+        hgnc_id, entrezgene_id = line_of_data[hgnc_column_number], line_of_data[entrezgene_column_number]
+        hgnc_id = hgnc_id.split(':').last.to_i
+
+        if !entrezgene_id || entrezgene_id.empty?
+          $logger.info "HGNC:#{hgnc_id} has no entrezgene_id"
+          next
+        end
+        raise "HGNC:#{hgnc_id} occurs more than once"  if hgnc_to_entrezgene.has_key?(hgnc_id)
+
+        entrezgene_id = entrezgene_id.to_i
+        hgnc_to_entrezgene[hgnc_id] = entrezgene_id
+
+        raise "entrezgene:#{entrezgene_id} occurs more than once"  if entrezgene_to_hgnc.has_key?(entrezgene_id)
+        entrezgene_to_hgnc[entrezgene_id] = hgnc_id
       end
-      raise "HGNC:#{hgnc_id} occurs more than once"  if hgnc_to_entrezgene.has_key?(hgnc_id)
-
-      entrezgene_id = entrezgene_id.to_i
-      hgnc_to_entrezgene[hgnc_id] = entrezgene_id
-
-      raise "entrezgene:#{entrezgene_id} occurs more than once"  if entrezgene_to_hgnc.has_key?(entrezgene_id) 
-      entrezgene_to_hgnc[entrezgene_id] = hgnc_id
     end
   end
   [hgnc_to_entrezgene, entrezgene_to_hgnc]
