@@ -8,15 +8,16 @@ require_relative 'identificator_mapping'
 require_relative 'transcript_group'
 
 class GeneDataLoader
-  attr_reader :all_cages, :hgnc_to_entrezgene, :entrezgene_to_hgnc, :entrezgene_transcripts, :all_peaks, :all_transcripts, :genes, :region_length
+  attr_reader :all_cages, :entrezgene_transcripts, :all_peaks, :all_transcripts, :genes, :region_length
   attr_reader :genes_to_process, :transcript_groups, :number_of_genes_for_a_peak
   attr_accessor :genome_folder
   def initialize(cages_file, hgnc_entrezgene_mapping_file, transcript_by_entrezgene_file, peaks_for_tissue_file, transcript_infos_file, region_length, genome_folder)
     @genome_folder = genome_folder
     @all_cages = read_cages(cages_file)
-    @hgnc_to_entrezgene, @entrezgene_to_hgnc = read_hgnc_entrezgene_mappings(hgnc_entrezgene_mapping_file)
+
+    hgnc_entrezgene_mapping = read_hgnc_entrezgene_mapping(hgnc_entrezgene_mapping_file)
     @entrezgene_transcripts = read_entrezgene_transcript_ids(transcript_by_entrezgene_file)
-    @all_peaks = Peak.peaks_from_file(peaks_for_tissue_file, hgnc_to_entrezgene, entrezgene_to_hgnc)
+    @all_peaks = Peak.peaks_from_file(peaks_for_tissue_file, hgnc_entrezgene_mapping)
     @genes = Gene.genes_from_file(hgnc_entrezgene_mapping_file)
     @all_transcripts = Transcript.transcripts_from_file(transcript_infos_file)
 
