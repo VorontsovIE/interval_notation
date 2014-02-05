@@ -1,3 +1,5 @@
+require_relative 'mapping'
+
 # {'hgnc_2' => 'entrezgene_2'}, {'entrezgene_2' => 'hgnc_2'}, ['hgnc_1', 'hgnc_2'], ['entrezgene_2', 'entrezgene_3']
 # --> [['hgnc_1', nil], ['hgnc_2', 'entrezgene_2'], [nil, 'entrezgene_3']]
 def hgnc_entrezgene_combine(hgnc_to_entrezgene, entrezgene_to_hgnc, hgnc_ids, entrezgene_ids)
@@ -58,6 +60,21 @@ def read_hgnc_entrezgene_mappings(input_file)
     end
   end
   [hgnc_to_entrezgene, entrezgene_to_hgnc]
+end
+
+def read_hgnc_entrezgene_mapping(input_file)
+  hgnc_entrez_lines = File.readlines(input_file).map{|l| l.strip.split("\t")}
+  column_names = hgnc_entrez_lines.shift
+  hgnc_column_index = column_names.index('HGNC ID')
+  entrez_column_index = column_names.index('Entrez Gene ID')
+  hgnc_entrez_pairs = hgnc_entrez_lines.map do |line|
+    hgnc_string = line[hgnc_column_index].sub(/^HGNC:/,'')
+    hgnc = hgnc_string.empty? ? nil : hgnc_string.to_i
+    entrez_string = line[entrez_column_index]
+    entrez = entrez_string.empty? ? nil : entrez_string.to_i
+    [hgnc, entrez]
+  end
+  Mapping.from_pairs(:hgnc, :entrezgene, hgnc_entrez_pairs)
 end
 
 def read_mtor_mapping(input_file)
