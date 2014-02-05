@@ -84,12 +84,10 @@ class Mapping
     (pairs_of_hash(first_to_second) + reverse_pairs_of_hash(second_to_first)).to_a
   end
 
-  def unambiguous?
-    ! ambiguous?
-  end
   def ambiguous?
     first_to_second.any?{|k,v| v.size > 1} || second_to_first.any?{|k,v| v.size > 1 }
   end
+
   def ambiguities
     first_to_second_duplicates = first_to_second.select{|k,v| v.size > 1}
     second_to_first_duplicates = second_to_first.select{|k,v| v.size > 1 }

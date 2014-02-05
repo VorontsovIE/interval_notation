@@ -74,7 +74,9 @@ def read_hgnc_entrezgene_mapping(input_file)
     entrez = entrez_string.empty? ? nil : entrez_string.to_i
     [hgnc, entrez]
   end
-  Mapping.from_pairs(:hgnc, :entrezgene, hgnc_entrez_pairs)
+  mapping = Mapping.from_pairs(:hgnc, :entrezgene, hgnc_entrez_pairs)
+  raise "HGNC <--> Entrezgene mapping is ambigous"  if mapping.ambigous?
+  mapping
 end
 
 def read_mtor_mapping(input_file)
