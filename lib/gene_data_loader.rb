@@ -95,7 +95,7 @@ class GeneDataLoader
         next
       end
 
-      gene.transcripts = collect_transcripts(gene.entrezgene_id)
+      gene.transcripts = transcripts_by_entrezgene(gene.entrezgene_id)
 
       if gene.transcripts.empty?
         logger.error "No one transcript of #{gene} was found"
@@ -112,7 +112,7 @@ class GeneDataLoader
   end
 
   # returns transcripts by gene's entrezgene_id
-  def collect_transcripts(entrezgene_id)
+  def transcripts_by_entrezgene(entrezgene_id)
     transcripts = []
     transcript_ucsc_ids = entrezgene_transcript_mapping.get_second_by_first_id(entrezgene_id)
     transcript_ucsc_ids.each do |ucsc_id|

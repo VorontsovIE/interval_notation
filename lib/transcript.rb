@@ -20,25 +20,29 @@ class Transcript
     coding_region = GenomeRegion.new(chromosome, strand, cds_start.to_i, cds_end.to_i)  ### rescue nil
     exon_regions = exon_count.to_i.times.map{|index| SemiInterval.new(exon_starts[index], exon_ends[index])} ##############
     exons = GenomeRegion.new(chromosome, strand, SemiIntervalSet.new(exon_regions))
-    self.new(name, chromosome, strand, coding_region, exons, protein_id)
+    Transcript.new(name, chromosome, strand, coding_region, exons, protein_id)
   end
 
   def coding?
     ! coding_region.empty?
   end
+
   def to_s
     protein_infos = protein_id ? "(#{protein_id})" : ""
-    "Transcript<#{name}#{protein_infos}; #{full_gene_region}; coding_region #{coding_region}; exons #{exons}>"
+    "Transcript<#{name}#{protein_infos}; #{transcript_region}; coding_region #{coding_region}; exons #{exons}>"
   end
   alias_method :inspect, :to_s
-  def full_gene_region
+
+  # contigious region covering whole transcript
+  def transcript_region
     exons.covering_region
   end
+  private :transcript_region
 
   # return contigious untranslated 5'-region, including introns
   def utr_5
     raise "5'-UTR of non-coding gene is undefined"  unless coding?
-    full_gene_region - coding_region.with_downstream(Float::INFINITY)
+    transcript_region - coding_region.with_downstream(Float::INFINITY)
   end
 
   def expanded_upstream(region_length)
@@ -104,7 +108,7 @@ class Transcript
   # exons_expanded (result)                (_________)^^^^(___)^(_______)
   #
   def expand_and_trim_with_peaks(peaks)
-    transcript_region = full_gene_region
+    transcript_region = transcript_region
     peaks_intersecting_region = peaks.select{|peak| peak.intersect?(transcript_region) }
     if peaks_intersecting_region.empty?
       self
