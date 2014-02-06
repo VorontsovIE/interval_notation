@@ -54,6 +54,12 @@ module UpDownStream
   def most_downstream_region
     plus_strand? ? GenomeRegion.new(chromosome, strand, list_of_regions.last) : GenomeRegion.new(chromosome, strand, list_of_regions.first)
   end
+  def most_upstream_pos
+    most_upstream_region.pos_upstream
+  end
+  def most_downstream_pos
+    most_downstream_region.pos_downstream
+  end
 
   def upstream(len)
     if plus_strand?
@@ -130,6 +136,12 @@ class GenomeRegion
   end
   def pos_end
     region.pos_end
+  end
+  def pos_upstream
+    plus_strand? ? pos_start : pos_end
+  end
+  def pos_downstream
+    plus_strand? ? pos_end : pos_start
   end
   def self.new(chromosome, strand, *region_data)
     case region_data.size
