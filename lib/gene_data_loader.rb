@@ -95,17 +95,19 @@ class GeneDataLoader
         next
       end
 
-      gene.transcripts = transcripts_by_entrezgene(gene.entrezgene_id)
-
-      if gene.transcripts.empty?
+      transcripts = transcripts_by_entrezgene(gene.entrezgene_id).map do |transcript|
+        transcript.expanded_upstream(region_length).expand_and_trim_with_peaks( all_peaks[hgnc_id] )
+      end
+      transcripts.each do |transcript|
+        transcript.associate_peaks(all_peaks[hgnc_id])
+      end
+      if transcripts.empty?
         logger.error "No one transcript of #{gene} was found"
         logger.warn "Skip #{gene}"
         next
       end
+      gene.transcripts = transcripts
 
-      gene.transcripts.each do |transcript|
-        transcript.associate_peaks(all_peaks[hgnc_id], region_length)
-      end
       genes_to_process[hgnc_id] = gene
     end
     genes_to_process

@@ -46,7 +46,7 @@ class Gene
     groups_of_transcripts = {}
     group_associated_peaks = {}
     transcripts.each do |transcript|
-      utr = transcript.utr_region
+      utr = transcript.utr_5
       exons_on_utr = transcript.exons_on_utr
 
       if utr.empty? || exons_on_utr.empty?

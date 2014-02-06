@@ -3,8 +3,7 @@ require_relative 'peak'
 
 class Transcript
   attr_reader :name, :chromosome, :strand, :coding_region, :exons, :protein_id
-  attr_accessor :peaks_associated, :region_length
-  attr_accessor :exons_on_utr
+  attr_accessor :peaks_associated
 
   def initialize(name, chromosome, strand, coding_region, exons, protein_id)
     @name, @chromosome, @strand, @coding_region, @exons, @protein_id  = name, chromosome, strand, coding_region, exons, protein_id
@@ -50,20 +49,16 @@ class Transcript
   end
   private :expanded_upstream
 
-  # region_length is length of region before txStart(start of transcript) where we are looking for peaks
-  def associate_peaks(peaks, region_length)
-    @region_length = region_length
-    @peaks_associated ||= begin
-      expanded_transcript = expanded_upstream(region_length).expand_and_trim_with_peaks(peaks)
-      @exons_on_utr = expanded_transcript.exons & expanded_transcript.utr_5
-      peaks.select{|peak| @exons_on_utr.intersect?(peak) }
-    end
+  def peaks_intersecting_transcript(peaks)
+    peaks.select{|peak| transcript_region.intersect?(peak) }
   end
 
-  # utr_region is defined by leftmost peak intersecting region [txStart-region_length; coding_region_start) and by start of coding region
-  def utr_region
-    # we should first expand, then take utr because some transcripts in UCSC don't have utr, their start marked at the same place, their coding region starts
-    expanded_upstream(region_length).expand_and_trim_with_peaks(peaks_associated).utr_5
+  def associate_peaks(peaks)
+    @peaks_associated ||= peaks_intersecting_transcript(peaks)
+  end
+
+  def exons_on_utr
+    exons & utr_5
   end
 
   #
@@ -96,8 +91,7 @@ class Transcript
   # exons_expanded (result)                (_________)^^^^(___)^(_______)
   #
   def expand_and_trim_with_peaks(peaks)
-    transcript_region = transcript_region
-    peaks_intersecting_region = peaks.select{|peak| peak.intersect?(transcript_region) }
+    peaks_intersecting_region = peaks_intersecting_transcript(peaks)
     if peaks_intersecting_region.empty?
       self
     else
