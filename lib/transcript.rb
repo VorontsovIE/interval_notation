@@ -50,31 +50,19 @@ class Transcript
   end
   private :expanded_upstream
 
-  def utr_5_with_upstream(region_length)
-    # we should first expand, then take utr because some transcripts in UCSC don't have utr, their start marked at the same place, their coding region starts
-    expanded_upstream(region_length).utr_5
-  end
-  private :utr_5_with_upstream
-
   # region_length is length of region before txStart(start of transcript) where we are looking for peaks
   def associate_peaks(peaks, region_length)
     @region_length = region_length
     @peaks_associated ||= begin
-      region_of_interest = calculate_exons_on_utr(peaks)
-      peaks.select{|peak| region_of_interest.intersect?(peak) }
-    end
-  end
-
-  def calculate_exons_on_utr(peaks)
-    @exons_on_utr = begin
       expanded_transcript = expanded_upstream(region_length).expand_and_trim_with_peaks(peaks)
-      expanded_transcript.exons & expanded_transcript.utr_5
+      @exons_on_utr = expanded_transcript.exons & expanded_transcript.utr_5
+      peaks.select{|peak| @exons_on_utr.intersect?(peak) }
     end
   end
-  private :calculate_exons_on_utr
 
   # utr_region is defined by leftmost peak intersecting region [txStart-region_length; coding_region_start) and by start of coding region
   def utr_region
+    # we should first expand, then take utr because some transcripts in UCSC don't have utr, their start marked at the same place, their coding region starts
     expanded_upstream(region_length).expand_and_trim_with_peaks(peaks_associated).utr_5
   end
 
