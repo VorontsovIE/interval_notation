@@ -45,6 +45,7 @@ module GenomeRegionOperations
   def &(other); intersection(other); end
   def -(other); subtract(other); end
   def ~; complement; end
+  def covering_region; GenomeRegion.new(chromosome, strand, region.covering_interval); end
 end
 
 module UpDownStream
@@ -60,19 +61,25 @@ module UpDownStream
   def most_downstream_pos
     most_downstream_region.pos_downstream
   end
+  def leftmost_position
+    region.leftmost_position
+  end
+  def rightmost_position
+    region.rightmost_position
+  end
 
   def upstream(len)
     if plus_strand?
-      GenomeRegion.new(chromosome, strand, SemiInterval.new(region.leftmost_position - len, region.leftmost_position))
+      GenomeRegion.new(chromosome, strand, SemiInterval.new(leftmost_position - len, leftmost_position))
     else
-      GenomeRegion.new(chromosome, strand, SemiInterval.new(region.rightmost_position, region.rightmost_position + len))
+      GenomeRegion.new(chromosome, strand, SemiInterval.new(rightmost_position, rightmost_position + len))
     end
   end
   def downstream(len)
     if plus_strand?
-      GenomeRegion.new(chromosome, strand, SemiInterval.new(region.rightmost_position, region.rightmost_position + len))
+      GenomeRegion.new(chromosome, strand, SemiInterval.new(rightmost_position, rightmost_position + len))
     else
-      GenomeRegion.new(chromosome, strand, SemiInterval.new(region.leftmost_position - len, region.leftmost_position))
+      GenomeRegion.new(chromosome, strand, SemiInterval.new(leftmost_position - len, leftmost_position))
     end
   end
 
