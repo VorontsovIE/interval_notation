@@ -35,10 +35,19 @@ class Transcript
     exons.covering_region
   end
 
-  def utr_5_with_upstream
-    full_gene_region.with_upstream(region_length) - coding_region.with_downstream(Float::INFINITY)
+  # return contigious untranslated 5'-region, including introns
+  def utr_5
+    raise "5'-UTR of non-coding gene is undefined"  unless coding?
+    full_gene_region - coding_region.with_downstream(Float::INFINITY)
   end
-  private :utr_5_with_upstream
+  def expanded_upstream(region_length)
+    Transcript.new(name, chromosome, strand, coding_region, exons.with_upstream(region_length), protein_id)
+  end
+  def utr_5_with_upstream(region_length)
+    # we should first expand, then take utr because some transcripts in UCSC don't have utr, their start marked at the same place, their coding region starts
+    expanded_upstream(region_length).utr_5
+  end
+  private :utr_5_with_upstream, :expanded_upstream
 
   # region_length is length of region before txStart(start of transcript) where we are looking for peaks
   def associate_peaks(peaks, region_length)
@@ -51,7 +60,7 @@ class Transcript
 
   def calculate_exons_on_utr(peaks)
     @exons_on_utr = begin
-      exons_on_utr_unexpanded = exons.with_upstream(region_length) & utr_5_with_upstream
+      exons_on_utr_unexpanded = exons.with_upstream(region_length) & utr_5_with_upstream(region_length)
       # expand ROI to include those peaks that intersect ROI
       region_expanded_upstream_with_peaks(exons_on_utr_unexpanded, peaks)
     end
@@ -60,7 +69,7 @@ class Transcript
 
   # utr_region is defined by leftmost peak intersecting region [txStart-region_length; coding_region_start) and by start of coding region
   def utr_region
-    region_expanded_upstream_with_peaks(utr_5_with_upstream, peaks_associated)
+    region_expanded_upstream_with_peaks(utr_5_with_upstream(region_length), peaks_associated)
   end
 
   # expand region to most upstream peaks and trim at that point (so result can be even shorter if peaks located downstream from start)
