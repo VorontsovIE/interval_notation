@@ -82,22 +82,27 @@ class Gene
     }
   end
 
-  # hgnc_id => gene
-  # columns is {column_name => column_header} i.e. {hgnc: 'HGNC ID', approved_symbol: 'Approved Symbol', entrezgene: 'Entrez Gene ID', ensembl: 'Ensembl Gene ID'}
+  # Given header of the table it returns indices of columns (0-based) titled as specified.
+  # Columns should be a hash from column names to according column titles
+  # e.g. {hgnc: 'HGNC ID', approved_symbol: 'Approved Symbol', entrezgene: 'Entrez Gene ID', ensembl: 'Ensembl Gene ID'}
+  def column_indices(line, columns)
+    column_names = line.strip.split("\t")
+    columns.inject(Hash.new) do |hsh, (column_name, column_header)|
+      idx = column_names.index(column_header)
+      hsh.merge(column_name => idx)
+    end
+  end
+
+  # returns a list of genes in file
   def self.genes_from_file(input_file, columns)
     column_indices = {}
-    genes = {}
+    genes = []
     File.open(input_file) do |fp|
       fp.each_line do |line|
         if fp.lineno == 1
-          column_names = line.strip.split("\t")
-          column_indices = columns.inject(Hash.new) do |hsh, (column_name, column_header)|
-            idx = column_names.index(column_header)
-            hsh.merge(column_name => idx)
-          end
+          column_indices = column_indices(line, columns)
         else
-          gene = Gene.new_by_infos(line, column_indices)
-          genes[gene.hgnc_id] = gene
+          genes << Gene.new_by_infos(line, column_indices)
         end
       end
     end
