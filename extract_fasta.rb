@@ -32,7 +32,7 @@ framework.setup!
 
 
 mtor_targets, translational_genes = read_mtor_mapping('mTOR_mapping.txt')
-genes_to_extract = framework.genes_to_process.select{|hgnc_id, gene| mtor_targets.has_key?(hgnc_id)}
+genes_to_extract = framework.genes_to_process.select{|gene| mtor_targets.has_key?(gene.hgnc_id)}
 
 File.open('weighted_5-utr.txt', 'w') do |fw|
   framework.output_all_5utr(genes_to_extract, fw) do |output_stream, gene_info, transcript_group, peaks_info, expression, spliced_sequence, spliced_cages|

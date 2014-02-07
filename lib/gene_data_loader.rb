@@ -9,7 +9,7 @@ require_relative 'transcript_group'
 require_relative 'logger_stub'
 
 class GeneDataLoader
-  attr_reader :all_cages, :entrezgene_transcript_mapping, :all_peaks, :all_transcripts, :genes
+  attr_reader :all_cages, :entrezgene_transcript_mapping, :all_peaks, :all_transcripts
   attr_reader :genes_to_process, :transcript_groups, :number_of_genes_for_a_peak
 
   attr_writer :logger
@@ -43,10 +43,15 @@ class GeneDataLoader
     # Очень стремный момент! Мы делаем много клонов одного пика
     @all_peaks = Peak.peaks_from_file(peaks_for_tissue_file, hgnc_entrezgene_mapping)
 
-    @genes = Gene.genes_from_file(gene_by_hgnc_file, {hgnc: 'HGNC ID', approved_symbol: 'Approved Symbol', entrezgene: 'Entrez Gene ID', ensembl: 'Ensembl Gene ID'})
     @all_transcripts = Transcript.transcripts_from_file(transcript_infos_file)
 
-    @genes_to_process = collect_peaks_and_transcripts_for_genes(@genes)
+    # bind peaks to transcripts and transcripts to genes; leave only genes having available coding transcripts and peaks
+    # TODO: remove genes having no associated peaks (i.e. all peaks are too far)
+    genes = Gene.genes_from_file(gene_by_hgnc_file, {hgnc: 'HGNC ID', approved_symbol: 'Approved Symbol', entrezgene: 'Entrez Gene ID', ensembl: 'Ensembl Gene ID'})
+    genes.reject!{|gene| peaks_by_hgnc(gene.hgnc_id).empty? }
+    genes.reject!{|gene| coding_transcripts_by_entrezgene(gene.entrezgene_id).empty? }
+    @genes_to_process = genes.map{|gene| augmented_gene(gene) }
+
     @transcript_groups = collect_transcript_groups(@genes_to_process)
     @number_of_genes_for_a_peak = calculate_number_of_genes_for_a_peak(@genes_to_process)
 
@@ -54,8 +59,8 @@ class GeneDataLoader
     # first equally between all genes whose expression can be affected by this peak
     # and then equally between all transcript groups of that gene
 
-    @genes_to_process.each do |hgnc_id, gene|
-      @transcript_groups[hgnc_id].each do |transcript_group|
+    @genes_to_process.each do |gene|
+      @transcript_groups[gene.hgnc_id].each do |transcript_group|
         transcript_group.summary_expression = calculate_summary_expressions_for_transcript_group(transcript_group)
       end
     end
@@ -77,81 +82,53 @@ class GeneDataLoader
     peaks_expression.inject(&:+)
   end
 
-  # collect peaks and transcripts for each gene gets {hgnc_id => gene} hash and return analogous hash {hgnc_id => gene}
-  # containing only those genes whose transcripts can be collected
-  # each gene became associated to transcripts and peaks
-  def collect_peaks_and_transcripts_for_genes(group_of_genes)
-    genes_to_process = {}
-    group_of_genes.each do |hgnc_id, gene|
-      if !all_peaks[hgnc_id] || all_peaks[hgnc_id].empty?
-        logger.warn "#{gene} has no peaks in this cell line"
-        logger.warn "Skip #{gene}"
-        next
-      end
-
-      unless gene.entrezgene_id
-        logger.warn "#{gene} has no entrezgene_id so we cannot find transcripts"
-        logger.warn "Skip #{gene}"
-        next
-      end
-
-      transcripts = transcripts_by_entrezgene(gene.entrezgene_id).map do |transcript|
-        transcript.expanded_upstream(region_length).expand_and_trim_with_peaks( all_peaks[hgnc_id] )
-      end
-      transcripts.each do |transcript|
-        transcript.associate_peaks(all_peaks[hgnc_id])
-      end
-      if transcripts.empty?
-        logger.error "No one transcript of #{gene} was found"
-        logger.warn "Skip #{gene}"
-        next
-      end
-      gene.transcripts = transcripts
-
-      genes_to_process[hgnc_id] = gene
+  # expand transcripts to upstream with some of given peaks, augment transcript infos with associated peaks
+  def augmented_transcripts(transcripts, peaks)
+    transcripts_expanded = transcripts.map do |transcript|
+      transcript.expanded_upstream(region_length).expand_and_trim_with_peaks(peaks)
     end
-    genes_to_process
+    transcripts_expanded.each do |transcript|
+      transcript.associate_peaks(peaks)
+    end
+    transcripts_expanded
   end
 
-  # returns transcripts by gene's entrezgene_id
-  def transcripts_by_entrezgene(entrezgene_id)
-    transcripts = []
-    transcript_ucsc_ids = entrezgene_transcript_mapping.get_second_by_first_id(entrezgene_id)
-    transcript_ucsc_ids.each do |ucsc_id|
-      transcript = all_transcripts[ucsc_id]
-      if !transcript
-        logger.error "Gene entrezgene:#{entrezgene_id}'s transcript #{ucsc_id} wasn't found. Skip transcript"
-      elsif ! transcript.coding?
-        logger.warn "Gene entrezgene:#{entrezgene_id}'s #{transcript} has no coding region. Skip transcript"
-      else
-        transcripts << transcript
-      end
-    end
-
-    transcripts
+  # returns the same Gene object augmented with information about its transcripts
+  # (each transcript in the meantime expanded and augmented with associated peaks)
+  def augmented_gene(gene)
+    transcripts = coding_transcripts_by_entrezgene(gene.entrezgene_id)
+    peaks = peaks_by_hgnc(gene.hgnc_id)
+    gene.transcripts = augmented_transcripts(transcripts, peaks)
+    gene
   end
 
-  # We count all gene with the same UTR as the same transcript group and doesn't
-  # renormalize expression and other quantities by number of transcripts in a group,
+  def coding_transcripts_by_entrezgene(entrezgene_id)
+    transcript_ucsc_ids = entrezgene_transcript_mapping.get_second_by_first_id(entrezgene_id, raise_on_missing_id: false)
+    transcript_ucsc_ids.map{|ucsc_id| transcript_by_ucsc(ucsc_id) }.compact.select(&:coding?)
+  end
+
+  def peaks_by_hgnc(hgnc_id)
+    all_peaks[hgnc_id] || []
+  end
+
+  def transcript_by_ucsc(ucsc_id)
+    all_transcripts[ucsc_id]
+  end
+
+  # Glue all gene's transcripts with the same UTR into the same TranscriptGroup
+  #
+  # We do so not to renormalize expression and other quantities between transcripts in a group,
   # because have not enough information about concrete transcripts in a group.
-  def collect_transcript_groups(group_of_genes)
-    transcript_groups = {}
-    group_of_genes.each do |hgnc_id, gene|
-      transcript_groups[hgnc_id] = gene.transcripts_grouped_by_common_exon_structure_on_utr(all_cages)
-    end
-    transcript_groups
+  def collect_transcript_groups(genes)
+    Hash[ genes.map{|gene| [gene.hgnc_id, gene.transcripts_grouped_by_common_exon_structure_on_utr(all_cages)]} ]
   end
 
   # Calculate number of genes that have specified peak in their transcript(transcript group)'s UTRs.
-  def calculate_number_of_genes_for_a_peak(group_of_genes)
-    number_of_genes_for_a_peak = {}
-    group_of_genes.each do |hgnc_id, gene|
-      peaks_associated_to_gene = @transcript_groups[hgnc_id].map(&:associated_peaks).flatten.uniq
-
-      peaks_associated_to_gene.each do |peak|
-        number_of_genes_for_a_peak[peak] ||= 0
-        number_of_genes_for_a_peak[peak] += 1
-      end
+  def calculate_number_of_genes_for_a_peak(genes)
+    number_of_genes_for_a_peak = Hash.new{|hsh,peak| hsh[peak] = 0}
+    genes.each do |gene|
+      peaks_associated_to_gene = @transcript_groups[gene.hgnc_id].map(&:associated_peaks).flatten.uniq
+      peaks_associated_to_gene.each{|peak| number_of_genes_for_a_peak[peak] += 1 }
     end
     number_of_genes_for_a_peak
   end
@@ -159,8 +136,8 @@ class GeneDataLoader
 
   # block is used to process sequence before output
   def output_all_5utr(genes_to_process, output_stream, &block)
-    genes_to_process.each do |hgnc_id, gene|
-      @transcript_groups[hgnc_id].each do |transcript_group|
+    genes_to_process.each do |gene|
+      @transcript_groups[gene.hgnc_id].each do |transcript_group|
         utr = transcript_group.utr
         exons_on_utr = transcript_group.exons_on_utr
 
