@@ -38,7 +38,7 @@ end
 # pos_end is always pos_start+1 because each line is reads from the single position
 def read_cages_to(input_file, cages, cage_count = nil)
   File.open(input_file) do |f|
-    if cage_count 
+    if cage_count
       f.each_line do |line|
         chromosome, pos_start, pos_end, region_annotation, num_reads, strand = line.strip.split("\t")
         pos_start, num_reads = pos_start.to_i, num_reads.to_i
@@ -55,4 +55,8 @@ def read_cages_to(input_file, cages, cage_count = nil)
       return cages
     end
   end
+end
+
+def sum_cages(genome_region_list, all_cages)
+  genome_region_list.each_region.map{|region| region.load_cages(all_cages).inject(0, :+) }.inject(0, :+)
 end

@@ -122,11 +122,10 @@ class GeneDataLoader
 
   def calculate_summary_expressions_for_transcript_group(transcript_group)
     peaks_expression = transcript_group.associated_peaks.map{|peak|
-      peaks_on_exons = peak.intersection(transcript_group.exons_on_utr)
-      sum_cages_on_exons = peaks_on_exons.map{|interval| GenomeRegion.new(peak.chromosome, peak.strand, interval).load_cages(all_cages).inject(0,:+) }.inject(0, :+)
-      sum_cages_on_peaks = peak.region.load_cages(all_cages).inject(0, :+)
-      percent_of_starts_in_intron = sum_cages_on_exons.to_f / sum_cages_on_peaks
-      tpm = peak.tpm.to_f * percent_of_starts_in_intron
+      sum_cages_on_exons = sum_cages(peak & transcript_group.exons_on_utr, all_cages)
+      sum_cages_on_peaks = sum_cages(peak.region, all_cages)
+      percent_of_starts_in_exon = sum_cages_on_exons.to_f / sum_cages_on_peaks
+      tpm = peak.tpm.to_f * percent_of_starts_in_exon
       tpm / (number_of_genes_for_a_peak[peak] * num_of_transcript_groups_associated_to_peak(peak))
     }
     peaks_expression.inject(&:+)
