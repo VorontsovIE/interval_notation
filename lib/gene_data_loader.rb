@@ -66,22 +66,25 @@ class GeneDataLoader
     end
   end
 
-  def num_of_transcript_groups_associated_to_peak(peak)
-    transcript_groups[peak.hgnc_id].count{|transcript_group| transcript_group.associated_peaks.include?(peak) }
+#
+# Helper methods to unify loading data by id
+#
+  def coding_transcripts_by_entrezgene(entrezgene_id)
+    transcript_ucsc_ids = entrezgene_transcript_mapping.get_second_by_first_id(entrezgene_id, raise_on_missing_id: false)
+    transcript_ucsc_ids.map{|ucsc_id| transcript_by_ucsc(ucsc_id) }.compact.select(&:coding?)
   end
 
-  def calculate_summary_expressions_for_transcript_group(transcript_group)
-    peaks_expression = transcript_group.associated_peaks.map{|peak|
-      peaks_on_exons = peak.intersection(transcript_group.exons_on_utr)
-      sum_cages_on_exons = peaks_on_exons.map{|interval| GenomeRegion.new(peak.chromosome, peak.strand, interval).load_cages(all_cages).inject(0,:+) }.inject(0, :+)
-      sum_cages_on_peaks = peak.region.load_cages(all_cages).inject(0, :+)
-      percent_of_starts_in_intron = sum_cages_on_exons.to_f / sum_cages_on_peaks
-      tpm = peak.tpm.to_f * percent_of_starts_in_intron
-      tpm / (number_of_genes_for_a_peak[peak] * num_of_transcript_groups_associated_to_peak(peak))
-    }
-    peaks_expression.inject(&:+)
+  def peaks_by_hgnc(hgnc_id)
+    all_peaks[hgnc_id] || []
   end
 
+  def transcript_by_ucsc(ucsc_id)
+    all_transcripts[ucsc_id]
+  end
+
+#
+# Methods to bind genes, peaks and transcripts
+#
   # expand transcripts to upstream with some of given peaks, augment transcript infos with associated peaks
   def augmented_transcripts(transcripts, peaks)
     transcripts_expanded = transcripts.map do |transcript|
@@ -102,25 +105,31 @@ class GeneDataLoader
     gene
   end
 
-  def coding_transcripts_by_entrezgene(entrezgene_id)
-    transcript_ucsc_ids = entrezgene_transcript_mapping.get_second_by_first_id(entrezgene_id, raise_on_missing_id: false)
-    transcript_ucsc_ids.map{|ucsc_id| transcript_by_ucsc(ucsc_id) }.compact.select(&:coding?)
-  end
-
-  def peaks_by_hgnc(hgnc_id)
-    all_peaks[hgnc_id] || []
-  end
-
-  def transcript_by_ucsc(ucsc_id)
-    all_transcripts[ucsc_id]
-  end
-
   # Glue all gene's transcripts with the same UTR into the same TranscriptGroup
   #
   # We do so not to renormalize expression and other quantities between transcripts in a group,
   # because have not enough information about concrete transcripts in a group.
   def collect_transcript_groups(genes)
     Hash[ genes.map{|gene| [gene.hgnc_id, gene.transcripts_grouped_by_common_exon_structure_on_utr(all_cages)]} ]
+  end
+
+#
+# Methods to renormalize expression
+#
+  def num_of_transcript_groups_associated_to_peak(peak)
+    transcript_groups[peak.hgnc_id].count{|transcript_group| transcript_group.associated_peaks.include?(peak) }
+  end
+
+  def calculate_summary_expressions_for_transcript_group(transcript_group)
+    peaks_expression = transcript_group.associated_peaks.map{|peak|
+      peaks_on_exons = peak.intersection(transcript_group.exons_on_utr)
+      sum_cages_on_exons = peaks_on_exons.map{|interval| GenomeRegion.new(peak.chromosome, peak.strand, interval).load_cages(all_cages).inject(0,:+) }.inject(0, :+)
+      sum_cages_on_peaks = peak.region.load_cages(all_cages).inject(0, :+)
+      percent_of_starts_in_intron = sum_cages_on_exons.to_f / sum_cages_on_peaks
+      tpm = peak.tpm.to_f * percent_of_starts_in_intron
+      tpm / (number_of_genes_for_a_peak[peak] * num_of_transcript_groups_associated_to_peak(peak))
+    }
+    peaks_expression.inject(&:+)
   end
 
   # Calculate number of genes that have specified peak in their transcript(transcript group)'s UTRs.
@@ -133,7 +142,9 @@ class GeneDataLoader
     number_of_genes_for_a_peak
   end
 
-
+#
+# Output results
+#
   # block is used to process sequence before output
   def output_all_5utr(genes_to_process, output_stream, &block)
     genes_to_process.each do |gene|
