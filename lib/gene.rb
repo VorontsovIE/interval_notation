@@ -41,47 +41,6 @@ class Gene
     "Gene<HGNC:#{hgnc_id}; #{approved_symbol}; entrezgene:#{entrezgene_id}; ensembl:#{ensembl_id}; #{transcripts.map(&:to_s).join(', ')}>"
   end
 
-  # {[utr, exons_on_utr] => [transcripts]}
-  def transcripts_grouped_by_common_exon_structure_on_utr(all_cages)
-    groups_of_transcripts = {}
-    group_associated_peaks = {}
-    transcripts.each do |transcript|
-      utr = transcript.utr_5
-      exons_on_utr = transcript.exons_on_utr
-
-      if utr.empty? || exons_on_utr.empty?
-        logger.info "#{transcript} with utr #{utr} has no exons on utr #{exons_on_utr}"
-        next
-      end
-
-      associated_peaks = transcript.peaks_associated.select do |peak|
-        peaks_on_exons = peak & exons_on_utr
-        sum_cages_on_exons = sum_cages(peaks_on_exons)
-        if sum_cages_on_exons == 0
-          logger.info "#{transcript}\tpeaks_on_exons: #{peaks_on_exons}\t has zero sum of cages on exons"
-          false
-        else
-          true
-        end
-      end
-
-      if associated_peaks.empty?
-        logger.info "#{transcript} has no associated peaks on utr"
-        next
-      end
-
-      exon_intron_structure_on_utr = [utr, exons_on_utr]  # utr should be here to know boundaries
-      groups_of_transcripts[exon_intron_structure_on_utr] ||= []
-      groups_of_transcripts[exon_intron_structure_on_utr] << transcript
-      group_associated_peaks[exon_intron_structure_on_utr] = associated_peaks
-    end
-
-    groups_of_transcripts.map{|exon_intron_structure_on_utr, transcripts|
-      utr, exons_on_utr = exon_intron_structure_on_utr
-      TranscriptGroup.new(utr, exons_on_utr, transcripts, group_associated_peaks[exon_intron_structure_on_utr])
-    }
-  end
-
   # Given header of the table it returns indices of columns (0-based) titled as specified.
   # Columns should be a hash from column names to according column titles
   # e.g. {hgnc: 'HGNC ID', approved_symbol: 'Approved Symbol', entrezgene: 'Entrez Gene ID', ensembl: 'Ensembl Gene ID'}

@@ -110,7 +110,7 @@ class GeneDataLoader
   # We do so not to renormalize expression and other quantities between transcripts in a group,
   # because have not enough information about concrete transcripts in a group.
   def collect_transcript_groups(genes)
-    Hash[ genes.map{|gene| [gene.hgnc_id, gene.transcripts_grouped_by_common_exon_structure_on_utr(all_cages)]} ]
+    Hash[ genes.map{|gene| [gene.hgnc_id, TranscriptGroup.groups_with_common_utr(gene.transcripts, all_cages)]} ]
   end
 
 #

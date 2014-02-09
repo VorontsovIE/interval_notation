@@ -24,4 +24,16 @@ class TranscriptGroup
     transcripts_infos = transcripts.map{|transcript| transcript.name }.join(';')
     "#{utr}\t#{exon_infos}\t#{transcripts_infos}"
   end
+
+  def self.groups_with_common_utr(all_transcripts, all_cages)
+    all_transcripts.group_by(&:exons_on_utr).map do |exons_on_utr, transcripts|
+      sample_transcript = transcripts.first
+      # all transcripts with the same exons_on_utr also have tha same 5'-UTRs
+      utr = sample_transcript.utr_5
+      # and the same peaks
+      associated_peaks = sample_transcript.peaks_associated.reject{|peak| sum_cages(peak & exons_on_utr, all_cages) == 0 }
+      Transcript.new(utr, exons_on_utr, transcripts, associated_peaks)
+    end
+  end
+
 end
