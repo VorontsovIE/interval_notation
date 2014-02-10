@@ -41,17 +41,6 @@ class Gene
     "Gene<HGNC:#{hgnc_id}; #{approved_symbol}; entrezgene:#{entrezgene_id}; ensembl:#{ensembl_id}; #{transcripts.map(&:to_s).join(', ')}>"
   end
 
-  # Given header of the table it returns indices of columns (0-based) titled as specified.
-  # Columns should be a hash from column names to according column titles
-  # e.g. {hgnc: 'HGNC ID', approved_symbol: 'Approved Symbol', entrezgene: 'Entrez Gene ID', ensembl: 'Ensembl Gene ID'}
-  def column_indices(line, columns)
-    column_names = line.strip.split("\t")
-    columns.inject(Hash.new) do |hsh, (column_name, column_header)|
-      idx = column_names.index(column_header)
-      hsh.merge(column_name => idx)
-    end
-  end
-
   # returns a list of genes in file
   def self.genes_from_file(input_file, columns)
     column_indices = {}
