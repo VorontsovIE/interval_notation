@@ -78,3 +78,12 @@ def column_indices(line, columns)
     hsh.merge(column_name => idx)
   end
 end
+
+# parse line with data and extracts cell values of +column_names+ columns from cells, according to order defined by +column_indices+
+def extract_columns(info_line, column_names, column_indices)
+  infos = info_line.strip.split("\t")
+  column_names.map{|column_name|
+    idx = column_indices[column_name]
+    idx ? infos[idx] : nil
+  }
+end

@@ -26,11 +26,7 @@ class Gene
 
   # Gene.new_by_infos('HGNC:10000 RGS4  regulator of G-protein signaling 4  1q23.3  5999', {hgnc: 0, approved_symbol: 1, approved_name: nil, entrez: 4})
   def self.new_by_infos(info_line, column_indices)
-    infos = info_line.strip.split("\t")
-    hgnc_id, approved_symbol, entrezgene_id, ensembl_id = [:hgnc, :approved_symbol, :entrezgene, :ensembl].map{|column_name|
-      idx = column_indices[column_name]
-      idx ? infos[idx] : nil
-    }
+    hgnc_id, approved_symbol, entrezgene_id, ensembl_id = *extract_columns(info_line, [:hgnc, :approved_symbol, :entrezgene, :ensembl], column_indices)
     hgnc_id = hgnc_from_string(hgnc_id)
     entrezgene_id = entrezgene_from_string(entrezgene_id, with_prefix: false)
     ensembl_id = ensembl_from_string(ensembl_id)
