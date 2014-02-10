@@ -120,13 +120,23 @@ class GeneDataLoader
     transcript_groups[peak.hgnc_id].count{|transcript_group| transcript_group.associated_peaks.include?(peak) }
   end
 
+  # Expression of peak starts, intersecting region
+  # It can be used to find peak expression just from exons, if region is a markup of transcript's exons
+  def peak_expression_on_region(peak, region, all_cages)
+    cages_for_full_region = sum_cages(peak, all_cages)
+    if cages_for_full_region == 0
+      return 0  if peak.tpm == 0
+      raise 'Expression of peak is non-zero, while no cages found; It\'s impossible to recalculate expression'
+    end
+    cages_for_restricted_region = sum_cages(peak & region, all_cages)
+    fraction_of_cages_on_region = cages_for_full_region.to_f / cages_for_restricted_region
+    peak.tpm * fraction_of_cages_on_region
+  end
+
   def calculate_summary_expressions_for_transcript_group(transcript_group)
     peaks_expression = transcript_group.associated_peaks.map{|peak|
-      sum_cages_on_exons = sum_cages(peak & transcript_group.exons_on_utr, all_cages)
-      sum_cages_on_peaks = sum_cages(peak.region, all_cages)
-      percent_of_starts_in_exon = sum_cages_on_exons.to_f / sum_cages_on_peaks
-      tpm = peak.tpm.to_f * percent_of_starts_in_exon
-      tpm / (number_of_genes_for_a_peak[peak] * num_of_transcript_groups_associated_to_peak(peak))
+      expression = peak_expression_on_region(peak, transcript_group.exons_on_utr, all_cages)
+      expression / (number_of_genes_for_a_peak[peak] * num_of_transcript_groups_associated_to_peak(peak))
     }
     peaks_expression.inject(&:+)
   end
