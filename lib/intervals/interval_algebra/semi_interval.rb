@@ -97,24 +97,24 @@ module IntervalAlgebra
     private :subtract_with_region
 
     def intersection(other)
-      case other
-      when SemiInterval then intersection_with_region(other)
-      when SemiIntervalSet then other.intersection(self)
-      else raise UnsupportedType
+      if other.contigious?
+        intersection_with_region(other)
+      else
+        other.intersection(self)
       end
     end
     def union(other)
-      case other
-      when SemiInterval then union_with_region(other)
-      when SemiIntervalSet then other.union(self)
-      else raise UnsupportedType
+      if other.contigious?
+        union_with_region(other)
+      else
+        other.union(self)
       end
     end
     def subtract(other)
-      case other
-      when SemiInterval then subtract_with_region(other)
-      when SemiIntervalSet then other.interval_list.inject(self){|result, interval| result.subtract(interval) }
-      else raise UnsupportedType
+      if other.contigious?
+        subtract_with_region(other)
+      else
+        other.interval_list.inject(self){|result, interval| result.subtract(interval) }
       end
     end
 
@@ -126,54 +126,41 @@ module IntervalAlgebra
       ! intersection(other).empty?
     end
     def contain?(other)
-      case other
-      when EmptySemiInterval
+      if other.empty?
         true
-      when SemiInterval
+      elsif other.contigious?
         pos_start <= other.pos_start && other.pos_end <= pos_end
-      when SemiIntervalSet
-        other.interval_list.all?{|interval| self.contain?(interval)}
       else
-        raise UnsupportedType
+        other.interval_list.all?{|interval| self.contain?(interval)}
       end
     end
     def inside?(other)
-      case other
-      when EmptySemiInterval
+      if other.empty?
         false
-      when SemiInterval
+      elsif other.contigious?
         other.pos_start <= pos_start && pos_end <= other.pos_end
-      when SemiIntervalSet
-        other.interval_list.any?{|interval| self.inside?(interval)}
       else
-        raise UnsupportedType
+        other.interval_list.any?{|interval| self.inside?(interval)}
       end
     end
     def from_left?(other)
-      case other
-      when EmptySemiInterval
+      if other.empty?
         raise ImpossibleComparison, "#{self}.from_left?(#{other}) failed"
-      when SemiInterval, SemiIntervalSet
-        self.rightmost_position <= other.leftmost_position
       else
-        raise UnsupportedType
+        self.rightmost_position <= other.leftmost_position
       end
     end
     def from_right?(other)
-      case other
-      when EmptySemiInterval
+      if other.empty?
         raise ImpossibleComparison, "#{self}.from_right?(#{other}) failed"
-      when SemiInterval, SemiIntervalSet
-        other.rightmost_position <= self.leftmost_position
       else
-        raise UnsupportedType
+        other.rightmost_position <= self.leftmost_position
       end
     end
     def region_adjacent?(other)
-      case other
-      when EmptySemiInterval
+      if other.empty?
         raise ImpossibleComparison, "#{self}.region_adjacent?(#{other}) failed"
-      when SemiInterval
+      elsif other.contigious?
         [:outside_left_adjacent, :outside_right_adjacent].include?  mutual_alignment(other)
       else
         raise UnsupportedType
@@ -181,32 +168,25 @@ module IntervalAlgebra
     end
 
     def ==(other)
-      case other
-      when EmptySemiInterval
-        false
-      when SemiInterval
-        pos_start == other.pos_start && pos_end == other.pos_end
-      else
-        false
-      end
+      other.contigious? && !other.empty? && (pos_start == other.pos_start && pos_end == other.pos_end)
     end
 
     def <=>(other)
-      case other
-      when SemiInterval
+      if other.empty?
+        raise UnsupportedType
+      elsif other.contigious?
         return 0 if self == other
         return -1 if self.from_left?(other)
         return 1 if self.from_right?(other)
         nil
-      when SemiIntervalSet
+      elsif !other.contigious?
         return -1 if other.interval_list.all?{|interval| self.from_left?(interval)}
         return 1 if other.interval_list.all?{|interval| self.from_right?(interval)}
         nil
-      else
-        raise UnsupportedType
       end
     end
     include Comparable
+
     def eql?(other); self == other; end
     def hash
       [pos_start,pos_end].hash

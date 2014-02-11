@@ -41,91 +41,51 @@ module IntervalAlgebra
     end
 
     def union(other)
-      case other
-      when SemiInterval
+      if other.contigious?
         intervals_intersecting_other_united = interval_list.select{|interval| interval.intersect?(other) }.inject(other){|result,interval| result.union(interval) }
         SemiIntervalSet.new( interval_list.select{|interval| !interval.intersect?(other)}, intervals_intersecting_other_united )
-      when SemiIntervalSet
-        other.interval_list.inject(self){|result, interval| result.union(interval) }
       else
-        raise UnsupportedType
+        other.interval_list.inject(self){|result, interval| result.union(interval) }
       end
     end
     def intersection(other)
-      case other
-      when SemiInterval, SemiIntervalSet
-        SemiIntervalSet.new( interval_list.map{|interval| other.intersection(interval)} )
-      else
-        raise UnsupportedType
-      end
+      SemiIntervalSet.new( interval_list.map{|interval| other.intersection(interval)} )
     end
     def subtract(other)
-      case other
-      when SemiInterval
+      if other.contigious?
         SemiIntervalSet.new( interval_list.map{|interval| interval.subtract(other) } )
-      when SemiIntervalSet
-        other.interval_list.inject(self){|result, interval| result.subtract(interval) }
       else
-        raise UnsupportedType
+        other.interval_list.inject(self){|result, interval| result.subtract(interval) }
       end
     end
     def empty?; false; end
     def contigious?; false; end
 
     def intersect?(other)
-      case other
-      when SemiInterval, SemiIntervalSet
-        interval_list.any?{|interval| other.intersect?(interval)}
-      else
-        raise UnsupportedType
-      end
+      interval_list.any?{|interval| other.intersect?(interval)}
     end
 
     def contain?(other)
-      case other
-      when SemiInterval
+      if other.contigious?
         interval_list.any?{|interval| interval.contain?(other) }
-      when SemiIntervalSet
-        other.interval_list.all?{|other_interval| self.contain?(other_interval) }
       else
-        raise UnsupportedType
+        other.interval_list.all?{|other_interval| self.contain?(other_interval) }
       end
     end
     def inside?(other)
-      case other
-      when SemiInterval, SemiIntervalSet
-        interval_list.all?{|interval| interval.inside?(other) }
-      else
-        raise UnsupportedType
-      end
+      interval_list.all?{|interval| interval.inside?(other) }
     end
     def from_left?(other)
-      case other
-      when SemiInterval, SemiIntervalSet
-        self.rightmost_position <= other.leftmost_position
-      else
-        raise UnsupportedType
-      end
+      self.rightmost_position <= other.leftmost_position
     end
     def from_right?(other)
-      case other
-      when SemiInterval, SemiIntervalSet
-        other.rightmost_position <= self.leftmost_position
-      else
-        raise UnsupportedType
-      end
+      other.rightmost_position <= self.leftmost_position
     end
 
     def ==(other)
-      case other
-      when SemiIntervalSet
-        interval_list == other.interval_list
-      when SemiInterval
-        false
-      else
-        raise UnsupportedType
-      end
+      !other.contigious? && interval_list == other.interval_list
     end
+
     def eql?(other); self == other; end
     def hash
       interval_list.hash

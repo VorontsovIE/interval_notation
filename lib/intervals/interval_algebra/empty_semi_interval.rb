@@ -19,12 +19,7 @@ module IntervalAlgebra
     def contain?(other); nil; end
     def inside?(other); nil; end
     def region_adjacent?(other)
-      case other
-      when SemiInterval
-        raise ImpossibleComparison, "#{self}.region_adjacent?(#{other}) failed"
-      when SemiIntervalSet
-        raise UnsupportedType
-      end
+      raise ImpossibleComparison, "#{self}.region_adjacent?(#{other}) failed"
     end
     def from_left?(other); nil; end
     def from_right?(other); nil; end
