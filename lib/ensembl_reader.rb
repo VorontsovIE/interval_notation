@@ -11,8 +11,8 @@ module EnsemblReader
     exons_by_transcript = Hash.new{|hsh, enst| hsh[enst] = [] }
     coding_region_by_transcript = Hash.new{|hsh, enst| hsh[enst] = [] }
     File.open(input_file) do |fp|
-      fp.each_line do |line|
-        if fp.lineno == 1
+      fp.each_line.each_with_index do |line, lineno|
+        if lineno == 0
           column_indices = column_indices(line, columns)
         else
           enst = *extract_columns(line, [:enst], column_indices)
@@ -43,7 +43,7 @@ module EnsemblReader
     pos_start = ensembl_pos_start.to_i - 1
     pos_end = ensembl_pos_end.to_i
     
-    GenomeRegion.new(chromosome, strand, SemiInterval.new(pos_start, pos_end))
+    GenomeRegion.new(chromosome, strand, IntervalAlgebra::SemiInterval.new(pos_start, pos_end))
   end
 
   # returns exon region by line in ensembl transcripts format

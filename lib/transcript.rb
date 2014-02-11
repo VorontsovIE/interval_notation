@@ -25,8 +25,8 @@ class Transcript
     exon_starts = exon_starts.split(',').map(&:strip).reject(&:empty?).map(&:to_i)
     exon_ends = exon_ends.split(',').map(&:strip).reject(&:empty?).map(&:to_i)
     coding_region = GenomeRegion.new(chromosome, strand, cds_start.to_i, cds_end.to_i)  ### rescue nil
-    exon_regions = exon_count.to_i.times.map{|index| SemiInterval.new(exon_starts[index], exon_ends[index])} ##############
-    exons = GenomeRegion.new(chromosome, strand, SemiIntervalSet.new(exon_regions))
+    exon_regions = exon_count.to_i.times.map{|index| IntervalAlgebra::SemiInterval.new(exon_starts[index], exon_ends[index])} ##############
+    exons = GenomeRegion.new(chromosome, strand, IntervalAlgebra::SemiIntervalSet.new(exon_regions))
     Transcript.new(name, coding_region, exons, protein_id)
   end
 

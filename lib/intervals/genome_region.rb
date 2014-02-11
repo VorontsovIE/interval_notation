@@ -2,7 +2,8 @@
 # It can be constructed using chromosome, strand and either pos_start,pos_end pair or interval/interval set
 # All intervals in genome region should be on the same strand
 
-require_relative 'semi_interval_set'
+require_relative 'interval_algebra'
+include IntervalAlgebra
 
 module GenomeRegionOperations
   def intersection(other)
