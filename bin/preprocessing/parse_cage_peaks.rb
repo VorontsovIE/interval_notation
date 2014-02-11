@@ -128,6 +128,8 @@ class CagePointsParser
         puts "line #{index}" if index % 100000 == 0
         # chr1	564462	564463	chr1:564462..564463,+	1	+
         chromosome, pos_start, pos_end, name, pieces, strand = line.strip.split("\t")
+        chromosome = chromosome.to_sym
+        strand = strand.to_sym
         pos_start, pos_end = pos_start.to_i, pos_end.to_i
         pieces = pieces.to_i
         cage_point = GenomeSegment.new(chromosome, strand, pos_start, pos_end)

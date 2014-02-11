@@ -136,7 +136,7 @@ class GenomeRegion
     self.new(chromosome, strand, SemiInterval.new(pos_start, pos_end))
   end
   def initialize(chromosome, strand, region)
-    @chromosome, @strand, @region = chromosome, strand.to_sym, region
+    @chromosome, @strand, @region = chromosome.to_sym, strand.to_sym, region
     raise ArgumentError  unless [:+, :-].include?(strand)
   end
   def pos_start
@@ -252,6 +252,9 @@ class GenomeRegion
   def list_of_regions
     region.interval_list#.map{|interval| GenomeRegion.new(chromosome, strand, interval)}
   end
+
+  # Danger method being combined with Enumerable!
+  # You can mix situation [region_1].inject(&:union) => region_1  and  region_1.inject => SemiInterval (region_1.region)
   def each(&block)
     if block_given?
       list_of_regions.each do |region|
@@ -276,7 +279,7 @@ end
 class GenomeRegionList
   attr_reader :region, :chromosome, :strand
   def initialize(chromosome, strand, region)
-    @chromosome, @strand, @region = chromosome, strand.to_sym, region
+    @chromosome, @strand, @region = chromosome.to_sym, strand.to_sym, region
     raise ArgumentError  unless [:+, :-].include?(strand)
   end
   def self.new(chromosome, strand, region)

@@ -44,7 +44,7 @@ describe GenomeRegion do
       Then{ region_list.should_not have_failed }
       Then{ region_list.list_of_regions.should == [region] }
       Then{ region_list.should_not be_empty }
-      Then{ region_list.chromosome.should == 'chr1' }
+      Then{ region_list.chromosome.should == :chr1 }
       Then{ region_list.strand.should == :+ }
       Then{ region_list.to_s.should == 'chr1,+:<100..110>' }
     end
@@ -53,7 +53,7 @@ describe GenomeRegion do
       Then{ region_list.should_not have_failed }
       Then{ region_list.list_of_regions.should == [region_from_left, region, region_from_right] }
       Then{ region_list.should_not be_empty }
-      Then{ region_list.chromosome.should == 'chr1' }
+      Then{ region_list.chromosome.should == :chr1 }
       Then{ region_list.strand.should == :+ }
       Then{ region_list.to_s.should == 'chr1,+:<93..97;100..110;113..117>' }
     end
