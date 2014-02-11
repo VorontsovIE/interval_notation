@@ -1,8 +1,8 @@
 require_relative 'intervals/genome_region'
 
 def cages_initial_hash
-  cages = {'+' => Hash.new{|h, chromosome| h[chromosome] = Hash.new{|h2,pos| h2[pos] = 0 } },
-           '-' => Hash.new{|h, chromosome| h[chromosome] = Hash.new{|h2,pos| h2[pos] = 0 } } }
+  cages = {:+ => Hash.new{|h, chromosome| h[chromosome] = Hash.new{|h2,pos| h2[pos] = 0 } },
+           :- => Hash.new{|h, chromosome| h[chromosome] = Hash.new{|h2,pos| h2[pos] = 0 } } }
 end
 # returns {strand => {chromosome => {position => num_reads} } } structure
 def read_cages(input_file)
@@ -40,7 +40,9 @@ def read_cages_to(input_file, cages, cage_count = nil)
   File.open(input_file) do |f|
     if cage_count
       f.each_line do |line|
-        chromosome, pos_start, pos_end, region_annotation, num_reads, strand = line.strip.split("\t")
+        chromosome, pos_start, _pos_end, _region_annotation, num_reads, strand = line.strip.split("\t")
+        strand = strand.to_sym
+        chromosome = chromosome.to_sym
         pos_start, num_reads = pos_start.to_i, num_reads.to_i
         cages[strand][chromosome][pos_start] += num_reads
         cage_count[strand][chromosome][pos_start] += 1
@@ -48,7 +50,9 @@ def read_cages_to(input_file, cages, cage_count = nil)
       return cages, cage_count
     else
       f.each_line do |line|
-        chromosome, pos_start, _, _, num_reads, strand = line.strip.split("\t")
+        chromosome, pos_start, _pos_end, _region_annotation, num_reads, strand = line.strip.split("\t")
+        strand = strand.to_sym
+        chromosome = chromosome.to_sym
         pos_start, num_reads = pos_start.to_i, num_reads.to_i
         cages[strand][chromosome][pos_start] += num_reads
       end

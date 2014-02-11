@@ -102,7 +102,7 @@ class GenomePeaks
   # data: {strand => {chromosome => [peaks] } }
   attr_reader :data
   def initialize
-    @data = {'+' => {}, '-' => {}}
+    @data = {:+ => {}, :- => {}}
   end
   def <<(peak)
     @data[peak.strand][peak.chromosome] ||= []

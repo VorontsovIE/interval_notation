@@ -1,4 +1,3 @@
-$:.unshift File.join(File.expand_path(__FILE__),'../../lib')
 require 'rspec'
 require 'factory_girl'
 RSpec.configure do |config|

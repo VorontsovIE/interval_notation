@@ -124,6 +124,7 @@ module RegionConditionals
     region.include_position?(pos)
   end
   #private :same_strand?
+  def contigious?; region.contigious?; end
 end
 
 class GenomeRegion
@@ -135,8 +136,8 @@ class GenomeRegion
     self.new(chromosome, strand, SemiInterval.new(pos_start, pos_end))
   end
   def initialize(chromosome, strand, region)
-    @chromosome, @strand, @region = chromosome, strand, region
-    raise ArgumentError  unless ['+', '-'].include?(strand)
+    @chromosome, @strand, @region = chromosome, strand.to_sym, region
+    raise ArgumentError  unless [:+, :-].include?(strand)
   end
   def pos_start
     region.pos_start
@@ -188,10 +189,10 @@ class GenomeRegion
   end
 
   def plus_strand?
-    strand == '+'
+    strand == :+
   end
   def minus_strand?
-    strand == '-'
+    strand == :-
   end
 
 
@@ -275,8 +276,8 @@ end
 class GenomeRegionList
   attr_reader :region, :chromosome, :strand
   def initialize(chromosome, strand, region)
-    @chromosome, @strand, @region = chromosome, strand, region
-    raise ArgumentError  unless ['+', '-'].include?(strand)
+    @chromosome, @strand, @region = chromosome, strand.to_sym, region
+    raise ArgumentError  unless [:+, :-].include?(strand)
   end
   def self.new(chromosome, strand, region)
     region = region & SemiInterval.new(0, Float::INFINITY)
@@ -307,10 +308,10 @@ class GenomeRegionList
   end
 
   def plus_strand?
-    strand == '+'
+    strand == :+
   end
   def minus_strand?
-    strand == '-'
+    strand == :-
   end
 
   include GenomeRegionOperations

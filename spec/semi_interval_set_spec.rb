@@ -3,8 +3,8 @@
 # inside?
 # from_left? from_right?
 
-require 'spec_helper.rb'
-require 'intervals/semi_interval_set'
+require_relative 'spec_helper'
+require_relative '../lib/intervals/semi_interval_set'
 
 module SemiIntervalHelpers
   def all_types_of_non_empty_regions

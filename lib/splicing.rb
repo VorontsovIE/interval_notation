@@ -2,7 +2,7 @@ require_relative 'intervals/genome_region'
 
 def splice_sequence(sequence, utr, exons_on_utr)
   spliced_sequence = utr.splice(sequence, exons_on_utr).join
-  utr.strand == '+'  ?  spliced_sequence  :  complement(spliced_sequence)
+  utr.plus_strand?  ?  spliced_sequence  :  complement(spliced_sequence)
 end
 
 # complement, not reverse complement

@@ -1,8 +1,7 @@
 # TODO: spec for each
 # TODO: add ability to give construction an array instead of splatted list. And add spec too
 
-$:.unshift File.dirname(File.expand_path(__FILE__, '../lib'))
-require 'intervals/genome_region'
+require_relative '../lib/intervals/genome_region'
 require 'rspec/given'
 
 describe GenomeRegion do
@@ -46,7 +45,7 @@ describe GenomeRegion do
       Then{ region_list.list_of_regions.should == [region] }
       Then{ region_list.should_not be_empty }
       Then{ region_list.chromosome.should == 'chr1' }
-      Then{ region_list.strand.should == '+' }
+      Then{ region_list.strand.should == :+ }
       Then{ region_list.to_s.should == 'chr1,+:<100..110>' }
     end
     context 'with several non-intersecting regions' do
@@ -55,14 +54,14 @@ describe GenomeRegion do
       Then{ region_list.list_of_regions.should == [region_from_left, region, region_from_right] }
       Then{ region_list.should_not be_empty }
       Then{ region_list.chromosome.should == 'chr1' }
-      Then{ region_list.strand.should == '+' }
+      Then{ region_list.strand.should == :+ }
       Then{ region_list.to_s.should == 'chr1,+:<93..97;100..110;113..117>' }
     end
     context 'with several non-intersecting regions on minus-strand' do
       When(:region_list) { GenomeRegion.new(region_minus_strand, region_from_right_minus_strand, region_from_left_minus_strand) }
       Then{ region_list.should_not have_failed }
       Then{ region_list.list_of_regions.should == [region_from_right_minus_strand, region_minus_strand, region_from_left_minus_strand] }
-      Then{ region_list.strand.should == '-' }
+      Then{ region_list.strand.should == :- }
       Then{ region_list.to_s.should == 'chr1,-:<113..117;100..110;93..97>' }
     end
     context 'with several non-intersecting regions jointed' do
