@@ -43,7 +43,7 @@ class GeneDataLoader
     # Очень стремный момент! Мы делаем много клонов одного пика
     @all_peaks = Peak.peaks_from_file(peaks_for_tissue_file, hgnc_entrezgene_mapping)
 
-    @all_transcripts = Transcript.transcripts_from_file(transcript_infos_file)
+    @all_transcripts = collect_hash_by_id(Transcript.transcripts_from_file(transcript_infos_file), &:name)
 
     # bind peaks to transcripts and transcripts to genes; leave only genes having available coding transcripts and peaks
     # TODO: remove genes having no associated peaks (i.e. all peaks are too far)

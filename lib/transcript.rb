@@ -114,13 +114,10 @@ class Transcript
 
   # ucsc_id => transcript
   def self.transcripts_from_file(input_file)
-    transcripts = {}
     File.open(input_file) do |fp|
-      fp.each_line do |line|
-        transcript = Transcript.new_by_infos(line)
-        transcripts[transcript.name] = transcript
+      fp.map do |line|
+        Transcript.new_by_infos(line)
       end
     end
-    transcripts
   end
 end

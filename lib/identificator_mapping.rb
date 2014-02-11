@@ -87,3 +87,8 @@ def extract_columns(info_line, column_names, column_indices)
     idx ? infos[idx] : nil
   }
 end
+
+# converts list to a hash indexed by id_block (e.g. by hgnc_id or by name)
+def collect_hash_by_id(list, &id_block)
+  list.each_with_object(Hash.new){|element, hsh| hsh[ id_block.call(element) ] = element }
+end
