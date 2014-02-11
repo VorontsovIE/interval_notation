@@ -32,7 +32,7 @@ class TranscriptGroup
       utr = sample_transcript.utr_5
       # and the same peaks
       associated_peaks = sample_transcript.peaks_associated.reject{|peak| sum_cages(peak & exons_on_utr, all_cages) == 0 }
-      Transcript.new(utr, exons_on_utr, transcripts, associated_peaks)
+      TranscriptGroup.new(utr, exons_on_utr, transcripts, associated_peaks)
     end
   end
 
