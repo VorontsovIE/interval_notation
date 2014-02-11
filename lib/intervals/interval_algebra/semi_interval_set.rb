@@ -106,7 +106,11 @@ module IntervalAlgebra
     end
 
     def region_adjacent?(other)
-      raise UnsupportedType, 'Unsupported type of receiver'
+      if other.empty?
+        raise ImpossibleComparison, "#{self}.region_adjacent?(#{other}) failed"
+      else
+        raise UnsupportedType, 'Unsupported type of receiver'
+      end
     end
 
     def include_position?(pos)

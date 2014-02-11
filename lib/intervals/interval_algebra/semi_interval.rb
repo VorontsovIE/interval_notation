@@ -158,7 +158,7 @@ module IntervalAlgebra
       end
     end
     def region_adjacent?(other)
-      if other.empty?
+      if empty? || other.empty?
         raise ImpossibleComparison, "#{self}.region_adjacent?(#{other}) failed"
       elsif other.contigious?
         [:outside_left_adjacent, :outside_right_adjacent].include?  mutual_alignment(other)

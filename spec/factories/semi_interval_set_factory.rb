@@ -1,8 +1,8 @@
 require_relative '../spec_helper'
-require_relative '../../lib/intervals/semi_interval_set'
+require_relative '../../lib/intervals/interval_algebra'
 
 def empty_interval
-  EmptySemiInterval.new
+  IntervalAlgebra::EmptySemiInterval.new
 end
 
 def with_interval_list(*region_names)
@@ -10,7 +10,7 @@ def with_interval_list(*region_names)
 end
 
 def region_set(*region_names)
-  SemiIntervalSet.new( region_names.map{|interval_name| interval(interval_name)} )
+  IntervalAlgebra::SemiIntervalSet.new( region_names.map{|interval_name| interval(interval_name)} )
 end
 
 def interval(interval_name)
@@ -18,8 +18,8 @@ def interval(interval_name)
 end
 
 FactoryGirl.define do
-  factory :central, class: SemiInterval do
-    initialize_with{ SemiInterval.new(region.begin, region.end) }
+  factory :central, class: IntervalAlgebra::SemiInterval do
+    initialize_with{ IntervalAlgebra::SemiInterval.new(region.begin, region.end) }
 
     region 10..20
     factory(:left) { region 3..8 }
