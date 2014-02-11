@@ -2,11 +2,19 @@ require_relative 'intervals/genome_region'
 require_relative 'peak'
 
 class Transcript
-  attr_reader :name, :chromosome, :strand, :coding_region, :exons, :protein_id
+  attr_reader :name, :coding_region, :exons, :protein_id
   attr_accessor :peaks_associated
 
-  def initialize(name, chromosome, strand, coding_region, exons, protein_id)
-    @name, @chromosome, @strand, @coding_region, @exons, @protein_id  = name, chromosome, strand, coding_region, exons, protein_id
+  def initialize(name, coding_region, exons, protein_id)
+    @name, @coding_region, @exons, @protein_id  = name, coding_region, exons, protein_id
+  end
+
+  def chromosome
+    @chromosome ||= exons.chromosome
+  end
+
+  def strand
+    @strand ||= exons.strand
   end
 
   # Transcript.new_by_infos('uc001aaa.3 chr1  + 11873 14409 11873 11873 3 11873,12612,13220,  12227,12721,14409,    uc001aaa.3')
@@ -19,7 +27,7 @@ class Transcript
     coding_region = GenomeRegion.new(chromosome, strand, cds_start.to_i, cds_end.to_i)  ### rescue nil
     exon_regions = exon_count.to_i.times.map{|index| SemiInterval.new(exon_starts[index], exon_ends[index])} ##############
     exons = GenomeRegion.new(chromosome, strand, SemiIntervalSet.new(exon_regions))
-    Transcript.new(name, chromosome, strand, coding_region, exons, protein_id)
+    Transcript.new(name, coding_region, exons, protein_id)
   end
 
   def coding?
@@ -45,7 +53,7 @@ class Transcript
   end
 
   def expanded_upstream(region_length)
-    Transcript.new(name, chromosome, strand, coding_region, exons.with_upstream(region_length), protein_id)
+    Transcript.new(name, coding_region, exons.with_upstream(region_length), protein_id)
   end
   private :expanded_upstream
 
@@ -99,7 +107,7 @@ class Transcript
       peak_with_downstream = most_upstream_peak.with_downstream(Float::INFINITY)
       region_expansion = exons.upstream(Float::INFINITY) & peak_with_downstream
       exons_expanded = (exons | region_expansion) & peak_with_downstream
-      Transcript.new(name, chromosome, strand, coding_region, exons_expanded, protein_id)
+      Transcript.new(name, coding_region, exons_expanded, protein_id)
     end
   end
 
