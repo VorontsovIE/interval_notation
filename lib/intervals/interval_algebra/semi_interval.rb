@@ -225,7 +225,6 @@ module IntervalAlgebra
     end
 
     def interval_list; [self]; end
-    def unite_adjacent; self; end
     def covering_interval; self; end
     def leftmost_position; pos_start; end
     def rightmost_position; pos_end; end

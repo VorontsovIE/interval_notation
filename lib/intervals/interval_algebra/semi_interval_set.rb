@@ -7,7 +7,7 @@ module IntervalAlgebra
   class SemiIntervalSet
     attr_reader :interval_list
 
-    def initialize(*interval_list)
+    def initialize(interval_list)
       @interval_list = interval_list
     rescue
       raise 'Intervals cannot be ordered without intersections'
@@ -24,24 +24,20 @@ module IntervalAlgebra
       when 1
         interval_list.first # returns SemiInterval (instead of SemiIntervalSet containing the only SemiInterval)
       else
-        super(*interval_list)
+        super(interval_list)
       end
     end
 
     def self.unite_adjacent(interval_list)
-      list = []
-      interval_list.each{|interval|
+      interval_list.each_with_object([]) do |interval, list|
         if list.empty?
           list.push(interval)
-          next
-        end
-        if list.last.region_adjacent?(interval)
+        elsif list.last.region_adjacent?(interval)
           list.push( list.pop.union(interval) )
         else
           list.push(interval)
         end
-      }
-      list
+      end
     end
 
     def union(other)
@@ -74,9 +70,7 @@ module IntervalAlgebra
       end
     end
     def empty?; false; end
-    def contigious?;
-      interval_list.each_cons(2).all?{|region_l, region_r| region_l.region_adjacent?(region_r) }
-    end
+    def contigious?; false; end
 
     def intersect?(other)
       case other
