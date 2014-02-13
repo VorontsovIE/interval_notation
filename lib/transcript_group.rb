@@ -22,7 +22,7 @@ class TranscriptGroup
   def to_s
     exon_infos = exons_on_utr.map{|interval| "#{interval.pos_start}..#{interval.pos_end}"}.join(';')
     transcripts_infos = transcripts.map{|transcript| transcript.name }.join(';')
-    "#{utr}\t#{exon_infos}\t#{transcripts_infos}"
+    "#{transcripts_infos}\tUTR: #{utr}\tExons on UTR: #{exon_infos}"
   end
 
   def self.groups_with_common_utr(all_transcripts, all_cages)

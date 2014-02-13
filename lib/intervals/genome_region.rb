@@ -138,7 +138,7 @@ class GenomeRegion
   end
   def initialize(chromosome, strand, region)
     @chromosome, @strand, @region = chromosome.to_sym, strand.to_sym, region
-    raise ArgumentError  unless [:+, :-].include?(strand)
+    raise ArgumentError  unless [:+, :-].include?(@strand)
   end
   def pos_start
     region.pos_start
@@ -226,6 +226,10 @@ class GenomeRegion
   # genome_dir is a folder with files of different chromosomes
   # here we don't take strand into account
   def load_sequence(genome_dir)
+    if self.empty?
+      p "Load sequence for #{self}"
+      return ""
+    end    
     @sequence_on_positive_strand ||= begin
       filename = File.join(genome_dir, "#{chromosome}.plain")
       File.open(filename) do |f|
@@ -237,6 +241,10 @@ class GenomeRegion
 
   # returns array of cages (not reversed on '-' strand)
   def load_cages(all_cages)
+    if self.empty?
+      p "Load cages for #{self}"
+      return [] 
+    end
     #caching here is a bad strategy because different tissues have different all_cages and yields different results
     #@cages ||= begin
       strand_of_cages = all_cages[strand][chromosome] || {}
@@ -281,7 +289,7 @@ class GenomeRegionList
   attr_reader :region, :chromosome, :strand
   def initialize(chromosome, strand, region)
     @chromosome, @strand, @region = chromosome.to_sym, strand.to_sym, region
-    raise ArgumentError  unless [:+, :-].include?(strand)
+    raise ArgumentError  unless [:+, :-].include?(@strand)
   end
   def self.new(chromosome, strand, region)
     region = region & SemiInterval.new(0, Float::INFINITY)

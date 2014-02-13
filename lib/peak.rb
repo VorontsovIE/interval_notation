@@ -4,9 +4,9 @@ require_relative 'identificator_mapping'
 
 class Peak
   attr_reader :annotation, :short_description, :description, :association_with_transcript,
-              :entrezgene_id, :hgnc_id, :uniprot_id, :tpm, :tpms
-  def initialize(annotation, short_description, description, association_with_transcript, entrezgene_id, hgnc_id, uniprot_id, tpm)
-    @annotation, @short_description, @description, @association_with_transcript, @entrezgene_id, @hgnc_id, @uniprot_id, @tpm = annotation, short_description, description, association_with_transcript, entrezgene_id, hgnc_id, uniprot_id, tpm
+              :entrezgene_id, :hgnc_ids, :uniprot_id, :tpm, :tpms
+  def initialize(annotation, short_description, description, association_with_transcript, entrezgene_ids, hgnc_ids, uniprot_id, tpm)
+    @annotation, @short_description, @description, @association_with_transcript, @entrezgene_ids, @hgnc_ids, @uniprot_id, @tpm = annotation, short_description, description, association_with_transcript, entrezgene_ids, hgnc_ids, uniprot_id, tpm
     @tpms = {}
   end
 
@@ -14,17 +14,23 @@ class Peak
     @region ||= GenomeRegion.new_by_annotation(annotation)
   end
 
-  # Returns an array of peaks (for each hgnc and entrezgene sticking hgnc and entrezgene together accordantly) basically the same but linked to different genes
-  ### (line with infos shortened for brevity)
-  ### Peak.new_peaks_by_infos('chr10:102289611..102289643,- p1@NDUFB8,p1@SEC31B CAGE_peak_1_at_NDUFB8_5end,CAGE_peak_1_at_SEC31B_5end 0bp_to_AF044958,AF077028,AF115968,NM_005004,uc010qpq.1,uc010qpr.1_5end  entrezgene:4714,entrezgene:25956  HGNC:7703,HGNC:23197  uniprot:O95169,uniprot:A8KAL6 62.734510667127')
-  def self.new_peaks_by_infos(infos, hgnc_entrezgene_mapping)
+  # ENST transcript associations
+  def enst_ids
+    @enst_ids ||= begin
+      if association_with_transcript == 'NA'
+        []  
+      else
+        association_with_transcript.gsub(/_5end$/,'').gsub(/-?\d+bp_to_(,-?\d+bp_to_)?/,'').split(',').select{|identifier| identifier.start_with?('ENST')}
+      end
+    end
+  end
+
+  def self.new_by_infos(infos)
     annotation, short_description, description, association_with_transcript, entrezgene, hgnc, uniprot_id, tpm = infos.strip.split("\t")
     tpm = tpm.to_f
     hgnc_ids = hgnc.split(',').map{|hgnc_id| hgnc_from_string(hgnc_id)}
     entrezgene_ids = entrezgene.split(',').map{|entrezgene_id| entrezgene_from_string(entrezgene_id)}
-    hgnc_entrezgene_mapping.combine(hgnc_ids, entrezgene_ids).map{|hgnc_id, entrezgene_id|
-      self.new(annotation, short_description, description, association_with_transcript, entrezgene_id, hgnc_id, uniprot_id, tpm)
-    }
+    Peak.new(annotation, short_description, description, association_with_transcript, entrezgene_ids, hgnc_ids, uniprot_id, tpm)
   end
 
   def to_s
@@ -36,21 +42,13 @@ class Peak
   def pos_start; region.pos_start; end
   def pos_end; region.pos_end; end
 
-  # hgnc_id => [peaks]
-  def self.peaks_from_file(input_file, hgnc_entrezgene_mapping)
-    peaks = {}
+  def self.peaks_from_file(input_file)
     File.open(input_file) do |fp|
-      fp.each_line do |line|
+      fp.each_line.each_with_object([]) do |line, peaks|
         next unless line.start_with?('chr')  # this criteium can become insufficient when applied to Drosophila (it has differently named chromosomes)
-        pack_of_peaks = Peak.new_peaks_by_infos(line, hgnc_entrezgene_mapping)
-        pack_of_peaks.each do |peak|
-          next unless peak.hgnc_id
-          peaks[peak.hgnc_id] ||= []
-          peaks[peak.hgnc_id] << peak
-        end
+        peaks << Peak.new_by_infos(line)
       end
     end
-    peaks
   end
 
   def ==(other)

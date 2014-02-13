@@ -7,128 +7,114 @@ require_relative 'cage'
 require_relative 'identificator_mapping'
 require_relative 'transcript_group'
 require_relative 'logger_stub'
+require_relative 'ensembl_reader'
 
 class GeneDataLoader
-  attr_reader :all_cages, :entrezgene_transcript_mapping, :all_peaks, :all_transcripts
+  def ensembl_exons_column_names 
+    {enst: 'Ensembl Transcript ID', chromosome: 'Chromosome Name', strand: 'Strand',
+    pos_start: 'Exon Chr Start (bp)', pos_end: 'Exon Chr End (bp)',
+    cds_start: 'Genomic coding start', cds_end: 'Genomic coding end' }
+  end
+
+  attr_reader :all_cages, :all_peaks, :all_transcripts, :transcripts_fold_change
   attr_reader :genes_to_process, :transcript_groups, :number_of_genes_for_a_peak
 
   attr_writer :logger
   def logger; @logger ||= LoggerStub.new;  end
 
-  attr_reader :cages_file, :gene_by_hgnc_file, :hgnc_entrezgene_mapping_file, :transcript_by_entrezgene_file, :peaks_for_tissue_file, :transcript_infos_file, :region_length, :genome_folder
-  def initialize(cages_file, gene_by_hgnc_file, hgnc_entrezgene_mapping_file, transcript_by_entrezgene_file, peaks_for_tissue_file, transcript_infos_file, region_length, genome_folder)
-    @cages_file = cages_file
-    @gene_by_hgnc_file = gene_by_hgnc_file
-    @hgnc_entrezgene_mapping_file = hgnc_entrezgene_mapping_file
-    @transcript_by_entrezgene_file = transcript_by_entrezgene_file
-    @peaks_for_tissue_file = peaks_for_tissue_file
-    @transcript_infos_file = transcript_infos_file
-    # length of region upstream to txStart which is considered to have peaks corresponding to transcript
-    @region_length = region_length
-    @genome_folder = genome_folder
+  # region_length - length of region upstream to txStart which is considered to have peaks corresponding to transcript
+  attr_reader :cages_file, :peaks_for_tissue_file, :transcript_infos_file, :region_length, :genome_folder, :mtor_fold_changes_file
+  def initialize(cages_file, peaks_for_tissue_file, transcript_infos_file, region_length, genome_folder, mtor_fold_changes_file)
+    @cages_file, @peaks_for_tissue_file, @transcript_infos_file, @region_length, @genome_folder, @mtor_fold_changes_file = cages_file, peaks_for_tissue_file, transcript_infos_file, region_length, genome_folder, mtor_fold_changes_file
   end
 
   def setup!
+    @transcripts_fold_change = load_transcripts_fold_change(mtor_fold_changes_file)
+    @all_peaks = Peak.peaks_from_file(peaks_for_tissue_file).reject{|peak| peak.tpm == 0}
+    transcripts = EnsemblReader.transcripts_from_ensembl_file(transcript_infos_file, ensembl_exons_column_names, Set.new(@transcripts_fold_change.keys))
+    transcripts.map! do |transcript|
+      augment_transcript(transcript, peaks_by_enst[transcript.name])
+    end
+    transcripts.reject(&:coding?).each{|transcript| $stderr.puts("#{transcript} is not coding") }
+    @all_transcripts = transcripts.select(&:coding?)
     @all_cages = read_cages(cages_file)
 
-    hgnc_entrezgene_mapping = read_hgnc_entrezgene_mapping(hgnc_entrezgene_mapping_file)
-    # Don't allow dublicates of either hgnc or entrezgene
-    raise "HGNC <--> Entrezgene mapping is ambigous"  if hgnc_entrezgene_mapping.ambigous?
-    hgnc_entrezgene_mapping.empty_links.each do |hgnc_id, entrezgene_id|
-      logger.info "Incomplete pair: (HGNC:#{hgnc_id}; entrezgene #{entrezgene_id})"
-    end
-
-    @entrezgene_transcript_mapping = read_entrezgene_transcript_mapping(transcript_by_entrezgene_file)
-
-    # Очень стремный момент! Мы делаем много клонов одного пика
-    @all_peaks = Peak.peaks_from_file(peaks_for_tissue_file, hgnc_entrezgene_mapping)
-
-    @all_transcripts = collect_hash_by_id(Transcript.transcripts_from_file(transcript_infos_file), &:name)
-
-    # bind peaks to transcripts and transcripts to genes; leave only genes having available coding transcripts and peaks
-    # TODO: remove genes having no associated peaks (i.e. all peaks are too far)
-    genes = Gene.genes_from_file(gene_by_hgnc_file, {hgnc: 'HGNC ID', approved_symbol: 'Approved Symbol', entrezgene: 'Entrez Gene ID', ensembl: 'Ensembl Gene ID'})
-    genes.reject!{|gene| peaks_by_hgnc(gene.hgnc_id).empty? }
-    genes.reject!{|gene| coding_transcripts_by_entrezgene(gene.entrezgene_id).empty? }
-    @genes_to_process = genes.map{|gene| augmented_gene(gene) }
-
-    @transcript_groups = collect_transcript_groups(@genes_to_process)
-    @number_of_genes_for_a_peak = calculate_number_of_genes_for_a_peak(@genes_to_process)
+    # Glue all gene's transcripts with the same UTR into the same TranscriptGroup
+    #
+    # We do so not to renormalize expression and other quantities between transcripts in a group,
+    # because have not enough information about concrete transcripts in a group.
+    @transcript_groups = TranscriptGroup.groups_with_common_utr(@all_transcripts, @all_cages)
 
     # Each peak can affect different transcripts so we distribute its expression
-    # first equally between all genes whose expression can be affected by this peak
-    # and then equally between all transcript groups of that gene
-
-    @genes_to_process.each do |gene|
-      @transcript_groups[gene.hgnc_id].each do |transcript_group|
-        transcript_group.summary_expression = calculate_summary_expressions_for_transcript_group(transcript_group)
-      end
+    # equally between all transcript groups whose expression can be affected by this peak
+    @transcript_groups.each do |transcript_group|
+      transcript_group.summary_expression = calculate_summary_expressions_for_transcript_group(transcript_group)
     end
   end
 
-#
-# Helper methods to unify loading data by id
-#
-  def coding_transcripts_by_entrezgene(entrezgene_id)
-    transcript_ucsc_ids = entrezgene_transcript_mapping.get_second_by_first_id(entrezgene_id, raise_on_missing_id: false)
-    transcript_ucsc_ids.map{|ucsc_id| transcript_by_ucsc(ucsc_id) }.compact.select(&:coding?)
+
+  def load_transcripts_fold_change(input_file)
+    mtor_lines = File.readlines(input_file)
+    column_indices = column_indices(mtor_lines[0], {enst: 'txids', fold_change: 'pp242.TE FOLD_CHANGE'})
+    mtor_lines.drop(1).each_with_object(Hash.new) do |line, transcripts_fold_change|
+      enst, fold_change = *extract_columns(line, [:enst, :fold_change], column_indices)
+      transcripts_fold_change[enst] = fold_change
+    end
   end
 
-  def peaks_by_hgnc(hgnc_id)
-    all_peaks[hgnc_id] || []
+
+  def peaks_by_enst
+    @peaks_by_enst ||= begin
+      result = Hash.new{|hsh, enst| hsh[enst] = []}
+      @all_peaks.each{|peak| peak.enst_ids.each{|enst_id| result[enst_id] << peak } }
+      result
+    end
   end
 
-  def transcript_by_ucsc(ucsc_id)
-    all_transcripts[ucsc_id]
+  def transcript_groups_by_enst
+    @transcript_groups_by_enst ||= begin
+      result = Hash.new {|hsh, enst| hsh[enst] = [] }
+      @transcript_groups.each do |transcript_group|
+        transcript_group.transcripts.each do |transcript|
+          result[transcript.name] << transcript_group
+        end
+      end   
+      result   
+    end
   end
 
+  def number_of_transcript_groups_for_a_peak
+    @number_of_transcript_groups_for_a_peak ||= begin
+      result = Hash.new{|hsh,peak| hsh[peak] = 0}
+      transcript_groups.each do |transcript_group|
+        transcript_group.associated_peaks.each{|peak| result[peak] += 1 }
+      end
+      result
+    end
+  end
 #
 # Methods to bind genes, peaks and transcripts
 #
-  # expand transcripts to upstream with some of given peaks, augment transcript infos with associated peaks
-  def augmented_transcripts(transcripts, peaks)
-    transcripts_expanded = transcripts.map do |transcript|
-      transcript.expanded_upstream(region_length).expand_and_trim_with_peaks(peaks)
-    end
-    transcripts_expanded.each do |transcript|
-      transcript.associate_peaks(peaks)
-    end
-    transcripts_expanded
+  def augment_transcript(transcript, peaks)
+    transcript_expanded = transcript.expanded_upstream(region_length).expand_and_trim_with_peaks(peaks)
+    transcript_expanded.associate_peaks(peaks)
+    transcript_expanded
   end
 
-  # returns the same Gene object augmented with information about its transcripts
-  # (each transcript in the meantime expanded and augmented with associated peaks)
-  def augmented_gene(gene)
-    transcripts = coding_transcripts_by_entrezgene(gene.entrezgene_id)
-    peaks = peaks_by_hgnc(gene.hgnc_id)
-    gene.transcripts = augmented_transcripts(transcripts, peaks)
-    gene
-  end
-
-  # Glue all gene's transcripts with the same UTR into the same TranscriptGroup
-  #
-  # We do so not to renormalize expression and other quantities between transcripts in a group,
-  # because have not enough information about concrete transcripts in a group.
-  def collect_transcript_groups(genes)
-    Hash[ genes.map{|gene| [gene.hgnc_id, TranscriptGroup.groups_with_common_utr(gene.transcripts, all_cages)]} ]
-  end
 
 #
 # Methods to renormalize expression
 #
-  def num_of_transcript_groups_associated_to_peak(peak)
-    transcript_groups[peak.hgnc_id].count{|transcript_group| transcript_group.associated_peaks.include?(peak) }
-  end
-
+  
   # Expression of peak starts, intersecting region
   # It can be used to find peak expression just from exons, if region is a markup of transcript's exons
   def peak_expression_on_region(peak, region, all_cages)
-    cages_for_full_region = sum_cages(peak, all_cages)
+    cages_for_full_region = sum_cages(peak.region, all_cages)
     if cages_for_full_region == 0
       return 0  if peak.tpm == 0
       raise 'Expression of peak is non-zero, while no cages found; It\'s impossible to recalculate expression'
     end
-    cages_for_restricted_region = sum_cages(peak & region, all_cages)
+    cages_for_restricted_region = sum_cages(peak.region & region, all_cages)
     fraction_of_cages_on_region = cages_for_full_region.to_f / cages_for_restricted_region
     peak.tpm * fraction_of_cages_on_region
   end
@@ -136,30 +122,24 @@ class GeneDataLoader
   def calculate_summary_expressions_for_transcript_group(transcript_group)
     peaks_expression = transcript_group.associated_peaks.map{|peak|
       expression = peak_expression_on_region(peak, transcript_group.exons_on_utr, all_cages)
-      expression / (number_of_genes_for_a_peak[peak] * num_of_transcript_groups_associated_to_peak(peak))
+      expression / (number_of_transcript_groups_for_a_peak[peak])
     }
-    peaks_expression.inject(&:+)
-  end
-
-  # Calculate number of genes that have specified peak in their transcript(transcript group)'s UTRs.
-  def calculate_number_of_genes_for_a_peak(genes)
-    number_of_genes_for_a_peak = Hash.new{|hsh,peak| hsh[peak] = 0}
-    genes.each do |gene|
-      peaks_associated_to_gene = @transcript_groups[gene.hgnc_id].map(&:associated_peaks).flatten.uniq
-      peaks_associated_to_gene.each{|peak| number_of_genes_for_a_peak[peak] += 1 }
-    end
-    number_of_genes_for_a_peak
+    peaks_expression.inject(0, &:+)
   end
 
 #
 # Output results
 #
   # block is used to process sequence before output
-  def output_all_5utr(genes_to_process, output_stream, &block)
-    genes_to_process.each do |gene|
-      @transcript_groups[gene.hgnc_id].each do |transcript_group|
+  def output_all_5utr(output_stream, &block)
+    transcripts_fold_change.each do |enst, fold_change|
+      transcript_groups_by_enst[enst].each do |transcript_group|
         utr = transcript_group.utr
         exons_on_utr = transcript_group.exons_on_utr
+        if exons_on_utr.empty?
+          $stderr.puts "#{transcript_group} has no exons on utr"
+          next
+        end
 
         # sequence and cages here are unreversed on '-'-strand. One should possibly reverse both arrays and complement sequence
         cages = utr.load_cages(all_cages)
@@ -169,20 +149,20 @@ class GeneDataLoader
         associated_peaks = transcript_group.associated_peaks
 
         summary_expression = transcript_group.summary_expression
-        gene_info = "HGNC:#{gene.hgnc_id}\t#{gene.approved_symbol}\tentrezgene:#{gene.entrezgene_id}"
         peaks_info = associated_peaks.map{|peak| peak.region.to_s}.join(';')
 
-        upstream_of_first_exon =  exons_on_utr.most_upstream_region.upstream(Float::INFINITY)
-        exons_on_utr_plus_upstream = exons_on_utr.union( upstream_of_first_exon.intersection(utr) )
+        #upstream_of_first_exon =  exons_on_utr.most_upstream_region.upstream(Float::INFINITY)
+        #exons_on_utr_plus_upstream = exons_on_utr.union( upstream_of_first_exon.intersection(utr) )
 
-        spliced_sequence = splice_sequence(sequence, utr, exons_on_utr_plus_upstream)
-        spliced_cages = utr.splice(cages, exons_on_utr_plus_upstream)
+        spliced_sequence = splice_sequence(sequence, utr, exons_on_utr)
+        spliced_cages = utr.splice(cages, exons_on_utr)
 
         if block_given?
-          block.call(output_stream, gene_info,transcript_group, peaks_info, summary_expression, spliced_sequence, spliced_cages)
+          block.call(output_stream, enst, transcript_group, peaks_info, summary_expression, spliced_sequence, spliced_cages, fold_change, utr, exons_on_utr)
         else
-          output_stream.puts ">#{gene_info}\t#{transcript_group}\t#{peaks_info}\t#{summary_expression}"
+          output_stream.puts ">#{enst}\tSummary expression: #{summary_expression}\tFold change: #{fold_change}\tTranscript: #{transcript_group}\tPeaks: #{peaks_info}"
           output_stream.puts spliced_sequence
+          output_stream.puts spliced_sequence.each_char.to_a.join("\t")
           output_stream.puts spliced_cages.join("\t")
         end
 

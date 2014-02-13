@@ -92,3 +92,22 @@ end
 def collect_hash_by_id(list, &id_block)
   list.each_with_object(Hash.new){|element, hsh| hsh[ id_block.call(element) ] = element }
 end
+
+def read_gene_mapping(input_file)
+  lines = File.readlines(input_file)
+  column_indices = column_indices(lines.first, {hgnc: 'HGNC ID', approved_symbol: 'Approved Symbol', entrezgene: 'Entrez Gene ID', ensembl: 'Ensembl Gene ID'})
+  lines.drop(1).map do |line|
+    hgnc_id, approved_symbol, entrezgene_id, ensembl_id = *extract_columns(line, [:hgnc, :approved_symbol, :entrezgene, :ensembl], column_indices)
+    Gene.new(hgnc_id, approved_symbol, entrezgene_id, ensembl_id)
+  end
+end
+
+def read_ensgs_by_enst(input_file)
+  lines = File.readlines(input_file)
+  column_indices = column_indices(lines.first, {ensg: 'Ensembl Gene ID', enst: 'Ensembl Transcript ID'})
+  mapping = Hash.new{|hsh, enst| hsh[enst] = [] }
+  lines.drop(1).map.with_object(mapping) do |line, result|
+    ensg, enst = *extract_columns(line, [:ensg, :enst], column_indices)
+    result[enst] << ensg
+  end
+end

@@ -6,7 +6,7 @@ module EnsemblReader
   # transcripts_from_ensembl_file(input_file, {enst: 'Ensembl Transcript ID', pos_start: 'Exon Chr Start (bp)', pos_end: 'Exon Chr End (bp)', chromosome: 'Chromosome Name', strand: 'Strand', cds_start: 'Genomic coding start', cds_end: 'Genomic coding end' })
 
   # returns a list of exons in file
-  def self.transcripts_from_ensembl_file(input_file, columns)
+  def self.transcripts_from_ensembl_file(input_file, columns, only_enst_from_list = nil)
     column_indices = {}
     exons_by_transcript = Hash.new{|hsh, enst| hsh[enst] = [] }
     coding_region_by_transcript = Hash.new{|hsh, enst| hsh[enst] = [] }
@@ -15,7 +15,8 @@ module EnsemblReader
         if lineno == 0
           column_indices = column_indices(line, columns)
         else
-          enst = *extract_columns(line, [:enst], column_indices)
+          enst, = *extract_columns(line, [:enst], column_indices)
+          next  if only_enst_from_list && ! only_enst_from_list.include?(enst)
           coding_region_by_transcript[enst] << coding_segment_by_infos(line, column_indices)
           exons_by_transcript[enst] << exon_by_infos(line, column_indices)
         end

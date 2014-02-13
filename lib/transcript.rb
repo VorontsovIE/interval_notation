@@ -55,10 +55,9 @@ class Transcript
   def expanded_upstream(region_length)
     Transcript.new(name, coding_region, exons.with_upstream(region_length), protein_id)
   end
-  private :expanded_upstream
 
   def peaks_intersecting_transcript(peaks)
-    peaks.select{|peak| transcript_region.intersect?(peak) }
+    peaks.select{|peak| transcript_region.intersect?(peak.region) }
   end
 
   def associate_peaks(peaks)
@@ -115,7 +114,7 @@ class Transcript
   # ucsc_id => transcript
   def self.transcripts_from_file(input_file)
     File.open(input_file) do |fp|
-      fp.map do |line|
+      fp.each_line.map do |line|
         Transcript.new_by_infos(line)
       end
     end
