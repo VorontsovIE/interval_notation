@@ -31,7 +31,7 @@ ensgs_by_enst = read_ensgs_by_enst('source_data/mart_export.txt')
 framework.setup!
 
 
-File.open('weighted_5-utr.txt', 'w') do |fw|
+File.open('weighted_5-utr_100bp.txt', 'w') do |fw|
   framework.output_all_5utr(fw) do |output_stream, enst, transcript_group, peaks_info, summary_expression, spliced_sequence, spliced_cages, fold_change, utr, exons_on_utr|
       # next  unless summary_expression >= min_expression
       gene_infos = ensgs_by_enst.fetch(enst, []).map{|ensg| genes_by_ensg.fetch(ensg, []) }.flatten.map{|gene| "#{gene.approved_symbol}(HGNC:#{gene.hgnc_id})" }.join(',')      

@@ -28,15 +28,36 @@ class GeneDataLoader
     @cages_file, @peaks_for_tissue_file, @transcript_infos_file, @region_length, @genome_folder, @mtor_fold_changes_file = cages_file, peaks_for_tissue_file, transcript_infos_file, region_length, genome_folder, mtor_fold_changes_file
   end
 
+  def peaks_by_chromosome
+    @peaks_by_chromosome ||= @all_peaks.group_by(&:chromosome)
+  end
+
   def setup!
     @transcripts_fold_change = load_transcripts_fold_change(mtor_fold_changes_file)
     @all_peaks = Peak.peaks_from_file(peaks_for_tissue_file).reject{|peak| peak.tpm == 0}
     transcripts = EnsemblReader.transcripts_from_ensembl_file(transcript_infos_file, ensembl_exons_column_names, Set.new(@transcripts_fold_change.keys))
-    transcripts.map! do |transcript|
-      augment_transcript(transcript, peaks_by_enst[transcript.name])
+    
+    transcripts.select{|transcript| ! transcript.coding? }.each{|transcript| $stderr.puts("#{transcript} is not coding") }
+    $stderr.puts("\n")
+    
+    transcripts = transcripts.select(&:coding?)
+    
+    transcripts.select{|transcript| transcript.utr_5.empty?}.each{|transcript| $stderr.puts "#{transcript} has empty UTR (before transcript augmentation)"}
+    $stderr.puts("\n")
+    transcripts.reject{|transcript| transcript.utr_5.empty?}.select{|transcript| transcript.exons_on_utr.empty?}.each{|transcript| $stderr.puts "#{transcript} has UTR but no exons on UTR (before transcript augmentation)"}
+    $stderr.puts("\n")
+    
+    transcripts = transcripts.map do |transcript|
+      augment_transcript(transcript, peaks_by_chromosome[transcript.chromosome])
     end
-    transcripts.reject(&:coding?).each{|transcript| $stderr.puts("#{transcript} is not coding") }
-    @all_transcripts = transcripts.select(&:coding?)
+
+    transcripts.select{|transcript| transcript.utr_5.empty?}.each{|transcript| $stderr.puts "#{transcript} has empty UTR (after transcript augmentation)"}
+    $stderr.puts("\n")
+    transcripts.reject{|transcript| transcript.utr_5.empty?}.select{|transcript| transcript.exons_on_utr.empty?}.each{|transcript| $stderr.puts "#{transcript} has UTR but no exons on UTR (after transcript augmentation)"}
+    $stderr.puts("\n")
+    
+    @all_transcripts = transcripts.reject{|transcript| transcript.exons_on_utr.empty? }
+
     @all_cages = read_cages(cages_file)
 
     # Glue all gene's transcripts with the same UTR into the same TranscriptGroup

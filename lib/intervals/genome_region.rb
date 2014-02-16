@@ -227,7 +227,6 @@ class GenomeRegion
   # here we don't take strand into account
   def load_sequence(genome_dir)
     if self.empty?
-      p "Load sequence for #{self}"
       return ""
     end    
     @sequence_on_positive_strand ||= begin
@@ -242,7 +241,6 @@ class GenomeRegion
   # returns array of cages (not reversed on '-' strand)
   def load_cages(all_cages)
     if self.empty?
-      p "Load cages for #{self}"
       return [] 
     end
     #caching here is a bad strategy because different tissues have different all_cages and yields different results
