@@ -60,8 +60,12 @@ class Transcript
     peaks.select{|peak| transcript_region.intersect?(peak.region) }
   end
 
+  def peaks_intersecting_exons_on_utr(peaks)
+    peaks.select{|peak| exons_on_utr.intersect?(peak.region) }
+  end
+
   def associate_peaks(peaks)
-    @peaks_associated ||= peaks_intersecting_transcript(peaks)
+    @peaks_associated ||= peaks_intersecting_exons_on_utr(peaks)
   end
 
   def exons_on_utr
