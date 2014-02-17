@@ -7,7 +7,7 @@ require_relative 'identificator_mapping'
 
 class Gene
   attr_reader :hgnc_id, :entrezgene_id, :ensembl_id, :approved_symbol
-  attr_accessor :transcripts
+  attr_accessor :transcripts, :ensembl_id_external
 
   def self.logger=(value)
     @logger = value
@@ -30,7 +30,11 @@ class Gene
     hgnc_id = hgnc_from_string(hgnc_id)
     entrezgene_id = entrezgene_from_string(entrezgene_id, with_prefix: false)
     ensembl_id = ensembl_from_string(ensembl_id)
-    self.new(hgnc_id, approved_symbol, entrezgene_id, ensembl_id)
+    gene = self.new(hgnc_id, approved_symbol, entrezgene_id, ensembl_id)
+    if column_indices[:ensembl_external]
+      gene.ensembl_id_external, = *extract_columns(info_line, [:ensembl_external], column_indices)  
+    end
+    gene
   end
 
   def to_s

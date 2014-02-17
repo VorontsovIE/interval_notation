@@ -42,14 +42,16 @@ class GeneDataLoader
     
     transcripts = transcripts.select(&:coding?)
     
-    transcripts.select{|transcript| transcript.utr_5.empty?}.each{|transcript| $stderr.puts "#{transcript} has empty UTR (before transcript augmentation)"}
-    $stderr.puts("\n")
-    transcripts.reject{|transcript| transcript.utr_5.empty?}.select{|transcript| transcript.exons_on_utr.empty?}.each{|transcript| $stderr.puts "#{transcript} has UTR but no exons on UTR (before transcript augmentation)"}
-    $stderr.puts("\n")
+    # transcripts.select{|transcript| transcript.utr_5.empty?}.each{|transcript| $stderr.puts "#{transcript} has empty UTR (before transcript augmentation)"}
+    # $stderr.puts("\n")
+    # transcripts.reject{|transcript| transcript.utr_5.empty?}.select{|transcript| transcript.exons_on_utr.empty?}.each{|transcript| $stderr.puts "#{transcript} has UTR but no exons on UTR (before transcript augmentation)"}
+    # $stderr.puts("\n")
     
     transcripts = transcripts.map do |transcript|
-      augment_transcript(transcript, peaks_by_chromosome[transcript.chromosome])
-    end
+      augment_transcript(transcript, peaks_by_chromosome[transcript.chromosome]).tap do |augmented_transcript|
+        $stderr.puts "#{transcript} had no related peaks so was removed" if augmented_transcript.nil?
+      end
+    end.compact
 
     transcripts.select{|transcript| transcript.utr_5.empty?}.each{|transcript| $stderr.puts "#{transcript} has empty UTR (after transcript augmentation)"}
     $stderr.puts("\n")
@@ -116,9 +118,21 @@ class GeneDataLoader
 #
 # Methods to bind genes, peaks and transcripts
 #
+  # Selects peaks intersecting exons on UTR of a transcript plus
+  # annotated (in FANTOM data) peaks, but only intesecting exons and lying on 5'-UTR upstream expansion
+  # Then it expands transcript to the most upstream peak and trim at that point and assigns transcript's associated peaks
+  # If no related peaks found - returns nil
   def augment_transcript(transcript, peaks)
-    transcript_expanded = transcript.expanded_upstream(region_length).expand_and_trim_with_peaks(peaks)
-    transcript_expanded.associate_peaks(peaks)
+    transcript_with_upstream = transcript.expanded_upstream(region_length)
+    related_peaks = peaks.select{|peak| peak.region.intersect?(transcript_with_upstream.exons_on_utr) }
+
+    upstream_of_coding_region = transcript.expanded_upstream(Float::INFINITY).exons_on_utr
+    related_peaks += peaks_by_enst[transcript.name].select{|peak| peak.region.intersect?(upstream_of_coding_region) }
+
+    related_peaks.uniq!
+
+    transcript_expanded = transcript.expand_and_trim_with_peaks(related_peaks)
+    transcript_expanded.associate_peaks(related_peaks)  if transcript_expanded
     transcript_expanded
   end
 

@@ -31,6 +31,10 @@ class TranscriptGroup
       # all transcripts with the same exons_on_utr also have tha same 5'-UTRs
       utr = sample_transcript.utr_5
       # and the same peaks
+      sample_transcript.peaks_associated.select{|peak| sum_cages(peak & exons_on_utr, all_cages) == 0 }.each{|peak|
+        real_sum_cages = sum_cages(peak.region, all_cages)
+        $stderr.puts "Peak #{peak} was removed from associated peaks of a transcript group because its sum of cages on intersection with #{sample_transcript}'s UTR is zero (full sum of cages of a peak is #{ real_sum_cages })"
+      }
       associated_peaks = sample_transcript.peaks_associated.reject{|peak| sum_cages(peak & exons_on_utr, all_cages) == 0 }
       TranscriptGroup.new(utr, exons_on_utr, transcripts, associated_peaks)
     end

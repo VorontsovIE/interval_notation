@@ -34,7 +34,7 @@ class Peak
   end
 
   def to_s
-    "Peak<#{annotation}; gene HGNC:#{hgnc_id}>"
+    "Peak<#{annotation}>"
   end
 
   def chromosome; region.chromosome; end

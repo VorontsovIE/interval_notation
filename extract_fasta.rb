@@ -7,7 +7,7 @@ min_expression = -Float::INFINITY
 cages_file = 'source_data/prostate%20cancer%20cell%20line%3aPC-3.CNhs11243.10439-106E7.hg19.ctss.bed'
 peaks_for_tissue_file = 'source_data/peaks_for_prostate%20cancer%20cell%20line%3aPC-3.txt'
 transcript_infos_file = 'source_data/ensembl_transcripts.txt'
-region_length = 100
+region_length = 0
 genome_folder = 'source_data/genome/hg19'
 mtor_fold_changes_file = 'source_data/mTOR_modified_res.csv'
 
@@ -22,19 +22,27 @@ logger.formatter = ->(severity, datetime, progname, msg) { "#{severity}: #{msg}\
 framework.logger = logger
 Gene.logger = logger
 
-
-genes_by_ensg = Gene.genes_from_file('source_data/protein_coding_genes.txt', 
-  {hgnc: 'HGNC ID', approved_symbol: 'Approved Symbol', entrezgene: 'Entrez Gene ID', ensembl: 'Ensembl Gene ID'}
-  ).group_by{|gene| gene.ensembl_id}
+genes = Gene.genes_from_file('source_data/protein_coding_genes.txt', 
+  {hgnc: 'HGNC ID', approved_symbol: 'Approved Symbol', entrezgene: 'Entrez Gene ID', ensembl: 'Ensembl Gene ID', ensembl_external: 'Ensembl ID(supplied by Ensembl)'}
+  )
+genes_by_ensg = genes.group_by{|gene| gene.ensembl_id}
+genes_by_external_ensg = genes.group_by{|gene| gene.ensembl_id_external}
 ensgs_by_enst = read_ensgs_by_enst('source_data/mart_export.txt')
 
 framework.setup!
 
 
-File.open('weighted_5-utr_100bp.txt', 'w') do |fw|
+File.open('weighted_5-utr_0bp_plus_peaks_annotated.txt', 'w') do |fw|
   framework.output_all_5utr(fw) do |output_stream, enst, transcript_group, peaks_info, summary_expression, spliced_sequence, spliced_cages, fold_change, utr, exons_on_utr|
       # next  unless summary_expression >= min_expression
-      gene_infos = ensgs_by_enst.fetch(enst, []).map{|ensg| genes_by_ensg.fetch(ensg, []) }.flatten.map{|gene| "#{gene.approved_symbol}(HGNC:#{gene.hgnc_id})" }.join(',')      
+      gene_infos = ensgs_by_enst.fetch(enst, []).map do |ensg|
+        genes_by_ensg.fetch(ensg) do |ensg_id|
+          genes_by_external_ensg.fetch(ensg_id, [])
+        end
+      end.flatten.map do |gene|
+        "#{gene.approved_symbol}(HGNC:#{gene.hgnc_id})"
+      end.join(',')
+
       output_stream.puts ">#{enst}\tGenes: #{gene_infos}\tSummary expression: #{summary_expression}\tFold change: #{fold_change}\tTranscript: #{transcript_group}\tPeaks: #{peaks_info}"
       output_stream.puts spliced_sequence
       output_stream.puts spliced_sequence.each_char.to_a.join("\t")

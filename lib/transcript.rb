@@ -6,6 +6,7 @@ class Transcript
   attr_accessor :peaks_associated
 
   def initialize(name, coding_region, exons, protein_id)
+    raise "Coding region is outside of exons"  unless exons.covering_region.contain?(coding_region)
     @name, @coding_region, @exons, @protein_id  = name, coding_region, exons, protein_id
   end
 
@@ -42,18 +43,18 @@ class Transcript
 
   # contigious region covering whole transcript
   def transcript_region
-    exons.covering_region
+    @transcript_region ||= exons.covering_region
   end
   private :transcript_region
 
   # return contigious untranslated 5'-region, including introns
   def utr_5
     raise "5'-UTR of non-coding gene is undefined"  unless coding?
-    transcript_region - coding_region.with_downstream(Float::INFINITY)
+    @utr_5 ||= transcript_region - coding_region.with_downstream(Float::INFINITY)
   end
 
   def expanded_upstream(region_length)
-    Transcript.new(name, coding_region, exons.with_upstream(region_length), protein_id)
+    (region_length == 0) ? self : Transcript.new(name, coding_region, exons.with_upstream(region_length), protein_id)
   end
 
   def peaks_intersecting_transcript(peaks)
@@ -65,17 +66,18 @@ class Transcript
   end
 
   def associate_peaks(peaks)
-    @peaks_associated ||= peaks_intersecting_exons_on_utr(peaks)
+    @peaks_associated = peaks # peaks_intersecting_exons_on_utr(peaks)
   end
 
   def exons_on_utr
-    exons & utr_5
+    @exons_on_utr ||= exons & utr_5
   end
 
   #
-  # Elongate region to the most upstream peak which intersects transcript and trims at this point start
+  # Elongate region to the most upstream peak and trims transcript's start at this point
   # It gives us transcript lasting upstream to the last point with reasonable expression (i.e. to a peak)
-  # Usually this procedure is applied after transcript was elongated 100-1000 bp from annotated txStart
+  # Usually this procedure is applied to peaks which intersect transcript being elongated upstream
+  # by 100-1000 bp from annotated txStart. Also peaks annotated as related to a transcript can be used
   # so +#expand_and_trim_with_peaks+ usually trims over-expanded transcript to its real start
   # But if transcript intersects peak in its(peak) middle, we elongate transcript to take whole the peak
   #
@@ -101,12 +103,13 @@ class Transcript
   # region expansion                       (...)
   # exons_expanded (result)                (_________)^^^^(___)^(_______)
   #
+  # In case there are no peaks, method returns nil
+  #
   def expand_and_trim_with_peaks(peaks)
-    peaks_intersecting_region = peaks_intersecting_transcript(peaks)
-    if peaks_intersecting_region.empty?
-      self
+    if peaks.empty?
+      nil
     else
-      most_upstream_peak = peaks_intersecting_region.map(&:region).min
+      most_upstream_peak = peaks.map(&:region).min
       peak_with_downstream = most_upstream_peak.with_downstream(Float::INFINITY)
       region_expansion = exons.upstream(Float::INFINITY) & peak_with_downstream
       exons_expanded = (exons | region_expansion) & peak_with_downstream
