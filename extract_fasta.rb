@@ -1,6 +1,16 @@
 require 'logger'
+require 'set'
 require_relative 'lib/gene_data_loader'
 require_relative 'lib/splicing'
+
+def load_transcripts_fold_change(input_file)
+  mtor_lines = File.readlines(input_file)
+  column_indices = column_indices(mtor_lines[0], {enst: 'txids', fold_change: 'pp242.TE FOLD_CHANGE'})
+  mtor_lines.drop(1).each_with_object(Hash.new) do |line, transcripts_fold_change|
+    enst, fold_change = *extract_columns(line, [:enst, :fold_change], column_indices)
+    transcripts_fold_change[enst] = fold_change
+  end
+end
 
 min_expression = -Float::INFINITY
 
@@ -15,8 +25,11 @@ framework = GeneDataLoader.new(cages_file,
                               peaks_for_tissue_file,
                               transcript_infos_file,
                               region_length,
-                              genome_folder,
-                              mtor_fold_changes_file)
+                              genome_folder)
+
+transcripts_fold_change = load_transcripts_fold_change(mtor_fold_changes_file)
+framework.transcript_ensts_to_load = Set.new(transcripts_fold_change.keys)
+
 logger = Logger.new($stderr)
 logger.formatter = ->(severity, datetime, progname, msg) { "#{severity}: #{msg}\n" }
 framework.logger = logger
@@ -33,7 +46,7 @@ framework.setup!
 
 
 File.open('weighted_5-utr_0bp_plus_peaks_annotated.txt', 'w') do |fw|
-  framework.output_all_5utr(fw) do |output_stream, enst, transcript_group, peaks_info, summary_expression, spliced_sequence, spliced_cages, fold_change, utr, exons_on_utr|
+  framework.output_all_5utr(fw) do |output_stream, enst, transcript_group, peaks_info, summary_expression, spliced_sequence, spliced_cages, utr, exons_on_utr|
       # next  unless summary_expression >= min_expression
       gene_infos = ensgs_by_enst.fetch(enst, []).map do |ensg|
         genes_by_ensg.fetch(ensg) do |ensg_id|
@@ -42,7 +55,7 @@ File.open('weighted_5-utr_0bp_plus_peaks_annotated.txt', 'w') do |fw|
       end.flatten.map do |gene|
         "#{gene.approved_symbol}(HGNC:#{gene.hgnc_id})"
       end.join(',')
-
+      fold_change = transcripts_fold_change[enst]
       output_stream.puts ">#{enst}\tGenes: #{gene_infos}\tSummary expression: #{summary_expression}\tFold change: #{fold_change}\tTranscript: #{transcript_group}\tPeaks: #{peaks_info}"
       output_stream.puts spliced_sequence
       output_stream.puts spliced_sequence.each_char.to_a.join("\t")

@@ -16,16 +16,17 @@ class GeneDataLoader
     cds_start: 'Genomic coding start', cds_end: 'Genomic coding end' }
   end
 
-  attr_reader :all_cages, :all_peaks, :all_transcripts, :transcripts_fold_change
+  attr_reader :all_cages, :all_peaks, :all_transcripts
   attr_reader :genes_to_process, :transcript_groups, :number_of_genes_for_a_peak
+  attr_accessor :transcript_ensts_to_load
 
   attr_writer :logger
   def logger; @logger ||= LoggerStub.new;  end
 
   # region_length - length of region upstream to txStart which is considered to have peaks corresponding to transcript
-  attr_reader :cages_file, :peaks_for_tissue_file, :transcript_infos_file, :region_length, :genome_folder, :mtor_fold_changes_file
-  def initialize(cages_file, peaks_for_tissue_file, transcript_infos_file, region_length, genome_folder, mtor_fold_changes_file)
-    @cages_file, @peaks_for_tissue_file, @transcript_infos_file, @region_length, @genome_folder, @mtor_fold_changes_file = cages_file, peaks_for_tissue_file, transcript_infos_file, region_length, genome_folder, mtor_fold_changes_file
+  attr_reader :cages_file, :peaks_for_tissue_file, :transcript_infos_file, :region_length, :genome_folder
+  def initialize(cages_file, peaks_for_tissue_file, transcript_infos_file, region_length, genome_folder)
+    @cages_file, @peaks_for_tissue_file, @transcript_infos_file, @region_length, @genome_folder = cages_file, peaks_for_tissue_file, transcript_infos_file, region_length, genome_folder
   end
 
   def peaks_by_chromosome
@@ -33,9 +34,8 @@ class GeneDataLoader
   end
 
   def setup!
-    @transcripts_fold_change = load_transcripts_fold_change(mtor_fold_changes_file)
     @all_peaks = Peak.peaks_from_file(peaks_for_tissue_file).reject{|peak| peak.tpm == 0}
-    transcripts = EnsemblReader.transcripts_from_ensembl_file(transcript_infos_file, ensembl_exons_column_names, Set.new(@transcripts_fold_change.keys))
+    transcripts = EnsemblReader.transcripts_from_ensembl_file(transcript_infos_file, ensembl_exons_column_names, transcript_ensts_to_load)
     
     transcripts.select{|transcript| ! transcript.coding? }.each{|transcript| $stderr.puts("#{transcript} is not coding") }
     $stderr.puts("\n")
@@ -74,17 +74,6 @@ class GeneDataLoader
       transcript_group.summary_expression = calculate_summary_expressions_for_transcript_group(transcript_group)
     end
   end
-
-
-  def load_transcripts_fold_change(input_file)
-    mtor_lines = File.readlines(input_file)
-    column_indices = column_indices(mtor_lines[0], {enst: 'txids', fold_change: 'pp242.TE FOLD_CHANGE'})
-    mtor_lines.drop(1).each_with_object(Hash.new) do |line, transcripts_fold_change|
-      enst, fold_change = *extract_columns(line, [:enst, :fold_change], column_indices)
-      transcripts_fold_change[enst] = fold_change
-    end
-  end
-
 
   def peaks_by_enst
     @peaks_by_enst ||= begin
@@ -167,7 +156,7 @@ class GeneDataLoader
 #
   # block is used to process sequence before output
   def output_all_5utr(output_stream, &block)
-    transcripts_fold_change.each do |enst, fold_change|
+    (transcript_ensts_to_load || @all_transcripts.map(&:name)).each do |enst|
       transcript_groups_by_enst[enst].each do |transcript_group|
         utr = transcript_group.utr
         exons_on_utr = transcript_group.exons_on_utr
@@ -193,9 +182,9 @@ class GeneDataLoader
         spliced_cages = utr.splice(cages, exons_on_utr)
 
         if block_given?
-          block.call(output_stream, enst, transcript_group, peaks_info, summary_expression, spliced_sequence, spliced_cages, fold_change, utr, exons_on_utr)
+          block.call(output_stream, enst, transcript_group, peaks_info, summary_expression, spliced_sequence, spliced_cages, utr, exons_on_utr)
         else
-          output_stream.puts ">#{enst}\tSummary expression: #{summary_expression}\tFold change: #{fold_change}\tTranscript: #{transcript_group}\tPeaks: #{peaks_info}"
+          output_stream.puts ">#{enst}\tSummary expression: #{summary_expression}\tTranscript: #{transcript_group}\tPeaks: #{peaks_info}"
           output_stream.puts spliced_sequence
           output_stream.puts spliced_sequence.each_char.to_a.join("\t")
           output_stream.puts spliced_cages.join("\t")
