@@ -13,13 +13,11 @@ def load_transcripts_fold_change(input_file)
 end
 
 min_expression = -Float::INFINITY
-
-cages_file = 'source_data/prostate%20cancer%20cell%20line%3aPC-3.CNhs11243.10439-106E7.hg19.ctss.bed'
-peaks_for_tissue_file = 'source_data/peaks_for_prostate%20cancer%20cell%20line%3aPC-3.txt'
+cages_file = 'source_data_2/embryonic%20kidney%20cell%20line%3a%20HEK293%2fSLAM%20untreated.CNhs11046.10450-106F9.hg19.ctss.bed'
+peaks_for_tissue_file = 'source_data_2/peaks_for_embryonic%20kidney%20cell%20line%3a%20HEK293%2fSLAM%20untreated.txt'
 transcript_infos_file = 'source_data/ensembl_transcripts.txt'
 region_length = 0
 genome_folder = 'source_data/genome/hg19'
-mtor_fold_changes_file = 'source_data/mTOR_modified_res.csv'
 
 framework = GeneDataLoader.new(cages_file,
                               peaks_for_tissue_file,
@@ -27,46 +25,21 @@ framework = GeneDataLoader.new(cages_file,
                               region_length,
                               genome_folder)
 
-transcripts_fold_change = load_transcripts_fold_change(mtor_fold_changes_file)
-framework.transcript_ensts_to_load = Set.new(transcripts_fold_change.keys)
+transcripts = File.readlines('source_data_2/reads_vs_hg19_gencodeComprehensive.stats').select{|l| l.strip.split.first.match(/ENST\d+/) }
+
+framework.transcript_ensts_to_load = Set.new( transcripts.map{|line| line.split.first.match(/ENST\d+/)[0] } )
 
 logger = Logger.new($stderr)
 logger.formatter = ->(severity, datetime, progname, msg) { "#{severity}: #{msg}\n" }
 framework.logger = logger
 Gene.logger = logger
 
-genes = Gene.genes_from_file('source_data/protein_coding_genes.txt', 
-  {hgnc: 'HGNC ID', approved_symbol: 'Approved Symbol', entrezgene: 'Entrez Gene ID', ensembl: 'Ensembl Gene ID', ensembl_external: 'Ensembl ID(supplied by Ensembl)'}
-  )
-genes_by_ensg = genes.group_by{|gene| gene.ensembl_id}
-genes_by_external_ensg = genes.group_by{|gene| gene.ensembl_id_external}
-ensgs_by_enst = read_ensgs_by_enst('source_data/mart_export.txt')
-
 framework.setup!
 
-
-File.open('weighted_5-utr_0bp_plus_peaks_annotated.txt', 'w') do |fw|
+File.open('transcripts_expression_3.txt', 'w') do |fw|
   framework.output_all_5utr(fw) do |output_stream, enst, transcript_group, peaks_info, summary_expression, spliced_sequence, spliced_cages, utr, exons_on_utr|
-      # next  unless summary_expression >= min_expression
-      gene_infos = ensgs_by_enst.fetch(enst, []).map do |ensg|
-        genes_by_ensg.fetch(ensg) do |ensg_id|
-          genes_by_external_ensg.fetch(ensg_id, [])
-        end
-      end.flatten.map do |gene|
-        "#{gene.approved_symbol}(HGNC:#{gene.hgnc_id})"
-      end.join(',')
-      fold_change = transcripts_fold_change[enst]
-      output_stream.puts ">#{enst}\tGenes: #{gene_infos}\tSummary expression: #{summary_expression}\tFold change: #{fold_change}\tTranscript: #{transcript_group}\tPeaks: #{peaks_info}"
-      output_stream.puts spliced_sequence
-      output_stream.puts spliced_sequence.each_char.to_a.join("\t")
-      output_stream.puts spliced_cages.join("\t")
+    output_stream.puts "#{enst}\t#{summary_expression}"
   end
-  # framework.output_all_5utr(nil, fw) do |output_stream, enst, transcript_group, peaks_info, expression, spliced_sequence, spliced_cages|
-  #   
-  #   output_stream.puts ">#{enst}\t#{transcript_group}\t#{expression}"
-  #   output_stream.puts ">#{spliced_cages.join("\t")}"
-  #   output_stream.puts spliced_sequence
-  # end
 end
 
 # File.open('weighted_5-utr-polyN-masked_1.txt', 'w') do |fw|
