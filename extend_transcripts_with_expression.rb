@@ -1,7 +1,7 @@
 require_relative 'lib/identificator_mapping'
 require_relative 'lib/gene'
 
-expression_by_enst = Hash[ File.readlines('transcripts_expression.txt').map(&:strip).map(&:split) ]
+expression_by_enst = Hash[ File.readlines('source_data_2/transcripts_expression.txt').map(&:strip).map(&:split) ]
 
 genes = Gene.genes_from_file('source_data/protein_coding_genes.txt', 
   {hgnc: 'HGNC ID', approved_symbol: 'Approved Symbol', entrezgene: 'Entrez Gene ID', ensembl: 'Ensembl Gene ID', ensembl_external: 'Ensembl ID(supplied by Ensembl)'}
@@ -12,7 +12,7 @@ ensgs_by_enst = read_ensgs_by_enst('source_data/mart_export.txt')
 
 enst_in_file = Set.new
 
-File.open('source_data_2/reads_vs_hg19_gencodeComprehensive.stats') do |f|
+File.open('source_data_2/reads_2_vs_hg19_gencodeComprehensive.stats') do |f|
   f.each_line do |line|
     match = line.split.first.match(/ENST\d+/)
     if match
