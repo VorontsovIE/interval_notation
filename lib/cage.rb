@@ -1,4 +1,5 @@
 require_relative 'intervals/genome_region'
+require 'zlib'
 
 def cages_initial_hash
   cages = {:+ => Hash.new{|h, chromosome| h[chromosome] = Hash.new{|h2,pos| h2[pos] = 0 } },
@@ -36,28 +37,31 @@ end
 # adds cages from new file to a hash (summing cages) and calculating number of files affected each position
 # input file has lines in format: chr1  564462  564463  chr1:564462..564463,+ 1 +
 # pos_end is always pos_start+1 because each line is reads from the single position
-def read_cages_to(input_file, cages, cage_count = nil)
-  File.open(input_file) do |f|
-    if cage_count
-      f.each_line do |line|
-        chromosome, pos_start, _pos_end, _region_annotation, num_reads, strand = line.strip.split("\t")
-        strand = strand.to_sym
-        chromosome = chromosome.to_sym
-        pos_start, num_reads = pos_start.to_i, num_reads.to_i
-        cages[strand][chromosome][pos_start] += num_reads
-        cage_count[strand][chromosome][pos_start] += 1
-      end
-      return cages, cage_count
-    else
-      f.each_line do |line|
-        chromosome, pos_start, _pos_end, _region_annotation, num_reads, strand = line.strip.split("\t")
-        strand = strand.to_sym
-        chromosome = chromosome.to_sym
-        pos_start, num_reads = pos_start.to_i, num_reads.to_i
-        cages[strand][chromosome][pos_start] += num_reads
-      end
-      return cages
-    end
+def read_cages_from_stream(stream, cages, cage_count = nil)
+  stream.each_line do |line|
+    chromosome, pos_start, _pos_end, _region_annotation, num_reads, strand = line.strip.split("\t")
+    strand = strand.to_sym
+    chromosome = chromosome.to_sym
+    pos_start, num_reads = pos_start.to_i, num_reads.to_i
+    cages[strand][chromosome][pos_start] += num_reads
+    cage_count[strand][chromosome][pos_start] += 1  if cage_count
+  end
+  if cage_count
+    return cages, cage_count
+  else
+    return cages
+  end
+end
+
+def read_cages_to(bed_filename, cages, cage_count = nil)
+  File.open(bed_filename) do |f|
+    read_cages_from_stream(f, cages, cage_count = nil)
+  end
+end
+
+def read_cages_from_gzip_to(gzip_bed_filename, cages, cage_count = nil)
+  Zlib::GzipReader.open(gzip_bed_filename) do |gz_f|
+    read_cages_from_stream(gz_f, cages, cage_count = nil)
   end
 end
 
