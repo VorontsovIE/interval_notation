@@ -39,7 +39,7 @@ end
 # pos_end is always pos_start+1 because each line is reads from the single position
 def read_cages_from_stream(stream, cages, cage_count = nil)
   stream.each_line do |line|
-    chromosome, pos_start, _pos_end, _region_annotation, num_reads, strand = line.strip.split("\t")
+    chromosome, pos_start, _pos_end, _region_annotation, num_reads, strand = line.chomp.split("\t")
     strand = strand.to_sym
     chromosome = chromosome.to_sym
     pos_start, num_reads = pos_start.to_i, num_reads.to_i

@@ -34,14 +34,14 @@ end
 def read_entrezgene_transcript_mapping(input_file)
   entrez_ucsc_pairs = File.readlines(input_file).map do |line|
     # we don't remove version (part of name after dot)
-    transcript_id, entrezgene_id = line.strip.split("\t")
+    transcript_id, entrezgene_id = line.chomp.split("\t")
     [transcript_id, entrezgene_id.to_i]
   end
   Mapping.new(:entrezgene, :ucsc, entrez_ucsc_pairs)
 end
 
 def read_hgnc_entrezgene_mapping(input_file)
-  hgnc_entrez_lines = File.readlines(input_file).map{|l| l.strip.split("\t")}
+  hgnc_entrez_lines = File.readlines(input_file).map{|l| l.chomp.split("\t")}
   column_names = hgnc_entrez_lines.shift
   hgnc_column_index = column_names.index('HGNC ID')
   entrez_column_index = column_names.index('Entrez Gene ID')
@@ -59,7 +59,7 @@ def read_mtor_mapping(input_file)
   File.open(input_file) do |f|
     f.each_line do |line|
       next if f.lineno == 1
-      hsieh_name, hgnc_name, hgnc_id = line.strip.split("\t")
+      hsieh_name, hgnc_name, hgnc_id = line.chomp.split("\t")
       hgnc_id = hgnc_from_string(hgnc_id)
       mtor_targets[hgnc_id] = hgnc_name
       translational_genes[hgnc_id] = hgnc_name  if hsieh_name.end_with?('=')
@@ -72,7 +72,7 @@ end
 # Columns should be a hash from column names to according column titles
 # e.g. {hgnc: 'HGNC ID', approved_symbol: 'Approved Symbol', entrezgene: 'Entrez Gene ID', ensembl: 'Ensembl Gene ID'}
 def column_indices(line, columns)
-  column_names = line.strip.split("\t")
+  column_names = line.chomp.split("\t")
   columns.inject(Hash.new) do |hsh, (column_name, column_header)|
     idx = column_names.index(column_header)
     hsh.merge(column_name => idx)
@@ -81,7 +81,7 @@ end
 
 # parse line with data and extracts cell values of +column_names+ columns from cells, according to order defined by +column_indices+
 def extract_columns(info_line, column_names, column_indices)
-  infos = info_line.strip.split("\t")
+  infos = info_line.chomp.split("\t")
   column_names.map{|column_name|
     idx = column_indices[column_name]
     idx ? infos[idx] : nil

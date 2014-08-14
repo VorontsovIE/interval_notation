@@ -23,7 +23,7 @@ class Mapping
   end
 
   def self.from_file(identifier_first_type, identifier_second_type, filename)
-    pairs = File.readlines(filename).map(&:strip).reject(&:empty?).map{|line| line.split("\t")}
+    pairs = File.readlines(filename).map(&:rstrip).reject(&:empty?).map{|line| line.split("\t")}
     from_pairs(identifier_first_type, identifier_second_type, pairs)
   end
 

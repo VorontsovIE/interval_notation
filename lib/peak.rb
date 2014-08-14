@@ -26,7 +26,7 @@ class Peak
   end
 
   def self.new_by_infos(infos)
-    annotation, short_description, description, association_with_transcript, entrezgene, hgnc, uniprot_id, tpm = infos.strip.split("\t")
+    annotation, short_description, description, association_with_transcript, entrezgene, hgnc, uniprot_id, tpm = infos.chomp.split("\t")
     tpm = tpm.to_f
     hgnc_ids = hgnc.split(',').map{|hgnc_id| hgnc_from_string(hgnc_id)}
     entrezgene_ids = entrezgene.split(',').map{|entrezgene_id| entrezgene_from_string(entrezgene_id)}
