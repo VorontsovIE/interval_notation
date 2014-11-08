@@ -115,8 +115,9 @@ class GeneDataLoader
     transcript_with_upstream = transcript.expanded_upstream(region_length)
     related_peaks = peaks.select{|peak| peak.region.intersect?(transcript_with_upstream.exons_on_utr) }
 
-    upstream_of_coding_region = transcript.expanded_upstream(Float::INFINITY).exons_on_utr
-    related_peaks += peaks_by_enst[transcript.name].select{|peak| peak.region.intersect?(upstream_of_coding_region) }
+    #upstream_of_coding_region = transcript.expanded_upstream(Float::INFINITY).exons_on_utr
+    #related_peaks += peaks_by_enst[transcript.name].select{|peak| peak.region.intersect?(upstream_of_coding_region) }
+
 
     related_peaks.uniq!
 
