@@ -1,5 +1,6 @@
 for_article/
 source_data/
+source_data_2/
 genome/
 top_motif/
 *.bed
@@ -11,3 +12,8 @@ robust_set.freeze1.reduced.pc-3
 *.sav
 *.fasta
 *.rar
+*.tar
+*.gz
+*.csv
+*.xls
+*.xlsx
