@@ -193,42 +193,4 @@ class GeneDataLoader
       end
     end
   end
-  def output_all_5utr(output_stream, &block)
-    (transcript_ensts_to_load || @all_transcripts.map(&:name)).each do |enst|
-      transcript_groups_by_enst[enst].each do |transcript_group|
-        utr = transcript_group.utr
-        exons_on_utr = transcript_group.exons_on_utr
-        if exons_on_utr.empty?
-          $stderr.puts "#{transcript_group} has no exons on utr"
-          next
-        end
-
-        # sequence and cages here are unreversed on '-'-strand. One should possibly reverse both arrays and complement sequence
-        cages = utr.load_cages(all_cages)
-        sequence = utr.load_sequence(genome_folder)
-
-        # all transcripts in the group have the same associated peaks
-        associated_peaks = transcript_group.associated_peaks
-
-        summary_expression = transcript_group.summary_expression
-        peaks_info = associated_peaks.map{|peak| peak.region.to_s}.join(';')
-
-        #upstream_of_first_exon =  exons_on_utr.most_upstream_region.upstream(Float::INFINITY)
-        #exons_on_utr_plus_upstream = exons_on_utr.union( upstream_of_first_exon.intersection(utr) )
-
-        spliced_sequence = splice_sequence(sequence, utr, exons_on_utr)
-        spliced_cages = utr.splice(cages, exons_on_utr)
-
-        if block_given?
-          block.call(output_stream, enst, transcript_group, peaks_info, summary_expression, spliced_sequence, spliced_cages, utr, exons_on_utr)
-        else
-          output_stream.puts ">#{enst}\tSummary expression: #{summary_expression}\tTranscript: #{transcript_group}\tPeaks: #{peaks_info}"
-          output_stream.puts spliced_sequence
-          output_stream.puts spliced_sequence.each_char.to_a.join("\t")
-          output_stream.puts spliced_cages.join("\t")
-        end
-
-      end
-    end
-  end
 end
