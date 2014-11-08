@@ -20,17 +20,27 @@ class Peak
       if association_with_transcript == 'NA'
         []  
       else
-        association_with_transcript.gsub(/_5end$/,'').gsub(/-?\d+bp_to_(,-?\d+bp_to_)?/,'').split(',').select{|identifier| identifier.start_with?('ENST')}
+        association_with_transcript.gsub(/_5end$/,'').gsub(/-?\d+bp_to_(,-?\d+bp_to_)?/,'').split(',').select{|identifier| identifier.start_with?('ENST') || identifier.start_with?('ENSMUST')}
       end
     end
   end
 
+# # (!) human FANTOM
+#   def self.new_by_infos(infos)
+#     annotation, short_description, description, association_with_transcript, entrezgene, hgnc, uniprot_id, tpm = infos.chomp.split("\t")
+#     tpm = tpm.to_f
+#     hgnc_ids = hgnc.split(',').map{|hgnc_id| hgnc_from_string(hgnc_id)}
+#     entrezgene_ids = entrezgene.split(',').map{|entrezgene_id| entrezgene_from_string(entrezgene_id)}
+#     Peak.new(annotation, short_description, description, association_with_transcript, entrezgene_ids, hgnc_ids, uniprot_id, tpm)
+#   end
+
+# (!) mouse FANTOM
   def self.new_by_infos(infos)
-    annotation, short_description, description, association_with_transcript, entrezgene, hgnc, uniprot_id, tpm = infos.chomp.split("\t")
+    annotation, short_description, description, association_with_transcript, entrezgene, uniprot_id, tpm = infos.chomp.split("\t")
     tpm = tpm.to_f
-    hgnc_ids = hgnc.split(',').map{|hgnc_id| hgnc_from_string(hgnc_id)}
+    # hgnc_ids = hgnc.split(',').map{|hgnc_id| hgnc_from_string(hgnc_id)}
     entrezgene_ids = entrezgene.split(',').map{|entrezgene_id| entrezgene_from_string(entrezgene_id)}
-    Peak.new(annotation, short_description, description, association_with_transcript, entrezgene_ids, hgnc_ids, uniprot_id, tpm)
+    Peak.new(annotation, short_description, description, association_with_transcript, entrezgene_ids, [], uniprot_id, tpm)
   end
 
   def to_s
