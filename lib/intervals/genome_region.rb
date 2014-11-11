@@ -261,6 +261,7 @@ class GenomeRegion
   end
 
   # Danger method being combined with Enumerable!
+  # Due to Eumerable #include? works not as expected
   # You can mix situation [region_1].inject(&:union) => region_1  and  region_1.inject => SemiInterval (region_1.region)
   def each(&block)
     if block_given?

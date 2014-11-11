@@ -1,12 +1,14 @@
 require_relative '../../lib/intervals/genome_region'
+require 'shellwords'
 require 'zlib'
 
-# annotation = ARGV[0]
-# tissues_filename = ARGV[1]
-annotation = 'chr1:160579800-160617200,-'
-tissues_filename = 'tissue_names.txt'
+# annotation = ARGV.shift
+# tissues_filename = ARGV[0]
+annotation = 'chr1:160579800..160617200,-'
+# tissues_filename = 'tissue_names.txt'
 region_of_interest = GenomeRegion.new_by_annotation(annotation)
 
+# p region_of_interest.intersect?(GenomeRegion.new_by_annotation('chr1:160579801..160617199,-'))
 
 def each_cage_line_from_stream(stream)
   stream.each_line do |line|
@@ -18,18 +20,25 @@ def each_cage_line_from_stream(stream)
   end
 end
 
-def select_cages_from_gzip_to(gzip_bed_filename, output_stream)
-  Zlib::GzipReader.open(gzip_bed_filename) do |gz_f|
+# reader: Zlib::GzipReader
+def select_cages_from(gzip_bed_filename, output_stream, region_of_interest, reader: File)
+  reader.open(gzip_bed_filename) do |gz_f|
     each_cage_line_from_stream(gz_f) do |line, region, num_reads|
-      output_stream.puts(line)  if region_of_interest.include?(region)
+      if region_of_interest.intersect?(region)
+        output_stream.puts(line)
+        $stderr.puts line, region, num_reads
+      end
     end
   end
 end
 
 
 Dir.mkdir('out')  unless Dir.exist?('out')
-tissues_filename.readlines(tissues_filename).each do |tissue|
-  File.open(tissue_filename + '.out', 'w') do |output_file|
-    select_cages_from_gzip_to(CGI.escape(tissue) + '.hg19.ctss.bed', File.join('out', tissue + '.txt'))
+
+Shellwords.split(ARGF.read).each do |tissue|
+  tissue_filename = tissue # CGI.escape(tissue) + '.hg19.ctss.bed'
+  output_filename = File.join('out', File.basename(tissue_filename) + '.out')
+  File.open(output_filename, 'w') do |output_file|
+    select_cages_from(tissue_filename, output_file, region_of_interest)
   end
 end
