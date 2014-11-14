@@ -40,7 +40,7 @@ tissue_filenames += ARGV
 # annotation = 'chr1:160579800..160617200,-'
 # tissues_filename = 'tissue_names.txt'
 region_of_interest = GenomeRegion.new_by_annotation(annotation)
-
+region_str = "#{region_of_interest.chromosome},#{region_of_interest.region.pos_start}..#{region_of_interest.region.pos_end},#{region_of_interest.strand}"
 
 # p region_of_interest.intersect?(GenomeRegion.new_by_annotation('chr1:160579801..160617199,-'))
 
@@ -49,7 +49,7 @@ Dir.mkdir('out')  unless Dir.exist?('out')
 
 tissue_filenames.each do |tissue_filename|
   tissue = File.basename(tissue_filename).gsub(/\.bed(\.gz)?/, '') # CGI.escape(tissue) + '.hg19.ctss.bed'
-  output_filename = File.join('out', tissue + '_' + region_of_interest.to_s + '.txt')
+  output_filename = File.join('out', tissue + '_' +  region_str + '.txt')
   $stderr.puts "#{tissue_filename}\t-->\t#{output_filename}"
   File.open(output_filename, 'w') do |output_file|
     if File.extname(tissue_filename) == '.gz'
