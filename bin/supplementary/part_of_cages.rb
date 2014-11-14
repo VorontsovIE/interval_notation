@@ -50,6 +50,7 @@ Dir.mkdir('out')  unless Dir.exist?('out')
 tissue_filenames.each do |tissue_filename|
   tissue = File.basename(tissue_filename).gsub(/\.bed(\.gz)?/, '') # CGI.escape(tissue) + '.hg19.ctss.bed'
   output_filename = File.join('out', tissue + '_' + region_of_interest.to_s + '.txt')
+  $stderr.puts "#{tissue_filename}\t-->\t#{output_filename}"
   File.open(output_filename, 'w') do |output_file|
     if File.extname(tissue_filename) == '.gz'
       select_cages_from(tissue_filename, output_file, region_of_interest, reader: Zlib::GzipReader)
