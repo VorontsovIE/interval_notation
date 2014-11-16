@@ -17,7 +17,7 @@ OptionParser.new do |opts|
   }
 end.parse!(ARGV)
 
-annotation, bed_filename = ARGV.first(2)
+bed_filename, annotation = ARGV.first(2)
 
 cages = cages_initial_hash
 read_cages_from_file_to(bed_filename, cages, nil)
