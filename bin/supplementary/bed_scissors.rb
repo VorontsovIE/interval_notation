@@ -7,6 +7,11 @@ require 'zlib'
 output_folder = 'out'
 use_interval_suffix = true
 OptionParser.new do |opts|
+  opts.banner = "Tool allows one to cut only a region of interest from a bed file.\n" +
+                "Usage: #{opts.program_name} <region of interest> <bed-files>... [options]\n" + 
+                "         or\n" +
+                "       list-of-bed-files | #{opts.program_name} <region of interest> [options]"
+  opts.separator 'Options:'
   opts.on('--output-folder FOLDER') {|value| output_folder = value }
   opts.on('--[no-]interval-suffix') {|value| use_interval_suffix = value }
 end.parse!(ARGV)
