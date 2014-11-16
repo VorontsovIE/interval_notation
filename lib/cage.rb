@@ -79,3 +79,24 @@ end
 def sum_cages(genome_region_list, all_cages)
   genome_region_list.each_region.map{|region| region.load_cages(all_cages).inject(0, :+) }.inject(0, :+)
 end
+
+# iterate cages on a chromosome
+def each_cage_line_on_chromosome_from_stream(stream, chr)
+  chr = "#{chr}\t"
+  stream.each_line.lazy.select do |line|
+    line.start_with?(chr)
+  end.each do |line|
+    yield line, GenomeRegion.new_by_bed_line(line)
+  end
+end
+
+# reader: File or Zlib::GzipReader
+def select_cages_from(gzip_bed_filename, output_stream, region_of_interest, reader: File)
+  reader.open(gzip_bed_filename) do |gz_f|
+    each_cage_line_on_chromosome_from_stream(gz_f, region_of_interest.chromosome) do |line, region|
+      if region_of_interest.intersect?(region)
+        output_stream.puts(line)
+      end
+    end
+  end
+end
