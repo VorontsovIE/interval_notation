@@ -133,7 +133,7 @@ class GenomeRegion
   def self.new_by_annotation(name)
     chromosome, name = name.split(':')
     name, strand = name.split(',')
-    pos_start, pos_end = name.split('..').map(&:to_i)
+    pos_start, pos_end = name.split(/\.\.|-/).map(&:to_i) # chr1:23..44,+  or  chr1:23-44,+
     self.new(chromosome, strand, SemiInterval.new(pos_start, pos_end))
   end
   def initialize(chromosome, strand, region)
