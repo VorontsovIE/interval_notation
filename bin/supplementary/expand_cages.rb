@@ -2,12 +2,6 @@ require 'optparse'
 require_relative '../../lib/cage'
 require_relative '../../lib/intervals/genome_region'
 
-# Usage:
-#         ruby expand_cages.rb <region annotation> <cages bed gzip file> [options]
-# Options:
-#         --with-sequence <genome_folder> -- load sequence for a given region and output it tab-separated
-# Example: ruby cut_cages.rb chr1:100..500,+ pc-3.bed --with-sequence source_data/genome/hg19/
-
 with_sequence = false
 genome_folder = nil
 OptionParser.new do |opts|
