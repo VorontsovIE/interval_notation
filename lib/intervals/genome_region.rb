@@ -139,7 +139,7 @@ class GenomeRegion
   end
 
   def self.new_by_bed_line(line)
-    chromosome, pos_start, pos_end, _region_annotation, _num_reads, strand = line.chomp.split("\t")
+    chromosome, pos_start, pos_end, _name, _score, strand = line.chomp.split("\t")
     pos_start = pos_start.to_i
     pos_end = pos_end.to_i
     GenomeRegion.new(chromosome, strand, SemiInterval.new(pos_start, pos_end))
