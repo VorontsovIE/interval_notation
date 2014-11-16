@@ -53,15 +53,26 @@ def read_cages_from_stream(stream, cages, cage_count = nil)
   end
 end
 
+def read_cages_from_file_to(cages_bed_file, cages, cage_count = nil)
+  if File.extname(cages_bed_file) == '.gz'
+    reader = Zlib::GzipReader
+  else
+    reader = File
+  end
+  reader.open(cages_bed_file) do |f|
+    read_cages_from_stream(f, cages, cage_count)
+  end
+end
+
 def read_cages_to(bed_filename, cages, cage_count = nil)
   File.open(bed_filename) do |f|
-    read_cages_from_stream(f, cages, cage_count = nil)
+    read_cages_from_stream(f, cages, cage_count)
   end
 end
 
 def read_cages_from_gzip_to(gzip_bed_filename, cages, cage_count = nil)
   Zlib::GzipReader.open(gzip_bed_filename) do |gz_f|
-    read_cages_from_stream(gz_f, cages, cage_count = nil)
+    read_cages_from_stream(gz_f, cages, cage_count)
   end
 end
 
