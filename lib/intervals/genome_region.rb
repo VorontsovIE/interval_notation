@@ -130,16 +130,26 @@ end
 
 class GenomeRegion
   attr_reader :region, :chromosome, :strand, :pos_start, :pos_end
+
   def self.new_by_annotation(name)
     chromosome, name = name.split(':')
     name, strand = name.split(',')
     pos_start, pos_end = name.split(/\.\.|-/).map(&:to_i) # chr1:23..44,+  or  chr1:23-44,+
     self.new(chromosome, strand, SemiInterval.new(pos_start, pos_end))
   end
+
+  def self.new_by_bed_line(line)
+    chromosome, pos_start, pos_end, _region_annotation, _num_reads, strand = line.chomp.split("\t")
+    pos_start = pos_start.to_i
+    pos_end = pos_end.to_i
+    GenomeRegion.new(chromosome, strand, SemiInterval.new(pos_start, pos_end))
+  end
+
   def initialize(chromosome, strand, region)
     @chromosome, @strand, @region = chromosome.to_sym, strand.to_sym, region
     raise ArgumentError  unless [:+, :-].include?(@strand)
   end
+
   def pos_start
     region.pos_start
   end

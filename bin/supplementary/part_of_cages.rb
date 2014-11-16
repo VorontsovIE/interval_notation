@@ -2,15 +2,6 @@ require_relative '../../lib/intervals/genome_region'
 require 'shellwords'
 require 'zlib'
 
-class GenomeRegion
-  def self.new_by_bed_line(line)
-    chromosome, pos_start, pos_end, _region_annotation, _num_reads, strand = line.chomp.split("\t")
-    pos_start = pos_start.to_i
-    pos_end = pos_end.to_i
-    GenomeRegion.new(chromosome, strand, SemiInterval.new(pos_start, pos_end))
-  end
-end
-
 def each_cage_line_from_stream(stream, chr)
   chr = "#{chr}\t"
   stream.each_line.lazy.select do |line|
