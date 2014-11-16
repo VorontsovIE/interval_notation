@@ -6,6 +6,7 @@ with_sequence = false
 genome_folder = nil
 OptionParser.new do |opts|
   opts.banner = "Tool allows one to transform cage counts from a bed file into each-position profile.\n" +
+                "No result reversing to be done for regions on negative strand\n"
                 "Usage: #{opts.program_name} <bed-file> <region of interest> [options]"
   opts.separator 'Options:'
   opts.on('--with-sequence GENOME_DIR', "load sequence for a given region and output it tab-separated"){|value|
