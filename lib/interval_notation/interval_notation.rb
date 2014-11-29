@@ -77,7 +77,9 @@ class IntervalTree
   def eql?(other); other.class.equal?(self.class) && intervals == other.intervals; end
   def ==(other); other.is_a?(IntervalTree) && intervals == other.intervals; end
 
-  def union(other)
+  # accepts a necessary inclusion_checker block.
+  # It accepts an array of two boolean elements(inclusion state of both interval's segments) and returns an inclusion state of a result
+  def combine(other)
     points_1 = intervals.flat_map{|interval| interval_boundaries(interval, 0) }
     points_2 = other.intervals.flat_map{|interval| interval_boundaries(interval, 1) }
 
@@ -86,7 +88,7 @@ class IntervalTree
     intervals = []
 
     inside = [false, false]
-    now_inside = false
+    now_inside = yield inside
     incl_from = nil
     from = nil
 
@@ -99,21 +101,21 @@ class IntervalTree
       end
 
       update_inside!(inside, points_on_place)
-      now_inside = inside.any?
+      now_inside = yield inside
 
       if !prev_inside && !now_inside
-        intervals << Point.new(point_value)  if included.any? ## automatically met
+        intervals << Point.new(point_value)  if yield included
       elsif !prev_inside && now_inside
         from = point_value
-        incl_from = included.any?
+        incl_from = yield included
       elsif prev_inside && !now_inside
         to = point_value
-        incl_to = included.any?
+        incl_to = yield included
         intervals << Interval.new_by_boundary_inclusion(incl_from, from, incl_to, to)
         from = nil # easier to find an error (but not necessary code)
         incl_from = nil # ditto
       else
-        if !included.any?
+        unless yield included
           intervals << Interval.new_by_boundary_inclusion(incl_from, from, false, point_value)
           incl_from = false
           from = point_value
@@ -123,49 +125,11 @@ class IntervalTree
     IntervalTree.new(intervals)
   end
 
+  def union(other)
+    combine(other, &:any?)
+  end
+
   def intersect(other)
-    points_1 = intervals.flat_map{|interval| interval_boundaries(interval, 0) }
-    points_2 = other.intervals.flat_map{|interval| interval_boundaries(interval, 1) }
-
-    points = (points_1 + points_2).sort_by(&:value)
-    
-    intervals = []
-
-    inside = [false, false]
-    now_inside = false
-    incl_from = nil
-    from = nil
-
-    points.chunk(&:value).each do |point_value, points_on_place|
-      prev_inside = now_inside
-      included = inside.dup # if no point of given interval-set present at a place, then this interval either covers (and thus includes a point) or not
-      points_on_place.each do |point|
-        # two points of the same interval-set may yield only identical not-included state (i.e. false)
-        included[point.interval_index] = point.included
-      end
-
-      update_inside!(inside, points_on_place)
-      now_inside = inside.all?
-
-      if !prev_inside && !now_inside
-        intervals << Point.new(point_value)  if included.all?
-      elsif !prev_inside && now_inside
-        from = point_value
-        incl_from = included.all?
-      elsif prev_inside && !now_inside
-        to = point_value
-        incl_to = included.all?
-        intervals << Interval.new_by_boundary_inclusion(incl_from, from, incl_to, to)
-        from = nil # easier to find an error (but not necessary code)
-        incl_from = nil # ditto
-      else
-        if !included.all?
-          intervals << Interval.new_by_boundary_inclusion(incl_from, from, false, point_value)
-          incl_from = false
-          from = point_value
-        end
-      end
-    end
-    IntervalTree.new(intervals)
+    combine(other, &:all?)
   end
 end
