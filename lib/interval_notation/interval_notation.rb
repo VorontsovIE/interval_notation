@@ -72,7 +72,6 @@ class IntervalTree
     points_on_place.reject(&:singular_point).each do |point|
       inside[point.interval_index] = !inside[point.interval_index]
     end
-    inside
   end
   
   def eql?(other); other.class.equal?(self.class) && intervals == other.intervals; end
