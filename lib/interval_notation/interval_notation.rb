@@ -132,4 +132,10 @@ class IntervalTree
   def intersect(other)
     combine(other, &:all?)
   end
+
+  def subtract(other)
+    combine(other) do |included|
+      included[0] && !included[1]
+    end
+  end
 end

@@ -132,4 +132,30 @@ describe IntervalTree::Helpers do
       end
     end
   end
+
+  describe '#subtract' do
+    {
+      [inttree(oo(1,5),oo(6,8)),inttree(oo(1,5))] => inttree(oo(6,8)),
+      [inttree(oo(1,5),oo(6,8)),inttree(oo(1,8))] => inttree(),
+      [inttree(oo(1,5),oo(6,8)),inttree(cc(1,5))] => inttree(oo(6,8)),
+      [inttree(oo(1,5)),inttree(cc(2,3))] => inttree(oo(1,2),oo(3,5)),
+      [inttree(oo(1,5)),inttree(oo(2,3))] => inttree(oc(1,2),co(3,5)),
+      [inttree(oo(1,5)),inttree(oo(1,3))] => inttree(co(3,5)),
+      [inttree(oo(1,5)),inttree(pt(0))] => inttree(oo(1,5)),
+      [inttree(oo(1,5)),inttree(pt(1))] => inttree(oo(1,5)),
+      [inttree(co(1,5)),inttree(pt(1))] => inttree(oo(1,5)),
+      [inttree(oo(1,5)),inttree(pt(3))] => inttree(oo(1,3),oo(3,5)),
+      [inttree(cc(1,5)),inttree(oo(1,3))] => inttree(pt(1),cc(3,5)),
+      [inttree(cc(1,5)),inttree(co(1,3))] => inttree(cc(3,5)),
+      [inttree(oo(1,5)),inttree(cc(1,3))] => inttree(oo(3,5)),
+      [inttree(oo(1,5)),inttree(oo(0,3))] => inttree(co(3,5)),
+      [inttree(oo(1,5)),inttree(oo(0,2),oo(3,4))] => inttree(cc(2,3),co(4,5)),
+      [inttree(oo(-Float::INFINITY,Float::INFINITY)),inttree(oo(1,5))] => inttree(oc(-Float::INFINITY,1),co(5,Float::INFINITY)),
+      [inttree(oo(1,5)), inttree(oo(-Float::INFINITY,Float::INFINITY))] => inttree(),
+    }.each do |(interval_1, interval_2), answer|
+      it "#{interval_1} - #{interval_2} should equal #{answer}" do
+        expect( interval_1.subtract(interval_2) ).to eq answer
+      end
+    end
+  end
 end
