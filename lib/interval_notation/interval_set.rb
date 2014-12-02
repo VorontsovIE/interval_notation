@@ -10,7 +10,7 @@ module IntervalNotation
     end
 
     def to_s
-      intervals.empty? ? 'Empty' : intervals.map(&:to_s).join('U')
+      intervals.empty? ? "∅" : intervals.map(&:to_s).join('U')
     end
 
     def inspect; to_s; end
