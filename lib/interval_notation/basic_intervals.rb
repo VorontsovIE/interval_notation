@@ -1,6 +1,8 @@
 require_relative 'error'
 
 module IntervalNotation
+  BoundaryPoint = Struct.new(:value, :included, :opening, :interval_index, :interval_boundary)
+
   class OpenOpenInterval
     attr_reader :from, :to
     def initialize(from, to)
@@ -16,6 +18,10 @@ module IntervalNotation
     def include_position?(value); from < value && value < to; end
     def eql?(other); other.class.equal?(self.class) && from == other.from && to == other.to; end
     def ==(other); other.is_a?(OpenOpenInterval) && from == other.from && to == other.to; end
+    def interval_boundaries(interval_index)
+      [ BoundaryPoint.new(from, false, true, interval_index, true),
+        BoundaryPoint.new(to, false, false, interval_index, true) ]
+    end
   end
 
   class OpenClosedInterval
@@ -34,6 +40,10 @@ module IntervalNotation
     def include_position?(value); from < value && value <= to; end
     def eql?(other); other.class.equal?(self.class) && from == other.from && to == other.to; end
     def ==(other); other.is_a?(OpenClosedInterval) && from == other.from && to == other.to; end
+    def interval_boundaries(interval_index)
+      [ BoundaryPoint.new(from, false, true, interval_index, true),
+        BoundaryPoint.new(to, true, false, interval_index, true) ]
+    end
   end
 
   class ClosedOpenInterval
@@ -52,6 +62,10 @@ module IntervalNotation
     def include_position?(value); from <= value && value < to; end
     def eql?(other); other.class.equal?(self.class) && from == other.from && to == other.to; end
     def ==(other); other.is_a?(ClosedOpenInterval) && from == other.from && to == other.to; end
+    def interval_boundaries(interval_index)
+      [ BoundaryPoint.new(from, true, true, interval_index, true),
+        BoundaryPoint.new(to, false, false, interval_index, true) ]
+    end
   end
 
   class ClosedClosedInterval
@@ -70,6 +84,10 @@ module IntervalNotation
     def include_position?(value); from <= value && value <= to; end
     def eql?(other); other.class.equal?(self.class) && from == other.from && to == other.to; end
     def ==(other); other.is_a?(ClosedClosedInterval) && from == other.from && to == other.to; end
+    def interval_boundaries(interval_index)
+      [ BoundaryPoint.new(from, true, true, interval_index, true),
+        BoundaryPoint.new(to, true, false, interval_index, true) ]
+    end
   end
 
   class Point
@@ -89,6 +107,9 @@ module IntervalNotation
     def include_position?(val); value == val; end
     def eql?(other); other.class.equal?(self.class) && value == other.value; end
     def ==(other); other.is_a?(Point) && value == other.value; end
+    def interval_boundaries(interval_index)
+      BoundaryPoint.new(from, true, nil, interval_index, false)
+    end
   end
 
   def interval_by_boundary_inclusion(include_from, from, include_to, to)
