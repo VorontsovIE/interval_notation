@@ -1,14 +1,9 @@
-require 'interval_notation/interval_notation'
+require 'interval_notation'
 
-def oo(from, to); Interval.oo(from, to); end
-def oc(from, to); Interval.oc(from, to); end
-def co(from, to); Interval.co(from, to); end
-def cc(from, to); Interval.cc(from, to); end
-def pt(value); Interval.pt(value); end
-def inttree(*intervals); IntervalTree.new(intervals); end
+include IntervalNotation
 
-describe IntervalTree::Helpers do
-  let(:helpers) { IntervalTree::Helpers }
+describe IntervalNotation::IntervalSet do
+  let(:helpers) { IntervalNotation::IntervalSet::Helpers }
 
   describe '#consequent_intervals_not_overlap?' do
     it{ expect(helpers.consequent_intervals_not_overlap?(oo(1,5), oo(5,7))).to be_truthy }

@@ -1,1 +1,3 @@
-class Error < StandardError; end
+module IntervalNotation
+  class Error < StandardError; end
+end
