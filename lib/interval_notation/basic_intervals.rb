@@ -6,7 +6,7 @@ module IntervalNotation
   class OpenOpenInterval
     attr_reader :from, :to
     def initialize(from, to)
-      raise Error, "Interval from #{from} to #{to} can't be created"  unless from < to
+      raise Error, "Interval (#{from};#{to}) can't be created"  unless from < to
       @from = from
       @to = to
     end
@@ -27,7 +27,7 @@ module IntervalNotation
   class OpenClosedInterval
     attr_reader :from, :to
     def initialize(from, to)
-      raise Error, "Interval from #{from} to #{to} can't be created"  unless from < to
+      raise Error, "Interval (#{from};#{to}] can't be created"  unless from < to
       raise Error, "Infinite boundary should be open" unless to.to_f.finite?
       @from = from
       @to = to
@@ -49,7 +49,7 @@ module IntervalNotation
   class ClosedOpenInterval
     attr_reader :from, :to
     def initialize(from, to)
-      raise Error, "Interval from #{from} to #{to} can't be created"  unless from < to
+      raise Error, "Interval [#{from};#{to}) can't be created"  unless from < to
       raise Error, "Infinite boundary should be open" unless from.to_f.finite?
       @from = from
       @to = to
@@ -71,7 +71,7 @@ module IntervalNotation
   class ClosedClosedInterval
     attr_reader :from, :to
     def initialize(from, to)
-      raise Error, "Interval from #{from} to #{to} can't be created"  unless from < to
+      raise Error, "Interval [#{from};#{to}] can't be created"  unless from < to
       raise Error, "Infinite boundary should be open" unless from.to_f.finite? && to.to_f.finite?
       @from = from
       @to = to
