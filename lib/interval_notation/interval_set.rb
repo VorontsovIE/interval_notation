@@ -152,7 +152,7 @@ module IntervalNotation
     end
 
     def complement
-      R - self
+      R.subtract(self)
     end
 
     alias :& :intersect

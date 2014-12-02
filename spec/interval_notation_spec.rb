@@ -6,90 +6,90 @@ describe IntervalNotation::IntervalSet do
   let(:helpers) { IntervalNotation::IntervalSet::Helpers }
 
   describe '#consequent_intervals_not_overlap?' do
-    it{ expect(helpers.consequent_intervals_not_overlap?(oo(1,5), oo(5,7))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(oc(1,5), oo(5,7))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(oo(1,5), co(5,7))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(oc(1,5), co(5,7))).to be_falsy }
+    it{ expect(helpers.consequent_intervals_not_overlap?(OpenOpenInterval.new(1,5), OpenOpenInterval.new(5,7))).to be_truthy }
+    it{ expect(helpers.consequent_intervals_not_overlap?(OpenClosedInterval.new(1,5), OpenOpenInterval.new(5,7))).to be_truthy }
+    it{ expect(helpers.consequent_intervals_not_overlap?(OpenOpenInterval.new(1,5), ClosedOpenInterval.new(5,7))).to be_truthy }
+    it{ expect(helpers.consequent_intervals_not_overlap?(OpenClosedInterval.new(1,5), ClosedOpenInterval.new(5,7))).to be_falsy }
     
-    it{ expect(helpers.consequent_intervals_not_overlap?(oc(1,5), cc(6,7))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(oc(1,5), cc(4,7))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(oc(1,5), cc(2,3))).to be_falsy }
+    it{ expect(helpers.consequent_intervals_not_overlap?(OpenClosedInterval.new(1,5), ClosedClosedInterval.new(6,7))).to be_truthy }
+    it{ expect(helpers.consequent_intervals_not_overlap?(OpenClosedInterval.new(1,5), ClosedClosedInterval.new(4,7))).to be_falsy }
+    it{ expect(helpers.consequent_intervals_not_overlap?(OpenClosedInterval.new(1,5), ClosedClosedInterval.new(2,3))).to be_falsy }
     
-    it{ expect(helpers.consequent_intervals_not_overlap?(oo(1,5), pt(5))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(oo(1,4), pt(5))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(oc(1,4), pt(5))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(pt(4), pt(5))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(oo(1,6), pt(5))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(oc(1,5), pt(5))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(pt(5), pt(5))).to be_falsy }
+    it{ expect(helpers.consequent_intervals_not_overlap?(OpenOpenInterval.new(1,5), Point.new(5))).to be_truthy }
+    it{ expect(helpers.consequent_intervals_not_overlap?(OpenOpenInterval.new(1,4), Point.new(5))).to be_truthy }
+    it{ expect(helpers.consequent_intervals_not_overlap?(OpenClosedInterval.new(1,4), Point.new(5))).to be_truthy }
+    it{ expect(helpers.consequent_intervals_not_overlap?(Point.new(4), Point.new(5))).to be_truthy }
+    it{ expect(helpers.consequent_intervals_not_overlap?(OpenOpenInterval.new(1,6), Point.new(5))).to be_falsy }
+    it{ expect(helpers.consequent_intervals_not_overlap?(OpenClosedInterval.new(1,5), Point.new(5))).to be_falsy }
+    it{ expect(helpers.consequent_intervals_not_overlap?(Point.new(5), Point.new(5))).to be_falsy }
   end
 
   describe '#consequent_intervals_adjacent?' do
-    it{ expect(helpers.consequent_intervals_adjacent?(oo(1,5), oo(5,7))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_adjacent?(oc(1,5), oo(5,7))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_adjacent?(oo(1,5), co(5,7))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_adjacent?(oc(1,5), co(5,7))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_adjacent?(oo(1,5), pt(5))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_adjacent?(oc(1,5), pt(5))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_adjacent?(oc(1,4), pt(5))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_adjacent?(oc(1,6), pt(5))).to be_falsy }
+    it{ expect(helpers.consequent_intervals_adjacent?(OpenOpenInterval.new(1,5), OpenOpenInterval.new(5,7))).to be_falsy }
+    it{ expect(helpers.consequent_intervals_adjacent?(OpenClosedInterval.new(1,5), OpenOpenInterval.new(5,7))).to be_truthy }
+    it{ expect(helpers.consequent_intervals_adjacent?(OpenOpenInterval.new(1,5), ClosedOpenInterval.new(5,7))).to be_truthy }
+    it{ expect(helpers.consequent_intervals_adjacent?(OpenClosedInterval.new(1,5), ClosedOpenInterval.new(5,7))).to be_falsy }
+    it{ expect(helpers.consequent_intervals_adjacent?(OpenOpenInterval.new(1,5), Point.new(5))).to be_truthy }
+    it{ expect(helpers.consequent_intervals_adjacent?(OpenClosedInterval.new(1,5), Point.new(5))).to be_falsy }
+    it{ expect(helpers.consequent_intervals_adjacent?(OpenClosedInterval.new(1,4), Point.new(5))).to be_falsy }
+    it{ expect(helpers.consequent_intervals_adjacent?(OpenClosedInterval.new(1,6), Point.new(5))).to be_falsy }
     
-    it{ expect(helpers.consequent_intervals_adjacent?(oc(1,5), cc(4,7))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_adjacent?(oc(1,5), cc(6,7))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_adjacent?(oc(1,5), cc(2,3))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_adjacent?(pt(4), pt(5))).to be_falsy }
+    it{ expect(helpers.consequent_intervals_adjacent?(OpenClosedInterval.new(1,5), ClosedClosedInterval.new(4,7))).to be_falsy }
+    it{ expect(helpers.consequent_intervals_adjacent?(OpenClosedInterval.new(1,5), ClosedClosedInterval.new(6,7))).to be_falsy }
+    it{ expect(helpers.consequent_intervals_adjacent?(OpenClosedInterval.new(1,5), ClosedClosedInterval.new(2,3))).to be_falsy }
+    it{ expect(helpers.consequent_intervals_adjacent?(Point.new(4), Point.new(5))).to be_falsy }
   end
 
   describe '#glue adjacent' do
     it{ expect(helpers.glue_adjacent([])).to eq([])  }
-    it{ expect(helpers.glue_adjacent([oo(1,5), pt(5)])).to eq([oc(1,5)])  }
-    it{ expect(helpers.glue_adjacent([oo(1,5), pt(5), oo(5,7)])).to eq([oo(1,7)])  }
+    it{ expect(helpers.glue_adjacent([OpenOpenInterval.new(1,5), Point.new(5)])).to eq([OpenClosedInterval.new(1,5)])  }
+    it{ expect(helpers.glue_adjacent([OpenOpenInterval.new(1,5), Point.new(5), OpenOpenInterval.new(5,7)])).to eq([OpenOpenInterval.new(1,7)])  }
 
-    it{ expect(helpers.glue_adjacent([oo(1,5), oo(5,7)])).to eq([oo(1,5), oo(5,7)])  }
+    it{ expect(helpers.glue_adjacent([OpenOpenInterval.new(1,5), OpenOpenInterval.new(5,7)])).to eq([OpenOpenInterval.new(1,5), OpenOpenInterval.new(5,7)])  }
     
-    it{ expect(helpers.glue_adjacent([oo(1,5), co(5,7)])).to eq([oo(1,7)])  }
-    it{ expect(helpers.glue_adjacent([oc(1,5), oo(5,7)])).to eq([oo(1,7)])  }
-    it{ expect(helpers.glue_adjacent([cc(1,5), oo(5,7)])).to eq([co(1,7)])  }
-    it{ expect(helpers.glue_adjacent([oc(1,5), oc(5,7)])).to eq([oc(1,7)])  }
+    it{ expect(helpers.glue_adjacent([OpenOpenInterval.new(1,5), ClosedOpenInterval.new(5,7)])).to eq([OpenOpenInterval.new(1,7)])  }
+    it{ expect(helpers.glue_adjacent([OpenClosedInterval.new(1,5), OpenOpenInterval.new(5,7)])).to eq([OpenOpenInterval.new(1,7)])  }
+    it{ expect(helpers.glue_adjacent([ClosedClosedInterval.new(1,5), OpenOpenInterval.new(5,7)])).to eq([ClosedOpenInterval.new(1,7)])  }
+    it{ expect(helpers.glue_adjacent([OpenClosedInterval.new(1,5), OpenClosedInterval.new(5,7)])).to eq([OpenClosedInterval.new(1,7)])  }
     
-    it{ expect(helpers.glue_adjacent([oc(1,5), oo(5,7), co(7,8)])).to eq([oo(1,8)])  }
-    it{ expect(helpers.glue_adjacent([oc(1,5), oo(5,7), co(7,8), oo(9,10)])).to eq([oo(1,8), oo(9,10)])  }
+    it{ expect(helpers.glue_adjacent([OpenClosedInterval.new(1,5), OpenOpenInterval.new(5,7), ClosedOpenInterval.new(7,8)])).to eq([OpenOpenInterval.new(1,8)])  }
+    it{ expect(helpers.glue_adjacent([OpenClosedInterval.new(1,5), OpenOpenInterval.new(5,7), ClosedOpenInterval.new(7,8), OpenOpenInterval.new(9,10)])).to eq([OpenOpenInterval.new(1,8), OpenOpenInterval.new(9,10)])  }
     
-    it{ expect(helpers.glue_adjacent([oo(1,5), oo(6,7)])).to eq([oo(1,5), oo(6,7)])  }
+    it{ expect(helpers.glue_adjacent([OpenOpenInterval.new(1,5), OpenOpenInterval.new(6,7)])).to eq([OpenOpenInterval.new(1,5), OpenOpenInterval.new(6,7)])  }
   end
 
   describe '#union'  do
     {
-      [inttree(oo(1,3),oo(3,5)), inttree(oo(2,3),oo(3,7))] => inttree(oo(1,3),oo(3,7)),
-      [inttree(oo(1,5)), inttree(oo(2,3),oo(3,7))] => inttree(oo(1,7)),
-      [inttree(oo(1,3),oo(3,5)), inttree(oo(2,7))] => inttree(oo(1,7)),
+      [oo(1,3)|oo(3,5), oo(2,3)|oo(3,7)] => oo(1,3)|oo(3,7),
+      [oo(1,5), oo(2,3)|oo(3,7)] => (oo(1,7)),
+      [oo(1,3)|oo(3,5), oo(2,7)] => (oo(1,7)),
         
-      [inttree(oo(1,3)), inttree()] => inttree(oo(1,3)),
-      [inttree(oo(1,3)), inttree(oo(5,6))] => inttree(oo(1,3), oo(5,6)),
-      [inttree(oo(1,3)), inttree(oo(3,6))] => inttree(oo(1,3), oo(3,6)),
-      [inttree(oo(1,3)), inttree(oo(2,6))] => inttree(oo(1,6)),
-      [inttree(oc(1,3)), inttree(co(5,6))] => inttree(oc(1,3), co(5,6)),
-      [inttree(cc(1,3)), inttree(oc(5,6))] => inttree(cc(1,3), oc(5,6)),
-      [inttree(oo(1,3)), inttree(co(3,6))] => inttree(oo(1,6)),
-      [inttree(oo(1,3)), inttree(oo(2,3))] => inttree(oo(1,3)),
-      [inttree(oo(1,3)), inttree(oc(2,3))] => inttree(oc(1,3)),
-      [inttree(oc(1,3)), inttree(oo(2,3))] => inttree(oc(1,3)),
-      [inttree(oo(1,3)), inttree(oo(1,3))] => inttree(oo(1,3)),
-      [inttree(oo(1,3)), inttree(oo(0,4))] => inttree(oo(0,4)),
-      [inttree(oo(0,4)), inttree(oo(1,3))] => inttree(oo(0,4)),
-      [inttree(oo(1,3),oo(3,5)), inttree(pt(3))] => inttree(oo(1,5)),
+      [oo(1,3), Empty] => (oo(1,3)),
+      [oo(1,3), oo(5,6)] => oo(1,3)|oo(5,6),
+      [oo(1,3), oo(3,6)] => oo(1,3)|oo(3,6),
+      [oo(1,3), oo(2,6)] => oo(1,6),
+      [oc(1,3), co(5,6)] => oc(1,3)|co(5,6),
+      [cc(1,3), oc(5,6)] => cc(1,3)|oc(5,6),
+      [oo(1,3), co(3,6)] => oo(1,6),
+      [oo(1,3), oo(2,3)] => oo(1,3),
+      [oo(1,3), oc(2,3)] => oc(1,3),
+      [oc(1,3), oo(2,3)] => oc(1,3),
+      [oo(1,3), oo(1,3)] => oo(1,3),
+      [oo(1,3), oo(0,4)] => oo(0,4),
+      [oo(0,4), oo(1,3)] => oo(0,4),
+      [oo(1,3)|oo(3,5), pt(3)] => oo(1,5),
 
-      [inttree(oo(1,3)), inttree(pt(2))] => inttree(oo(1,3)),
-      [inttree(oo(1,3)), inttree(pt(1))] => inttree(co(1,3)),
-      [inttree(co(1,3)), inttree(pt(1))] => inttree(co(1,3)),
-      [inttree(oo(1,3)), inttree(pt(0))] => inttree(pt(0),oo(1,3)),
+      [oo(1,3), pt(2)] => oo(1,3),
+      [oo(1,3), pt(1)] => co(1,3),
+      [co(1,3), pt(1)] => co(1,3),
+      [oo(1,3), pt(0)] => pt(0)|oo(1,3),
 
-      [inttree(oo(1,3),oo(5,7)), inttree(oo(3,5))] => inttree(oo(1,3),oo(3,5),oo(5,7)),
-      [inttree(oo(1,3),oo(5,7)), inttree(co(3,5))] => inttree(oo(1,5),oo(5,7)),
-      [inttree(oo(1,3),oo(5,7)), inttree(cc(3,5))] => inttree(oo(1,7)),
-      [inttree(oo(-Float::INFINITY,3)), inttree(oo(2,Float::INFINITY))] => inttree(oo(-Float::INFINITY,Float::INFINITY)),
-      [inttree(oo(-Float::INFINITY,3)), inttree(oo(4,Float::INFINITY))] => inttree(oo(-Float::INFINITY,3),oo(4,Float::INFINITY)),
-      [inttree(oo(-Float::INFINITY,3)), inttree(co(3,Float::INFINITY))] => inttree(oo(-Float::INFINITY,Float::INFINITY)),
+      [oo(1,3)|oo(5,7), oo(3,5)] => oo(1,3)|oo(3,5)|oo(5,7),
+      [oo(1,3)|oo(5,7), co(3,5)] => oo(1,5)|oo(5,7),
+      [oo(1,3)|oo(5,7), cc(3,5)] => oo(1,7),
+      [lt(3), gt(2)] => R,
+      [lt(3), gt(4)] => lt(3) | gt(4),
+      [lt(3), ge(3)] => R,
     }.each do |(interval_1, interval_2), answer|
       it "#{interval_1} | #{interval_2} should equal #{answer}" do
         expect( interval_1.union(interval_2) ).to eq answer
@@ -100,26 +100,26 @@ describe IntervalNotation::IntervalSet do
 
   describe '#intersect'  do
     {
-      [inttree(oo(1,3),oo(3,5)), inttree(oo(2,3),oo(3,7))] => inttree(oo(2,3),oo(3,5)),
-      [inttree(oo(1,3),oo(3,5)), inttree(oo(2,7))] => inttree(oo(2,3),oo(3,5)),
+      [oo(1,3)|oo(3,5), oo(2,3)|oo(3,7)] => oo(2,3)|oo(3,5),
+      [oo(1,3)|oo(3,5), oo(2,7)] => oo(2,3)|oo(3,5),
 
-      [inttree(oo(1,3)), inttree(oo(2,5))] => inttree(oo(2,3)),
-      [inttree(oo(1,3)), inttree(oo(4,5))] => inttree(),
+      [oo(1,3), oo(2,5)] => oo(2,3),
+      [oo(1,3), oo(4,5)] => Empty,
 
-      [inttree(oo(1,3)), inttree(oo(3,5))] => inttree(),
-      [inttree(oo(1,3)), inttree(co(3,5))] => inttree(),
-      [inttree(oc(1,3)), inttree(oo(3,5))] => inttree(),
-      [inttree(oc(1,3)), inttree(co(3,5))] => inttree(pt(3)),
+      [oo(1,3), oo(3,5)] => Empty,
+      [oo(1,3), co(3,5)] => Empty,
+      [oc(1,3), oo(3,5)] => Empty,
+      [oc(1,3), co(3,5)] => pt(3),
 
-      [inttree(oo(2,6)), inttree(oo(1,3),co(5,7))] => inttree(oo(2,3),co(5,6)),
-      [inttree(oo(1,6)), inttree(oo(1,3),co(5,7))] => inttree(oo(1,3),co(5,6)),
-      [inttree(oo(0,6)), inttree(oo(1,3),co(5,7))] => inttree(oo(1,3),co(5,6)),
-      [inttree(oo(0,6)), inttree(oo(1,3),co(5,6))] => inttree(oo(1,3),co(5,6)),
+      [oo(2,6), oo(1,3)|co(5,7)] => oo(2,3)|co(5,6),
+      [oo(1,6), oo(1,3)|co(5,7)] => oo(1,3)|co(5,6),
+      [oo(0,6), oo(1,3)|co(5,7)] => oo(1,3)|co(5,6),
+      [oo(0,6), oo(1,3)|co(5,6)] => oo(1,3)|co(5,6),
         
-      [inttree(oo(1,3)), inttree(pt(2))] => inttree(pt(2)),
-      [inttree(oo(1,3)), inttree(pt(1))] => inttree(),
-      [inttree(co(1,3)), inttree(pt(0))] => inttree(),
-      [inttree(co(1,3)), inttree(pt(1))] => inttree(pt(1)),
+      [oo(1,3), pt(2)] => pt(2),
+      [oo(1,3), pt(1)] => Empty,
+      [co(1,3), pt(0)] => Empty,
+      [co(1,3), pt(1)] => pt(1),
 
     }.each do |(interval_1, interval_2), answer|
       it "#{interval_1} & #{interval_2} should equal #{answer}" do
@@ -130,23 +130,23 @@ describe IntervalNotation::IntervalSet do
 
   describe '#subtract' do
     {
-      [inttree(oo(1,5),oo(6,8)),inttree(oo(1,5))] => inttree(oo(6,8)),
-      [inttree(oo(1,5),oo(6,8)),inttree(oo(1,8))] => inttree(),
-      [inttree(oo(1,5),oo(6,8)),inttree(cc(1,5))] => inttree(oo(6,8)),
-      [inttree(oo(1,5)),inttree(cc(2,3))] => inttree(oo(1,2),oo(3,5)),
-      [inttree(oo(1,5)),inttree(oo(2,3))] => inttree(oc(1,2),co(3,5)),
-      [inttree(oo(1,5)),inttree(oo(1,3))] => inttree(co(3,5)),
-      [inttree(oo(1,5)),inttree(pt(0))] => inttree(oo(1,5)),
-      [inttree(oo(1,5)),inttree(pt(1))] => inttree(oo(1,5)),
-      [inttree(co(1,5)),inttree(pt(1))] => inttree(oo(1,5)),
-      [inttree(oo(1,5)),inttree(pt(3))] => inttree(oo(1,3),oo(3,5)),
-      [inttree(cc(1,5)),inttree(oo(1,3))] => inttree(pt(1),cc(3,5)),
-      [inttree(cc(1,5)),inttree(co(1,3))] => inttree(cc(3,5)),
-      [inttree(oo(1,5)),inttree(cc(1,3))] => inttree(oo(3,5)),
-      [inttree(oo(1,5)),inttree(oo(0,3))] => inttree(co(3,5)),
-      [inttree(oo(1,5)),inttree(oo(0,2),oo(3,4))] => inttree(cc(2,3),co(4,5)),
-      [inttree(oo(-Float::INFINITY,Float::INFINITY)),inttree(oo(1,5))] => inttree(oc(-Float::INFINITY,1),co(5,Float::INFINITY)),
-      [inttree(oo(1,5)), inttree(oo(-Float::INFINITY,Float::INFINITY))] => inttree(),
+      [oo(1,5)|oo(6,8),(oo(1,5))] => oo(6,8),
+      [oo(1,5)|oo(6,8),(oo(1,8))] => Empty,
+      [oo(1,5)|oo(6,8),(cc(1,5))] => oo(6,8),
+      [oo(1,5),cc(2,3)] => oo(1,2)|oo(3,5),
+      [oo(1,5),oo(2,3)] => oc(1,2)|co(3,5),
+      [oo(1,5),oo(1,3)] => co(3,5),
+      [oo(1,5),pt(0)] => oo(1,5),
+      [oo(1,5),pt(1)] => oo(1,5),
+      [co(1,5),pt(1)] => oo(1,5),
+      [oo(1,5),pt(3)] => oo(1,3)|oo(3,5),
+      [cc(1,5),oo(1,3)] => pt(1)|cc(3,5),
+      [cc(1,5),co(1,3)] => cc(3,5),
+      [oo(1,5),cc(1,3)] => oo(3,5),
+      [oo(1,5),oo(0,3)] => co(3,5),
+      [oo(1,5),oo(0,2)|oo(3,4)] => cc(2,3)|co(4,5),
+      [R,oo(1,5)] => le(1)|ge(5),
+      [oo(1,5),R] => Empty,
     }.each do |(interval_1, interval_2), answer|
       it "#{interval_1} - #{interval_2} should equal #{answer}" do
         expect( interval_1.subtract(interval_2) ).to eq answer
