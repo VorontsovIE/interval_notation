@@ -153,4 +153,56 @@ describe IntervalNotation::IntervalSet do
       end
     end
   end
+
+  describe '#include_position?' do
+    {
+      [oo(1,3), 2] => true,
+      [oo(1,3), 3] => false,
+      [oo(1,3), 1] => false,
+      [oo(1,3), 4] => false,
+      [oo(1,3), 0] => false,
+      [oo(1,3), 100] => false,
+      [oo(1,3), -100] => false,
+      
+      [co(1,3), 2] => true,
+      [co(1,3), 1] => true,
+      [co(1,3), 3] => false,
+      [co(1,3), 4] => false,
+      [co(1,3), 0] => false,
+      
+      [oc(1,3), 2] => true,
+      [oc(1,3), 1] => false,
+      [oc(1,3), 3] => true,
+      [oc(1,3), 4] => false,
+      [oc(1,3), 0] => false,
+      
+      [cc(1,3), 2] => true,
+      [cc(1,3), 1] => true,
+      [cc(1,3), 3] => true,
+      [cc(1,3), 4] => false,
+      [cc(1,3), 0] => false,
+
+      [lt(-10) | cc(1,3) | ge(10), 2] => true,
+      [lt(-10) | cc(1,3) | ge(10), 1] => true,
+      [lt(-10) | cc(1,3) | ge(10), 3] => true,
+      [lt(-10) | cc(1,3) | ge(10), 4] => false,
+      [lt(-10) | cc(1,3) | ge(10), 0] => false,
+      [lt(-10) | cc(1,3) | ge(10), -10] => false,
+      [lt(-10) | cc(1,3) | ge(10), -11] => true,
+      [lt(-10) | cc(1,3) | ge(10), -1000] => true,
+      [lt(-10) | cc(1,3) | ge(10), 10] => true,
+      [lt(-10) | cc(1,3) | ge(10), 10] => true,
+      [lt(-10) | cc(1,3) | ge(10), 1000] => true,
+    }.each do |(interval, point), answer|
+      if answer
+        it "#{interval}.include_position?(#{point}) should be truthy" do
+          expect( interval.include_position?(point) ).to be_truthy
+        end
+      else
+        it "#{interval}.include_position?(#{point}) should be falsy" do
+          expect( interval.include_position?(point) ).to be_falsy
+        end
+      end
+    end
+  end
 end

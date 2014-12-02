@@ -24,9 +24,9 @@ module IntervalNotation
         result = [interval_list.first]
         interval_list.drop(1).each do |next_interval|
           last_interval = result.last
-          if consequent_intervals_adjacent?(last_interval, next_interval)
+          if last_interval.to == next_interval.from && (last_interval.include_to? ^ next_interval.include_from?)
             interval_union = interval_by_boundary_inclusion(last_interval.include_from?, last_interval.from,
-                                                  next_interval.include_to?, next_interval.to)
+                                                  next_interval.include_to?, next_interval.to) # Optimize!
             result.pop
             result.push interval_union
           else
@@ -54,9 +54,8 @@ module IntervalNotation
 
     def include_position?(value)
       interval = @intervals.bsearch{|interv| interv.to >= value }
-      interval.include_position?(value)
+      interval && interval.include_position?(value)
     end
-
 
     BoundaryPoint = Struct.new(:value, :included, :opening, :interval_index, :singular_point)
 
@@ -66,12 +65,6 @@ module IntervalNotation
       else
         [ BoundaryPoint.new(interval.from, interval.include_from?, true, interval_index, false),
           BoundaryPoint.new(interval.to, interval.include_to?, false, interval_index, false) ]
-      end
-    end
-
-    private def update_inside!(inside, points_on_place)
-      points_on_place.reject(&:singular_point).each do |point|
-        inside[point.interval_index] = !inside[point.interval_index]
       end
     end
 
@@ -101,7 +94,6 @@ module IntervalNotation
           included[point.interval_index] = point.included
         end
 
-        # update_inside!(inside, points_on_place)
         points_on_place.reject(&:singular_point).each do |point|
           inside[point.interval_index] = !inside[point.interval_index]
         end
@@ -153,6 +145,10 @@ module IntervalNotation
 
     def complement
       R.subtract(self)
+    end
+
+    def include?(other)
+      other == (self.intersect(other))
     end
 
     alias :& :intersect
