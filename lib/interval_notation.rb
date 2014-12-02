@@ -17,8 +17,5 @@ module IntervalNotation
   def gt(value); IntervalSet.new( [OpenOpenInterval.new(value, Float::INFINITY)] ); end
   def ge(value); IntervalSet.new( [ClosedOpenInterval.new(value, Float::INFINITY)] ); end
 
-  # def interval_set(*intervals); IntervalSet.new(intervals); end
-
   module_function :oo, :co, :oc, :cc, :pt, :lt, :le, :gt, :ge
-  # module_function :interval_set
 end
