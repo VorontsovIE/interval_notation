@@ -2,62 +2,7 @@ require 'interval_notation'
 
 include IntervalNotation
 
-describe IntervalNotation::IntervalSet do
-  let(:helpers) { IntervalNotation::IntervalSet::Helpers }
-
-  describe '#consequent_intervals_not_overlap?' do
-    it{ expect(helpers.consequent_intervals_not_overlap?(OpenOpenInterval.new(1,5), OpenOpenInterval.new(5,7))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(OpenClosedInterval.new(1,5), OpenOpenInterval.new(5,7))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(OpenOpenInterval.new(1,5), ClosedOpenInterval.new(5,7))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(OpenClosedInterval.new(1,5), ClosedOpenInterval.new(5,7))).to be_falsy }
-    
-    it{ expect(helpers.consequent_intervals_not_overlap?(OpenClosedInterval.new(1,5), ClosedClosedInterval.new(6,7))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(OpenClosedInterval.new(1,5), ClosedClosedInterval.new(4,7))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(OpenClosedInterval.new(1,5), ClosedClosedInterval.new(2,3))).to be_falsy }
-    
-    it{ expect(helpers.consequent_intervals_not_overlap?(OpenOpenInterval.new(1,5), Point.new(5))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(OpenOpenInterval.new(1,4), Point.new(5))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(OpenClosedInterval.new(1,4), Point.new(5))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(Point.new(4), Point.new(5))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(OpenOpenInterval.new(1,6), Point.new(5))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(OpenClosedInterval.new(1,5), Point.new(5))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_not_overlap?(Point.new(5), Point.new(5))).to be_falsy }
-  end
-
-  describe '#consequent_intervals_adjacent?' do
-    it{ expect(helpers.consequent_intervals_adjacent?(OpenOpenInterval.new(1,5), OpenOpenInterval.new(5,7))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_adjacent?(OpenClosedInterval.new(1,5), OpenOpenInterval.new(5,7))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_adjacent?(OpenOpenInterval.new(1,5), ClosedOpenInterval.new(5,7))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_adjacent?(OpenClosedInterval.new(1,5), ClosedOpenInterval.new(5,7))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_adjacent?(OpenOpenInterval.new(1,5), Point.new(5))).to be_truthy }
-    it{ expect(helpers.consequent_intervals_adjacent?(OpenClosedInterval.new(1,5), Point.new(5))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_adjacent?(OpenClosedInterval.new(1,4), Point.new(5))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_adjacent?(OpenClosedInterval.new(1,6), Point.new(5))).to be_falsy }
-    
-    it{ expect(helpers.consequent_intervals_adjacent?(OpenClosedInterval.new(1,5), ClosedClosedInterval.new(4,7))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_adjacent?(OpenClosedInterval.new(1,5), ClosedClosedInterval.new(6,7))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_adjacent?(OpenClosedInterval.new(1,5), ClosedClosedInterval.new(2,3))).to be_falsy }
-    it{ expect(helpers.consequent_intervals_adjacent?(Point.new(4), Point.new(5))).to be_falsy }
-  end
-
-  describe '#glue adjacent' do
-    it{ expect(helpers.glue_adjacent([])).to eq([])  }
-    it{ expect(helpers.glue_adjacent([OpenOpenInterval.new(1,5), Point.new(5)])).to eq([OpenClosedInterval.new(1,5)])  }
-    it{ expect(helpers.glue_adjacent([OpenOpenInterval.new(1,5), Point.new(5), OpenOpenInterval.new(5,7)])).to eq([OpenOpenInterval.new(1,7)])  }
-
-    it{ expect(helpers.glue_adjacent([OpenOpenInterval.new(1,5), OpenOpenInterval.new(5,7)])).to eq([OpenOpenInterval.new(1,5), OpenOpenInterval.new(5,7)])  }
-    
-    it{ expect(helpers.glue_adjacent([OpenOpenInterval.new(1,5), ClosedOpenInterval.new(5,7)])).to eq([OpenOpenInterval.new(1,7)])  }
-    it{ expect(helpers.glue_adjacent([OpenClosedInterval.new(1,5), OpenOpenInterval.new(5,7)])).to eq([OpenOpenInterval.new(1,7)])  }
-    it{ expect(helpers.glue_adjacent([ClosedClosedInterval.new(1,5), OpenOpenInterval.new(5,7)])).to eq([ClosedOpenInterval.new(1,7)])  }
-    it{ expect(helpers.glue_adjacent([OpenClosedInterval.new(1,5), OpenClosedInterval.new(5,7)])).to eq([OpenClosedInterval.new(1,7)])  }
-    
-    it{ expect(helpers.glue_adjacent([OpenClosedInterval.new(1,5), OpenOpenInterval.new(5,7), ClosedOpenInterval.new(7,8)])).to eq([OpenOpenInterval.new(1,8)])  }
-    it{ expect(helpers.glue_adjacent([OpenClosedInterval.new(1,5), OpenOpenInterval.new(5,7), ClosedOpenInterval.new(7,8), OpenOpenInterval.new(9,10)])).to eq([OpenOpenInterval.new(1,8), OpenOpenInterval.new(9,10)])  }
-    
-    it{ expect(helpers.glue_adjacent([OpenOpenInterval.new(1,5), OpenOpenInterval.new(6,7)])).to eq([OpenOpenInterval.new(1,5), OpenOpenInterval.new(6,7)])  }
-  end
-
+describe IntervalNotation do
   describe '#union'  do
     {
       [oo(1,3)|oo(3,5), oo(2,3)|oo(3,7)] => oo(1,3)|oo(3,7),

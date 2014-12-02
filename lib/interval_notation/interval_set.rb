@@ -3,47 +3,10 @@ require_relative 'error'
 
 module IntervalNotation
   class IntervalSet
-    module Helpers
-      def self.consequent_intervals_not_overlap?(interval, next_interval)
-        (interval.to < next_interval.from) ||
-        (interval.to == next_interval.from) && (!interval.include_to? || !next_interval.include_from?)
-      end
-
-      def self.consequent_intervals_adjacent?(interval, next_interval)
-        (interval.to == next_interval.from) && (interval.include_to? ^ next_interval.include_from?)
-      end
-
-      def self.sorted_intervals_not_overlap?(intervals)
-        intervals.each_cons(2).all? do |interval, next_interval|
-          consequent_intervals_not_overlap?(interval, next_interval)
-        end
-      end
-
-      def self.glue_adjacent(interval_list)
-        return []  if interval_list.empty?
-        result = [interval_list.first]
-        interval_list.drop(1).each do |next_interval|
-          last_interval = result.last
-          if last_interval.to == next_interval.from && (last_interval.include_to? ^ next_interval.include_from?)
-            interval_union = interval_by_boundary_inclusion(last_interval.include_from?, last_interval.from,
-                                                  next_interval.include_to?, next_interval.to) # Optimize!
-            result.pop
-            result.push interval_union
-          else
-            result << next_interval
-          end
-        end
-        result
-      end
-    end
-
-
     attr_reader :intervals
 
     def initialize(intervals)
-      intervals = intervals.sort_by(&:from)
-      raise Error, "Intervals shouldn't overlap"  unless Helpers.sorted_intervals_not_overlap?(intervals)
-      @intervals = Helpers.glue_adjacent(intervals)
+      @intervals = intervals
     end
 
     def to_s
@@ -157,4 +120,6 @@ module IntervalNotation
     alias :^ :symmetric_difference
     alias :~ :complement
   end
+
+  private_constant :IntervalSet
 end

@@ -112,4 +112,5 @@ module IntervalNotation
   end
 
   module_function :interval_by_boundary_inclusion
+  private_constant :OpenOpenInterval, :OpenClosedInterval, :ClosedOpenInterval, :ClosedClosedInterval, :Point
 end
