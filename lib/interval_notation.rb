@@ -1,21 +1,63 @@
 require 'interval_notation/version'
+
+module IntervalNotation
+  module PrivateZone
+  end
+end
+
 require 'interval_notation/basic_intervals'
 require 'interval_notation/interval_set'
 
 module IntervalNotation
-  R = IntervalSet.new( [OpenOpenInterval.new(-Float::INFINITY, Float::INFINITY)] )
-  Empty = IntervalSet.new([])
+  private_constant :PrivateZone
 
-  def oo(from, to); IntervalSet.new( [OpenOpenInterval.new(from, to)] ); end
-  def co(from, to); IntervalSet.new( [ClosedOpenInterval.new(from, to)] ); end
-  def oc(from, to); IntervalSet.new( [OpenClosedInterval.new(from, to)] ); end
-  def cc(from, to); IntervalSet.new( [ClosedClosedInterval.new(from, to)] ); end
-  def pt(value); IntervalSet.new( [Point.new(value)] ); end
+  # make private constants accessible
+  open_open_interval_class = const_get(:PrivateZone)::OpenOpenInterval
+  open_closed_interval_class = const_get(:PrivateZone)::OpenClosedInterval
+  closed_open_interval_class = const_get(:PrivateZone)::ClosedOpenInterval
+  closed_closed_interval_class = const_get(:PrivateZone)::ClosedClosedInterval
+  interval_set_class = const_get(:PrivateZone)::IntervalSet
+  point_class = const_get(:PrivateZone)::Point
 
-  def lt(value); IntervalSet.new( [OpenOpenInterval.new(-Float::INFINITY, value)] ); end
-  def le(value); IntervalSet.new( [OpenClosedInterval.new(-Float::INFINITY, value)] ); end
-  def gt(value); IntervalSet.new( [OpenOpenInterval.new(value, Float::INFINITY)] ); end
-  def ge(value); IntervalSet.new( [ClosedOpenInterval.new(value, Float::INFINITY)] ); end
+
+  R = interval_set_class.new( [open_open_interval_class.new(-Float::INFINITY, Float::INFINITY)] )
+  Empty = interval_set_class.new([])
+
+  define_method :oo do |from, to|
+    interval_set_class.new( [open_open_interval_class.new(from, to)] )
+  end
+
+  define_method :co do |from, to|
+    interval_set_class.new( [closed_open_interval_class.new(from, to)] )
+  end
+
+  define_method :oc do |from, to|
+    interval_set_class.new( [open_closed_interval_class.new(from, to)] )
+  end
+
+  define_method :cc do |from, to|
+    interval_set_class.new( [closed_closed_interval_class.new(from, to)] )
+  end
+
+  define_method :pt do |value|
+    interval_set_class.new( [point_class.new(value)] )
+  end
+
+  define_method :lt do |value|
+    interval_set_class.new( [open_open_interval_class.new(-Float::INFINITY, value)] )
+  end
+
+  define_method :le do |value|
+    interval_set_class.new( [open_closed_interval_class.new(-Float::INFINITY, value)] )
+  end
+
+  define_method :gt do |value|
+    interval_set_class.new( [open_open_interval_class.new(value, Float::INFINITY)] )
+  end
+
+  define_method :ge do |value|
+    interval_set_class.new( [closed_open_interval_class.new(value, Float::INFINITY)] )
+  end
 
   module_function :oo, :co, :oc, :cc, :pt, :lt, :le, :gt, :ge
 end

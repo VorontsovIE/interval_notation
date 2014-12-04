@@ -1,6 +1,6 @@
 require_relative 'error'
 
-module IntervalNotation
+module IntervalNotation::PrivateZone
   BoundaryPoint = Struct.new(:value, :included, :opening, :interval_index, :interval_boundary)
 
   class OpenOpenInterval
@@ -111,27 +111,4 @@ module IntervalNotation
       BoundaryPoint.new(from, true, nil, interval_index, false)
     end
   end
-
-  def interval_by_boundary_inclusion(include_from, from, include_to, to)
-    if include_from
-      if include_to
-        if from != to
-          ClosedClosedInterval.new(from, to)
-        else
-          Point.new(from)
-        end
-      else
-        ClosedOpenInterval.new(from, to)
-      end
-    else
-      if include_to
-        OpenClosedInterval.new(from, to)
-      else
-        OpenOpenInterval.new(from, to)
-      end
-    end
-  end
-
-  module_function :interval_by_boundary_inclusion
-  private_constant :OpenOpenInterval, :OpenClosedInterval, :ClosedOpenInterval, :ClosedClosedInterval, :Point
 end

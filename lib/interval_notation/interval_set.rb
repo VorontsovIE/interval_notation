@@ -1,7 +1,7 @@
 require_relative 'basic_intervals'
 require_relative 'error'
 
-module IntervalNotation
+module IntervalNotation::PrivateZone
   class IntervalSet
     attr_reader :intervals
 
@@ -121,7 +121,26 @@ module IntervalNotation
     alias :- :subtract
     alias :^ :symmetric_difference
     alias :~ :complement
-  end
 
-  private_constant :IntervalSet
+    def interval_by_boundary_inclusion(include_from, from, include_to, to)
+      if include_from
+        if include_to
+          if from != to
+            ClosedClosedInterval.new(from, to)
+          else
+            Point.new(from)
+          end
+        else
+          ClosedOpenInterval.new(from, to)
+        end
+      else
+        if include_to
+          OpenClosedInterval.new(from, to)
+        else
+          OpenOpenInterval.new(from, to)
+        end
+      end
+    end
+
+  end
 end
