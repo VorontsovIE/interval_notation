@@ -1,6 +1,6 @@
 require_relative 'error'
 
-module IntervalNotation::PrivateZone
+module IntervalNotation
   BoundaryPoint = Struct.new(:value, :included, :opening, :interval_index, :interval_boundary)
 
   class OpenOpenInterval
@@ -15,7 +15,9 @@ module IntervalNotation::PrivateZone
     def inspect; to_s; end
     def include_from?; false; end
     def include_to?; false; end
+    def singular_point?; false; end
     def include_position?(value); from < value && value < to; end
+    def hash; [@from, @to, :open, :open].hash; end;
     def eql?(other); other.class.equal?(self.class) && from == other.from && to == other.to; end
     def ==(other); other.is_a?(OpenOpenInterval) && from == other.from && to == other.to; end
     def interval_boundaries(interval_index)
@@ -37,7 +39,9 @@ module IntervalNotation::PrivateZone
     def inspect; to_s; end
     def include_from?; false; end
     def include_to?; true; end
+    def singular_point?; false; end
     def include_position?(value); from < value && value <= to; end
+    def hash; [@from, @to, :open, :closed].hash; end;
     def eql?(other); other.class.equal?(self.class) && from == other.from && to == other.to; end
     def ==(other); other.is_a?(OpenClosedInterval) && from == other.from && to == other.to; end
     def interval_boundaries(interval_index)
@@ -59,7 +63,9 @@ module IntervalNotation::PrivateZone
     def inspect; to_s; end
     def include_from?; true; end
     def include_to?; false; end
+    def singular_point?; false; end
     def include_position?(value); from <= value && value < to; end
+    def hash; [@from, @to, :closed, :open].hash; end;
     def eql?(other); other.class.equal?(self.class) && from == other.from && to == other.to; end
     def ==(other); other.is_a?(ClosedOpenInterval) && from == other.from && to == other.to; end
     def interval_boundaries(interval_index)
@@ -81,7 +87,9 @@ module IntervalNotation::PrivateZone
     def inspect; to_s; end
     def include_from?; true; end
     def include_to?; true; end
+    def singular_point?; false; end
     def include_position?(value); from <= value && value <= to; end
+    def hash; [@from, @to, :closed, :closed].hash; end;
     def eql?(other); other.class.equal?(self.class) && from == other.from && to == other.to; end
     def ==(other); other.is_a?(ClosedClosedInterval) && from == other.from && to == other.to; end
     def interval_boundaries(interval_index)
@@ -104,7 +112,9 @@ module IntervalNotation::PrivateZone
     def inspect; to_s; end
     def include_from?; true; end
     def include_to?; true; end
+    def singular_point?; true; end
     def include_position?(val); value == val; end
+    def hash; @value.hash; end;
     def eql?(other); other.class.equal?(self.class) && value == other.value; end
     def ==(other); other.is_a?(Point) && value == other.value; end
     def interval_boundaries(interval_index)
