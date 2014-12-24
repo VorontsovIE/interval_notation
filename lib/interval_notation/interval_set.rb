@@ -6,7 +6,7 @@ module IntervalNotation
   class IntervalSet
     attr_reader :intervals
 
-    # +IntervalSet.new+ accepts an ordered list of intervals. 
+    # +IntervalSet.new+ accepts an ordered list of intervals.
     # Intervals should be sorted from leftmost to rightmost and should not overlap.
     # It's not recommended to use this constructor directly. Instead take a look at +IntervalNotation::Syntax+ module.
     #
@@ -31,7 +31,7 @@ module IntervalNotation
     # Output standard mathematical notation of interval set in left-to-right order.
     # Each singular point is listed separately in curly braces.
     def to_s
-      @intervals.empty? ? "∅" : intervals.map(&:to_s).join('∪')
+      @intervals.empty? ? EMPTY_SET_SYMBOL : intervals.map(&:to_s).join(UNION_SYMBOL)
     end
 
     def inspect # :nodoc:
@@ -50,7 +50,7 @@ module IntervalNotation
       self.intersection(other) == other
     end
     alias include? contain?
- 
+
     # Checks whether an interval set is covered by another interval set. Alias: +#covered_by?+
     def contained_by?(other)
       self.intersection(other) == self
@@ -71,17 +71,17 @@ module IntervalNotation
     def hash # :nodoc:
       @intervals.hash
     end
-    
+
     def eql?(other) # :nodoc:
       other.class.equal?(self.class) && intervals == other.intervals
     end
-    
+
     # Intervals are equal only if they contain exactly the same intervals.
     # Point inclusion is also considered
     def ==(other)
       other.is_a?(IntervalSet) && intervals == other.intervals
     end
-    
+
     # Union of an interval set with another interval set +other+. Alias: +|+
     def union(other)
       IntervalNotation.union([self, other])

@@ -4,6 +4,18 @@ require_relative 'interval_notation/basic_intervals'
 require_relative 'interval_notation/interval_set'
 
 module IntervalNotation
+  UNION_SYMBOL = '∪'.freeze
+  PLUS_INFINITY_SYMBOL = '+∞'.freeze
+  MINUS_INFINITY_SYMBOL = '-∞'.freeze
+  EMPTY_SET_SYMBOL = '∅'.freeze
+
+  module Syntax
+    module Long
+    end
+    module Short
+    end
+  end
+
   R = IntervalSet.new_unsafe( [OpenOpenInterval.new(-Float::INFINITY, Float::INFINITY)] )
   Empty = IntervalSet.new_unsafe([])
 
