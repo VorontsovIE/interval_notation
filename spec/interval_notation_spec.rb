@@ -1,6 +1,8 @@
 require 'interval_notation'
 
 include IntervalNotation
+include IntervalNotation::BasicIntervals
+include IntervalNotation::Syntax::Short
 
 def each_combination_of_intervals(intervals)
   basic_intervals = intervals.flat_map(&:intervals)
@@ -8,8 +10,8 @@ def each_combination_of_intervals(intervals)
     indices = basic_intervals.size.times.to_a
     indices.combination(chunk_1_size).each do |chunk_1_indices|
       chunk_2_indices = indices - chunk_1_indices
-      chunk_1 = IntervalNotation.union(chunk_1_indices.map{|i| IntervalSet.new([basic_intervals[i]]) })
-      chunk_2 = IntervalNotation.union(chunk_2_indices.map{|i| IntervalSet.new([basic_intervals[i]]) })
+      chunk_1 = IntervalNotation::Operations.union(chunk_1_indices.map{|i| IntervalSet.new([basic_intervals[i]]) })
+      chunk_2 = IntervalNotation::Operations.union(chunk_2_indices.map{|i| IntervalSet.new([basic_intervals[i]]) })
       yield chunk_1, chunk_2
     end
   end
@@ -110,8 +112,8 @@ describe IntervalNotation do
       [oo(1,3), oo(3,6), oo(7,9), oo(15,19), oc(123,190),cc(4,18)],
       [lt(0),oo(1,3), oo(3,6), oo(7,9), oo(15,19), oc(123,190),cc(4,18),ge(180)],
     ].each do |intervals|
-      it "IntervalNotation.union(#{intervals.map(&:to_s).join(',')}) should be equal to #{intervals.map(&:to_s).join('|')}" do
-        expect( IntervalNotation.union(intervals) ).to eq intervals.inject(&:|)
+      it "IntervalNotation::Operations.union(#{intervals.map(&:to_s).join(',')}) should be equal to #{intervals.map(&:to_s).join('|')}" do
+        expect( IntervalNotation::Operations.union(intervals) ).to eq intervals.inject(&:|)
       end
     end
   end
@@ -337,12 +339,12 @@ describe IntervalNotation do
       [oo(1,3)|oo(5,7), co(3,5)] => oo(1,5)|oo(5,7),
       [oo(1,3)|oo(5,7), cc(3,5)] => oo(1,7),
     }).each do |intervals, answer|
-      it "IntervalNotation.union(#{intervals.map(&:to_s).join(',')} should equal #{answer}" do
-        expect( IntervalNotation.union(intervals) ).to eq answer
+      it "IntervalNotation::Operations.union(#{intervals.map(&:to_s).join(',')} should equal #{answer}" do
+        expect( IntervalNotation::Operations.union(intervals) ).to eq answer
       end
 
-      it "IntervalNotation.union(#{intervals.map(&:to_s).join(',')} should equal consequent unite: #{intervals.map(&:to_s).join('|')}" do
-        expect( IntervalNotation.union(intervals) ).to eq intervals.inject(&:union)
+      it "IntervalNotation::Operations.union(#{intervals.map(&:to_s).join(',')} should equal consequent unite: #{intervals.map(&:to_s).join('|')}" do
+        expect( IntervalNotation::Operations.union(intervals) ).to eq intervals.inject(&:union)
       end
 
       if intervals.size == 2
@@ -421,12 +423,12 @@ describe IntervalNotation do
 
 
     }.each do |intervals, answer|
-      it "IntervalNotation.intersection(#{intervals.map(&:to_s).join(',')} should equal #{answer}" do
-        expect( IntervalNotation.intersection(intervals) ).to eq answer
+      it "IntervalNotation::Operations.intersection(#{intervals.map(&:to_s).join(',')} should equal #{answer}" do
+        expect( IntervalNotation::Operations.intersection(intervals) ).to eq answer
       end
 
-      it "IntervalNotation.intersection(#{intervals.map(&:to_s).join(',')} should equal consequent unite: #{intervals.map(&:to_s).join('&')}" do
-        expect( IntervalNotation.intersection(intervals) ).to eq intervals.inject(&:intersection)
+      it "IntervalNotation::Operations.intersection(#{intervals.map(&:to_s).join(',')} should equal consequent unite: #{intervals.map(&:to_s).join('&')}" do
+        expect( IntervalNotation::Operations.intersection(intervals) ).to eq intervals.inject(&:intersection)
       end
 
       if intervals.size == 2
@@ -446,7 +448,7 @@ describe IntervalNotation do
       [oo(1,5), oc(1,3), co(3,5)] => pt(3)
     }.each do |intervals, answer|
       it "#{intervals.map(&:to_s).join('&')} should equal #{answer}" do
-        expect( IntervalNotation.intersection(intervals) ).to eq answer
+        expect( IntervalNotation::Operations.intersection(intervals) ).to eq answer
       end
     end
   end

@@ -83,23 +83,27 @@ module IntervalNotation
     end
 
     # Union of an interval set with another interval set +other+. Alias: +|+
+    # To unite many (tens of thousands intervals) intervals use +IntervalNotation::Operations.unite+ method.
+    # (+Operations.unite+ is dramatically faster than sequentially uniting intervals one-by-one)
     def union(other)
-      IntervalNotation.union([self, other])
+      IntervalNotation::Operations.union([self, other])
     end
 
     # Intersection of an interval set with another interval set +other+. Alias: +&+
+    # To unite many (tens of thousands intervals) intervals use +IntervalNotation::Operations.intersection+ method.
+    # (+Operations.intersection+ is dramatically faster than sequentially intersecting intervals one-by-one)
     def intersection(other)
-      IntervalNotation.intersection([self, other])
+      IntervalNotation::Operations.intersection([self, other])
     end
 
     # Difference between an interval set and another interval set +other+. Alias: +-+
     def subtract(other)
-      IntervalNotation.combine([self, other], SubtractCombiner.new)
+      IntervalNotation::Operations.combine([self, other], SubtractCombiner.new)
     end
 
     # Symmetric difference between an interval set and another interval set +other+. Alias: +^+
     def symmetric_difference(other)
-      IntervalNotation.combine([self, other], SymmetricDifferenceCombiner.new)
+      IntervalNotation::Operations.combine([self, other], SymmetricDifferenceCombiner.new)
     end
 
     # Complement of an interval set in R. Alias: +~+

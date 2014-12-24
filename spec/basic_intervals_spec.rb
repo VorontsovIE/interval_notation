@@ -1,6 +1,8 @@
 require 'interval_notation'
 
 include IntervalNotation
+include IntervalNotation::BasicIntervals
+include IntervalNotation::Syntax::Short
 
 describe IntervalNotation do
   describe OpenOpenInterval do

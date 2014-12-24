@@ -24,14 +24,14 @@ module IntervalNotation
         if combiner.previous_state
           if combiner.state
             unless combiner.include_last_point
-              intervals << interval_by_boundary_inclusion(incl_from, from, false, point_value)
+              intervals << BasicIntervals.interval_by_boundary_inclusion(incl_from, from, false, point_value)
               incl_from = false
               from = point_value
             end
           else
             to = point_value
             incl_to = combiner.include_last_point
-            intervals << interval_by_boundary_inclusion(incl_from, from, incl_to, to)
+            intervals << BasicIntervals.interval_by_boundary_inclusion(incl_from, from, incl_to, to)
             from = nil # easier to find an error (but not necessary code)
             incl_from = nil # ditto
           end
@@ -40,39 +40,23 @@ module IntervalNotation
             from = point_value
             incl_from = combiner.include_last_point
           else
-            intervals << IntervalNotation::Point.new(point_value)  if combiner.include_last_point
+            intervals << BasicIntervals::Point.new(point_value)  if combiner.include_last_point
           end
         end
       end
-      IntervalNotation::IntervalSet.new_unsafe(intervals)
+      IntervalSet.new_unsafe(intervals)
     end
 
+    # Union of multiple intervals.
     def union(intervals)
       combine(intervals, UnionCombiner.new(intervals.size))
     end
 
+    # Intersection of multiple intervals
     def intersection(intervals)
       combine(intervals, IntersectCombiner.new(intervals.size))
     end
 
-    def interval_by_boundary_inclusion(include_from, from, include_to, to)
-      if include_from
-        if include_to
-          if from != to
-            IntervalNotation::ClosedClosedInterval.new(from, to)
-          else
-            IntervalNotation::Point.new(from)
-          end
-        else
-          IntervalNotation::ClosedOpenInterval.new(from, to)
-        end
-      else
-        if include_to
-          IntervalNotation::OpenClosedInterval.new(from, to)
-        else
-          IntervalNotation::OpenOpenInterval.new(from, to)
-        end
-      end
-    end
+    module_function :combine, :union, :intersection
   end
 end
