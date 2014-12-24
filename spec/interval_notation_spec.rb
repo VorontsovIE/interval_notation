@@ -119,7 +119,10 @@ describe IntervalNotation do
   describe '#empty?' do
     {
       Empty => true,
+      pt(1) => false,
+      pt(1)|pt(3) => false,
       oo(1,5) => false,
+      oo(1,5)|pt(7) => false,
       oo(1,3)|oo(3,5) => false,
       oo(1,3)|oo(3,5)|cc(6,7) => false
     }.each do |interval, answer|
@@ -466,7 +469,17 @@ describe IntervalNotation do
       [oo(1,5),oo(0,3)] => co(3,5),
       [oo(1,5),oo(0,2)|oo(3,4)] => cc(2,3)|co(4,5),
       [R,oo(1,5)] => le(1)|ge(5),
+      [R,oc(1,5)] => le(1)|gt(5),
+      [R,co(1,5)] => lt(1)|ge(5),
+      [R,pt(3)] => lt(3)|gt(3),
+      [R,Empty] => R,
+      [R,R] => Empty,
       [oo(1,5),R] => Empty,
+      [pt(3),R] => Empty,
+      [oo(1,3)|pt(5)|cc(7,10),R] => Empty,
+      [Empty,R] => Empty,
+      [Empty,pt(3)] => Empty,
+      [Empty,oo(1,3)] => Empty,
     }.each do |(interval_1, interval_2), answer|
       it "#{interval_1} - #{interval_2} should equal #{answer}" do
         expect( interval_1.subtract(interval_2) ).to eq answer
@@ -474,45 +487,109 @@ describe IntervalNotation do
     end
   end
 
+  describe '#symmetric_difference' do
+    {
+      [oo(1,3),oo(1,3)] => Empty,
+      [cc(1,3),cc(1,3)] => Empty,
+      [cc(1,3),pt(2)] => co(1,2)|oc(2,3),
+      [cc(1,3),oo(1,3)] => pt(1)|pt(3),
+      [oo(1,4),oo(2,3)] => oc(1,2)|co(3,4),
+      [oo(1,4),cc(2,3)] => oo(1,2)|oo(3,4),
+      [oo(1,4),Empty] => oo(1,4),
+      [oo(1,4),R] => le(1)|ge(4),
+    }.each do |(interval_1, interval_2), answer|
+      it "#{interval_1} ^ #{interval_2} should equal #{answer}" do
+        expect( interval_1.symmetric_difference(interval_2) ).to eq answer
+      end
+      it "#{interval_2} ^ #{interval_1} should equal #{answer}" do
+        expect( interval_2.symmetric_difference(interval_1) ).to eq answer
+      end
+      it "#{interval_1} ^ #{answer} should equal #{interval_2}" do
+        expect( interval_1.symmetric_difference(answer) ).to eq interval_2
+      end
+      it "#{interval_2} ^ #{answer} should equal #{interval_1}" do
+        expect( interval_2.symmetric_difference(answer) ).to eq interval_1
+      end
+    end
+  end
+
+  describe '#complement' do
+    {
+      oo(1,3)|cc(5,6) => le(1)|co(3,5)|gt(6),
+      oo(1,5) => le(1)|ge(5),
+      oc(1,5) => le(1)|gt(5),
+      co(1,5) => lt(1)|ge(5),
+      pt(3) => lt(3)|gt(3),
+      Empty => R,
+      R => Empty,
+    }.each do |interval, answer|
+      it "#{interval}.complement should equal #{answer}" do
+        expect( interval.complement ).to eq answer
+      end
+    end
+  end
+
   describe '#include_position?' do
     {
+      [oo(1,3), -100] => false,
+      [oo(1,3), 0] => false,
+      [oo(1,3), 1] => false,
       [oo(1,3), 2] => true,
       [oo(1,3), 3] => false,
-      [oo(1,3), 1] => false,
       [oo(1,3), 4] => false,
-      [oo(1,3), 0] => false,
       [oo(1,3), 100] => false,
-      [oo(1,3), -100] => false,
-      
-      [co(1,3), 2] => true,
+
+      [co(1,3), -100] => false,
+      [co(1,3), 0] => false,
       [co(1,3), 1] => true,
+      [co(1,3), 2] => true,
       [co(1,3), 3] => false,
       [co(1,3), 4] => false,
-      [co(1,3), 0] => false,
-      
-      [oc(1,3), 2] => true,
+      [co(1,3), 100] => false,
+
+      [oc(1,3), -100] => false,
+      [oc(1,3), 0] => false,
       [oc(1,3), 1] => false,
+      [oc(1,3), 2] => true,
       [oc(1,3), 3] => true,
       [oc(1,3), 4] => false,
-      [oc(1,3), 0] => false,
-      
-      [cc(1,3), 2] => true,
+      [oc(1,3), 100] => false,
+
+      [cc(1,3), -100] => false,
+      [cc(1,3), 0] => false,
       [cc(1,3), 1] => true,
+      [cc(1,3), 2] => true,
       [cc(1,3), 3] => true,
       [cc(1,3), 4] => false,
-      [cc(1,3), 0] => false,
+      [cc(1,3), 100] => false,
 
-      [lt(-10) | cc(1,3) | ge(10), 2] => true,
-      [lt(-10) | cc(1,3) | ge(10), 1] => true,
-      [lt(-10) | cc(1,3) | ge(10), 3] => true,
-      [lt(-10) | cc(1,3) | ge(10), 4] => false,
-      [lt(-10) | cc(1,3) | ge(10), 0] => false,
-      [lt(-10) | cc(1,3) | ge(10), -10] => false,
-      [lt(-10) | cc(1,3) | ge(10), -11] => true,
-      [lt(-10) | cc(1,3) | ge(10), -1000] => true,
-      [lt(-10) | cc(1,3) | ge(10), 10] => true,
-      [lt(-10) | cc(1,3) | ge(10), 10] => true,
-      [lt(-10) | cc(1,3) | ge(10), 1000] => true,
+      [cc(0,2)|pt(4)|pt(6)|cc(8,10), -1] => false,
+      [cc(0,2)|pt(4)|pt(6)|cc(8,10), 0] => true,
+      [cc(0,2)|pt(4)|pt(6)|cc(8,10), 1] => true,
+      [cc(0,2)|pt(4)|pt(6)|cc(8,10), 2] => true,
+      [cc(0,2)|pt(4)|pt(6)|cc(8,10), 3] => false,
+      [cc(0,2)|pt(4)|pt(6)|cc(8,10), 4] => true,
+      [cc(0,2)|pt(4)|pt(6)|cc(8,10), 5] => false,
+      [cc(0,2)|pt(4)|pt(6)|cc(8,10), 6] => true,
+      [cc(0,2)|pt(4)|pt(6)|cc(8,10), 7] => false,
+      [cc(0,2)|pt(4)|pt(6)|cc(8,10), 8] => true,
+      [cc(0,2)|pt(4)|pt(6)|cc(8,10), 9] => true,
+      [cc(0,2)|pt(4)|pt(6)|cc(8,10), 10] => true,
+      [cc(0,2)|pt(4)|pt(6)|cc(8,10), 11] => false,
+
+      [lt(-10)|cc(1,3)|ge(10), -1000] => true,
+      [lt(-10)|cc(1,3)|ge(10), -11] => true,
+      [lt(-10)|cc(1,3)|ge(10), -10] => false,
+      [lt(-10)|cc(1,3)|ge(10), -9] => false,
+      [lt(-10)|cc(1,3)|ge(10), 0] => false,
+      [lt(-10)|cc(1,3)|ge(10), 1] => true,
+      [lt(-10)|cc(1,3)|ge(10), 2] => true,
+      [lt(-10)|cc(1,3)|ge(10), 3] => true,
+      [lt(-10)|cc(1,3)|ge(10), 4] => false,
+      [lt(-10)|cc(1,3)|ge(10), 9] => false,
+      [lt(-10)|cc(1,3)|ge(10), 10] => true,
+      [lt(-10)|cc(1,3)|ge(10), 11] => true,
+      [lt(-10)|cc(1,3)|ge(10), 1000] => true,
     }.each do |(interval, point), answer|
       if answer
         it "#{interval}.include_position?(#{point}) should be truthy" do
@@ -521,6 +598,85 @@ describe IntervalNotation do
       else
         it "#{interval}.include_position?(#{point}) should be falsy" do
           expect( interval.include_position?(point) ).to be_falsy
+        end
+      end
+    end
+  end
+
+  describe '#contain? / contained_by?' do 
+    {
+      [oo(1,3), oo(1,2)] => true,
+      [oo(1,3), oo(1.5,2.5)] => true,
+      [oo(1,3), cc(1.5,2.5)] => true,
+      [oo(1,3), oo(2,3)] => true,
+      [oo(1,3), oo(1,3)] => true,
+      [cc(1,3), oo(1,3)] => true,
+      [cc(1,3), cc(1,3)] => true,
+      [oo(1,3), cc(1,3)] => false,
+      [oo(1,3), co(1,3)] => false,
+      [oo(1,3)|pt(4)|cc(8,10), oo(1,3)|oc(9,10) ] => true,
+      [oo(1,3)|pt(4)|cc(8,10), oo(1,3)|pt(4) ] => true,
+      [oo(1,3)|pt(4)|cc(8,10), oo(1,3)|pt(5) ] => false,
+      [oo(1,3)|pt(4)|cc(8,10), oo(1,3)|pt(8) ] => true,
+      [lt(10), oo(1,3)] => true,
+      [lt(10), oo(10,11)] => false,
+      [le(10), oo(10,11)] => false,
+    }.each do |(interval_1, interval_2), answer|
+      if answer
+        it "#{interval_1}.contain?(#{interval_2}) should be truthy" do
+          expect( interval_1.contain?(interval_2) ).to be_truthy
+        end
+        it "#{interval_2}.contained_by?(#{interval_1}) should be truthy" do
+          expect( interval_2.contained_by?(interval_1) ).to be_truthy
+        end
+      else
+        it "#{interval_1}.contain?(#{interval_2}) should be falsy" do
+          expect( interval_1.contain?(interval_2) ).to be_falsy
+        end
+        it "#{interval_2}.contained_by?(#{interval_1}) should be falsy" do
+          expect( interval_2.contained_by?(interval_1) ).to be_falsy
+        end
+      end
+    end
+  end
+
+  describe '#intersect?' do 
+    {
+      [oo(1,3), oo(1,2)] => true,
+      [oo(1,3), oo(1,3)] => true,
+      [oo(1,3), cc(1.5,2.5)] => true,
+      
+      [oo(1,3), oo(3,4)] => false,
+      [oc(1,3), oo(3,4)] => false,
+      [oo(1,3), co(3,4)] => false,
+      [oc(1,3), co(3,4)] => true,
+
+      [oo(1,3), oo(4,5)] => false,
+      [cc(1,3), cc(4,5)] => false,
+      [cc(1,3), pt(2)|cc(4,5)] => true,
+      [co(1,3), pt(2)|cc(4,5)] => true,
+      [cc(1,3), pt(3)|cc(4,5)] => true,
+      [co(1,3), pt(3)|cc(4,5)] => false,
+      [cc(1,3), cc(4,5)|pt(6)] => false,
+
+      [lt(10), oo(1,3)] => true,
+      [lt(10), oo(11,12)] => false,
+      [lt(10), oo(10,11)] => false,
+      [le(10), co(10,11)] => true,
+      [le(10), le(9)] => true,
+      [le(10), le(11)] => true,
+      [le(10), ge(11)] => false,
+      [le(10), ge(10)] => true,
+      [le(10), gt(10)] => false,
+      [le(10), gt(11)] => false,
+    }.each do |(interval_1, interval_2), answer|
+      if answer
+        it "#{interval_1}.intersect?(#{interval_2}) should be truthy" do
+          expect( interval_1.intersect?(interval_2) ).to be_truthy
+        end
+      else
+        it "#{interval_1}.intersect?(#{interval_2}) should be falsy" do
+          expect( interval_1.intersect?(interval_2) ).to be_falsy
         end
       end
     end
