@@ -1,6 +1,6 @@
 require_relative 'interval_set'
 require_relative 'basic_intervals'
-require_relative 'combiner'
+require_relative 'combiners'
 
 module IntervalNotation
   module Operations
