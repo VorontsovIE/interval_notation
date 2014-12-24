@@ -53,15 +53,11 @@ module IntervalNotation
     end
 
     def subtract(other)
-      IntervalNotation.combine([self, other]) do |included|
-        included[0] && !included[1]
-      end
+      IntervalNotation.combine([self, other], SubtractCombiner.new(2))
     end
 
     def symmetric_difference(other)
-      IntervalNotation.combine([self, other]) do |included|
-        included[0] ^ included[1]
-      end
+      IntervalNotation.combine([self, other], SymmetricDifferenceCombiner.new(2))
     end
 
     def complement

@@ -1,5 +1,6 @@
 require_relative 'interval_set'
 require_relative 'basic_intervals'
+require_relative 'combiner'
 
 module IntervalNotation
   module Operations
@@ -18,7 +19,7 @@ module IntervalNotation
 
     # accepts a necessary inclusion_checker block.
     # It accepts an array of two boolean elements(inclusion state of both interval's segments) and returns an inclusion state of a result
-    def combine(interval_sets)
+    def combine(interval_sets, combiner)
       points = interval_sets.each_with_index.flat_map{|interval_set, interval_set_index|
         interval_set.intervals.flat_map{|interval|
           interval.interval_boundaries(interval_set_index)
@@ -27,29 +28,31 @@ module IntervalNotation
 
       intervals = []
 
-      inside = Array.new(interval_sets.size, false)
-      now_inside = yield inside
+      now_inside = combiner.state
+      # inside = Array.new(interval_sets.size, false)
+      # now_inside = yield inside
       # num_inside = now_inside.count{|el| el}
       incl_from = nil
       from = nil
 
       points.chunk(&:value).each do |point_value, points_on_place|
         prev_inside = now_inside
-        included = inside.dup # if no point of given interval-set present at a place, then this interval either covers (and thus includes a point) or not
-        update_included!(points_on_place, included)
-        update_inside!(points_on_place, inside)
-        now_inside = yield inside
+        # included = inside.dup # if no point of given interval-set present at a place, then this interval either covers (and thus includes a point) or not
+        # update_included!(points_on_place, included)
+        # update_inside!(points_on_place, inside)
+        combiner.pass(points_on_place)
+        now_inside = combiner.state
 
         if prev_inside
           if now_inside
-            unless yield included
+            unless combiner.include_last_point
               intervals << interval_by_boundary_inclusion(incl_from, from, false, point_value)
               incl_from = false
               from = point_value
             end
           else
             to = point_value
-            incl_to = yield included
+            incl_to = combiner.include_last_point
             intervals << interval_by_boundary_inclusion(incl_from, from, incl_to, to)
             from = nil # easier to find an error (but not necessary code)
             incl_from = nil # ditto
@@ -57,9 +60,9 @@ module IntervalNotation
         else
           if now_inside
             from = point_value
-            incl_from = yield included
+            incl_from = combiner.include_last_point
           else
-            intervals << IntervalNotation::Point.new(point_value)  if yield included
+            intervals << IntervalNotation::Point.new(point_value)  if combiner.include_last_point
           end
         end
       end
@@ -67,15 +70,11 @@ module IntervalNotation
     end
 
     def union(intervals)
-      combine(intervals) do |included|
-        included.any?
-      end
+      combine(intervals, UnionCombiner.new(intervals.size))
     end
 
     def intersection(intervals)
-      combine(intervals) do |included|
-        included.all?
-      end
+      combine(intervals, IntersectCombiner.new(intervals.size))
     end
 
     def interval_by_boundary_inclusion(include_from, from, include_to, to)

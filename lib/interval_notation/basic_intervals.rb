@@ -1,7 +1,11 @@
 require_relative 'error'
 
 module IntervalNotation
-  BoundaryPoint = Struct.new(:value, :included, :opening, :interval_index, :interval_boundary)
+  BoundaryPoint = Struct.new(:value, :included, :opening, :interval_index, :interval_boundary) do
+    def closing
+      !opening
+    end
+  end
 
   class OpenOpenInterval
     attr_reader :from, :to

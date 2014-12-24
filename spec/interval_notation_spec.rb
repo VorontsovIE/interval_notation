@@ -347,6 +347,13 @@ describe IntervalNotation do
       [oo(1,6), oo(1,3)|co(5,7)] => oo(1,3)|co(5,6),
       [oo(0,6), oo(1,3)|co(5,7)] => oo(1,3)|co(5,6),
       [oo(0,6), oo(1,3)|co(5,6)] => oo(1,3)|co(5,6),
+
+      [oo(1,3) | oo(3,5), oo(1,3)] => oo(1,3),
+      [oo(1,3) | oo(3,5), oo(3,5)] => oo(3,5),
+      [oo(1,3) | oo(3,5), oo(1,3)|oo(3,5)] => oo(1,3) | oo(3,5),
+      [oo(1,3), oo(1,5)] => oo(1,3),
+      [oc(1,3), oo(1,5)] => oc(1,3),
+      [co(3,5), oo(1,5)] => co(3,5),
         
       [oo(1,3), pt(2)] => pt(2),
       [oo(1,3), pt(1)] => Empty,
@@ -357,6 +364,14 @@ describe IntervalNotation do
       it "#{interval_1} & #{interval_2} should equal #{answer}" do
         expect( interval_1.intersection(interval_2) ).to eq answer
         expect( IntervalNotation.intersection([interval_1, interval_2]) ).to eq answer
+      end
+    end
+
+    {
+      [oo(1,5), oc(1,3), co(3,5)] => pt(3)
+    }.each do |intervals, answer|
+      it "#{intervals.map(&:to_s).join('&')} should equal #{answer}" do
+        expect( IntervalNotation.intersection(intervals) ).to eq answer
       end
     end
   end
