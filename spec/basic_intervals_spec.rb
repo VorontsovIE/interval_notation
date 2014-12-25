@@ -1,4 +1,4 @@
-require 'interval_notation'
+require_relative '../lib/interval_notation'
 
 include IntervalNotation
 include IntervalNotation::BasicIntervals
