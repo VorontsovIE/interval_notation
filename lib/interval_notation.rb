@@ -18,6 +18,10 @@ module IntervalNotation
       R = ::IntervalNotation::R
       Empty = ::IntervalNotation::Empty
 
+      def int(str)
+        IntervalSet.from_string(str)
+      end
+
       def oo(from, to)
         IntervalSet.new_unsafe( [BasicIntervals::OpenOpenInterval.new(from, to)] )
       end
@@ -54,13 +58,17 @@ module IntervalNotation
         IntervalSet.new_unsafe( [BasicIntervals::ClosedOpenInterval.new(value, Float::INFINITY)] )
       end
 
-      module_function :oo, :co, :oc, :cc, :pt, :lt, :le, :gt, :ge
+      module_function :oo, :co, :oc, :cc, :pt, :lt, :le, :gt, :ge, :int
     end
 
     # Long syntax for interval factory methods
     module Long
       R = ::IntervalNotation::R
       Empty = ::IntervalNotation::Empty
+
+      def interval(str)
+        IntervalSet.from_string(str)
+      end
 
       def open_open(from, to)
         IntervalSet.new_unsafe( [BasicIntervals::OpenOpenInterval.new(from, to)] )
@@ -99,7 +107,8 @@ module IntervalNotation
       end
 
       module_function :open_open, :closed_open, :open_closed, :closed_closed, :point,
-                      :less_than, :less_than_or_equal_to, :greater_than, :greater_than_or_equal_to
+                      :less_than, :less_than_or_equal_to, :greater_than, :greater_than_or_equal_to,
+                      :interval
     end
   end
 end

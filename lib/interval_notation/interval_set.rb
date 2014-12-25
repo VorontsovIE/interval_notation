@@ -24,9 +24,21 @@ module IntervalNotation
       @intervals = intervals.freeze
     end
 
-    # !!!
-    # def self.from_string(str)
-    # end
+    # Method to create an interval set from string.
+    # It accepts strings obtained by +#to_s+ and many other formats.
+    # Spaces inside are ignored
+    # Intervals can be joined with +u+ or +U+ letters and unicode union character +∪+
+    # Points can go separately or be combined inside of single curly braces. Single point can go without braces at all
+    # +,+ and +;+ are both valid value separators.
+    # Infinity can be represented by +inf+, +infty+, +\infty+, +infinity+, +∞+ (each can go with or without sign)
+    # Empty set is empty string, word +Empty+ or unicode character +∅+
+    # +R+ represents whole 1-D line (-∞, ∞)
+    def self.from_string(str)
+      intervals = str.split(/[uU∪]/).flat_map{|interval_str|
+        BasicIntervals.from_string(interval_str)
+      }.map(&:to_interval_set)
+      Operations.union(intervals)
+    end
 
     # Output standard mathematical notation of interval set in left-to-right order.
     # Each singular point is listed separately in curly braces.
@@ -57,6 +69,7 @@ module IntervalNotation
     end
     alias covered_by? contained_by?
 
+    # TODO: optimize if possible.
     # Checks whether an interval set intersects another interval set. Alias: +#intersect?+
     def intersect?(other)
       ! intersection(other).empty?
@@ -66,6 +79,39 @@ module IntervalNotation
     # Checks whether an interval set is empty
     def empty?
       @intervals.empty?
+    end
+
+    # Checks whether an interval set is contiguous (empty set treated contiguous)
+    def contiguous?
+      @intervals.size <= 1
+    end
+
+    # Total length of all intervals in set
+    def total_length
+      @intervals.map(&:length).inject(0, &:+)
+    end
+
+    # Number of connected components
+    def num_connected_components
+      @intervals.size
+    end
+
+    # TODO: optimize.
+    # Closure of an interval set
+    def closure
+      Operations.union(@intervals.map(&:closure).map(&:to_interval_set))
+    end
+
+    # Minimal contiguous interval, covering interval set
+    def covering_interval
+      if @intervals.size == 0
+        Empty
+      elsif @intervals.size == 1
+        self
+      else
+        BasicIntervals.interval_by_boundary_inclusion(@intervals.first.include_from?, @intervals.first.from,
+                                                      @intervals.last.include_to?, @intervals.last.to).to_interval_set
+      end
     end
 
     def hash # :nodoc:
@@ -86,24 +132,24 @@ module IntervalNotation
     # To unite many (tens of thousands intervals) intervals use +IntervalNotation::Operations.unite+ method.
     # (+Operations.unite+ is dramatically faster than sequentially uniting intervals one-by-one)
     def union(other)
-      IntervalNotation::Operations.union([self, other])
+      Operations.union([self, other])
     end
 
     # Intersection of an interval set with another interval set +other+. Alias: +&+
     # To unite many (tens of thousands intervals) intervals use +IntervalNotation::Operations.intersection+ method.
     # (+Operations.intersection+ is dramatically faster than sequentially intersecting intervals one-by-one)
     def intersection(other)
-      IntervalNotation::Operations.intersection([self, other])
+      Operations.intersection([self, other])
     end
 
     # Difference between an interval set and another interval set +other+. Alias: +-+
     def subtract(other)
-      IntervalNotation::Operations.combine([self, other], SubtractCombiner.new)
+      Operations.combine([self, other], SubtractCombiner.new)
     end
 
     # Symmetric difference between an interval set and another interval set +other+. Alias: +^+
     def symmetric_difference(other)
-      IntervalNotation::Operations.combine([self, other], SymmetricDifferenceCombiner.new)
+      Operations.combine([self, other], SymmetricDifferenceCombiner.new)
     end
 
     # Complement of an interval set in R. Alias: +~+
@@ -116,6 +162,12 @@ module IntervalNotation
     alias :- :subtract
     alias :^ :symmetric_difference
     alias :~ :complement
+
+
+    # Auxiliary method to share part of common interface with basic intervals
+    def to_interval_set # :nodoc:
+      self
+    end
 
     class << self
       # auxiliary method to check that intervals are sorted and don't overlap

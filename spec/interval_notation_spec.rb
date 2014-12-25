@@ -76,22 +76,80 @@ describe IntervalNotation do
     end
   end
 
+  describe '.to_s' do
+    {
+      Empty => '∅',
+      R => '(-∞;+∞)',
+      oo(1,3) => '(1;3)',
+      oc(1,3) => '(1;3]',
+      co(1,3) => '[1;3)',
+      cc(1,3) => '[1;3]',
+      lt(3) => '(-∞;3)',
+      le(3) => '(-∞;3]',
+      gt(3) => '(3;+∞)',
+      ge(3) => '[3;+∞)',
+      pt(2) => '{2}',
+      oo(1,3) | cc(4,5) => '(1;3)∪[4;5]',
+      oo(1,3) | pt(4) => '(1;3)∪{4}',
+      pt(-1) | oo(1,3) | pt(4) => '{-1}∪(1;3)∪{4}',
+      pt(1) | pt(4) => '{1}∪{4}',
+    }.each do |interval, str|
+      it "String representation #{interval.to_s} should eq #{str}" do
+        expect(interval.to_s).to eq str
+      end
+      it "Interval created by string representation #{interval.to_s} is the same as a source interval" do
+        expect(IntervalNotation::IntervalSet.from_string(interval.to_s)).to eq interval
+      end
+    end
+  end
+
+  describe 'IntervalNotation::IntervalSet.from_string' do
+    {
+      '∅' => Empty,
+      'Empty' => Empty,
+      'empty' => Empty,
+      '' => Empty,
+      'R' => R,
+      '3' => pt(3),
+      '-3' => pt(-3),
+      '{3}' => pt(3),
+      '{3,5}' => pt(3) | pt(5),
+      '{3;5}' => pt(3) | pt(5),
+      '{3}u{5}' => pt(3) | pt(5),
+      '{3}U{5}' => pt(3) | pt(5),
+      '{3}∪{5}' => pt(3) | pt(5),
+      '(0,1)' => oo(0,1),
+      '(0,1]' => oc(0,1),
+      '[0,1)' => co(0,1),
+      '[0,1]' => cc(0,1),
+      '(0,1)U(2,5.5)' => oo(0,1) | oo(2,5.5),
+      '(0;1)U(2;5.5)' => oo(0,1) | oo(2,5.5),
+      '(- 2; 5.5)' => oo(-2, 5.5),
+      '(-∞; ∞)' => R,
+      '(-∞; 1)' => lt(1),
+      '(-inf; 1)' => lt(1),
+      '(-infty; 1)' => lt(1),
+      '(-\infty; 1)' => lt(1),
+      '(-infinity; 1)' => lt(1),
+      '(1;∞)' => gt(1),
+      '(1;inf)' => gt(1),
+      '(1;infty)' => gt(1),
+      '(1;\infty)' => gt(1),
+      '(1;infinity)' => gt(1),
+      '(1;+∞)' => gt(1),
+      '[1;+∞)' => ge(1),
+      '[1;+inf)' => ge(1),
+      '[1;+infty)' => ge(1),
+      '[1;+\infty)' => ge(1),
+      '[1;+infinity)' => ge(1),
+    }.each do |str, interval|
+      it "IntervalNotation::IntervalSet.from_string from string #{str} should eq #{interval}" do
+        expect(IntervalNotation::IntervalSet.from_string(str)).to eq interval
+      end
+    end
+  end
 
   describe '.union' do
-    # intervals = [ Empty,
-    #   oo(1,3), oc(1,3), co(1,3), cc(1,3), pt(1), pt(3),
-    #   oo(1,5), oc(1,5), co(1,5), cc(1,5), pt(5),
-    #   oo(3,5), oc(3,5), co(3,5), cc(3,5),
-    #   oo(3,4), oc(3,4), co(3,4), cc(3,4), pt(4),
-    #   oo(0,5), oc(0,5), co(0,5), cc(0,5), pt(0),
-    #   oo(2,5), oc(2,5), co(2,5), cc(2,5), pt(2),
-    #   oo(6,7), oc(6,7), co(6,7), cc(6,7), pt(6), pt(7),
-    #   oo(1,3) | oo(3,5), oo(1,3) | pt(5), oo(1,5)
-    # ]
-
-    # intervals.combination(2).each do |intervals|
-    # end
-
     [ [Empty],
       [oo(1,3)],
       [Empty, Empty],
@@ -680,6 +738,143 @@ describe IntervalNotation do
         it "#{interval_1}.intersect?(#{interval_2}) should be falsy" do
           expect( interval_1.intersect?(interval_2) ).to be_falsy
         end
+      end
+    end
+  end
+
+  describe '#contiguous?' do
+    it 'Empty interval is treated as contiguous' do
+      expect(Empty).to be_contiguous
+    end
+    
+    it 'Single component intervals are treated as contiguous' do
+      expect(R).to be_contiguous
+      expect(oo(1,3)).to be_contiguous
+      expect(cc(1,3)).to be_contiguous
+      expect(lt(3)).to be_contiguous
+      expect(ge(3)).to be_contiguous
+      expect(pt(3)).to be_contiguous
+    end
+
+    it 'Several components intervals are treated as contiguous' do
+      expect(oo(1,3)|oo(3,5)).not_to be_contiguous
+      expect(oo(1,3)|oo(3,5)|oo(10,15)).not_to be_contiguous
+      expect(oo(1,3)|pt(5)).not_to be_contiguous
+      expect(cc(1,3)|pt(5)).not_to be_contiguous
+      expect(cc(1,3)|ge(5)).not_to be_contiguous
+      expect(pt(3)|ge(5)).not_to be_contiguous
+      expect(lt(3)|ge(5)).not_to be_contiguous
+      expect(pt(3)|pt(5)).not_to be_contiguous
+    end
+  end
+
+  describe '#num_connected_components' do
+    {
+      oo(1,3) => 1,
+      oc(1,3) => 1,
+      co(1,3) => 1,
+      cc(1,3) => 1,
+      oo(1,3) | oo(3,6) => 2,
+      oo(1,3) | oo(5,8) => 2,
+      oo(1,3) | oo(3,6) | cc(10,15) => 3,
+      oo(1,3) | pt(4) | oo(5,8) => 3,
+      Empty => 0,
+      pt(3) => 1,
+      pt(3) | pt(5) => 2,
+      lt(3) => 1,
+      le(3) => 1,
+      gt(3) => 1,
+      ge(3) => 1,
+      R => 1,
+    }.each do |interval, answer|
+      it "#{interval}.num_connected_components should equal #{answer}" do
+        expect(interval.num_connected_components).to eq answer
+      end
+    end
+  end
+
+  describe '#total_length' do
+    {
+      oo(1,3) => 2,
+      oc(1,3) => 2,
+      co(1,3) => 2,
+      cc(1,3) => 2,
+      oo(1,3) | oo(3,6) => 5,
+      oo(1,3) | oo(5,8) => 5,
+      oo(1,3) | pt(4) | oo(5,8) => 5,
+      Empty => 0,
+      pt(3) => 0,
+      pt(3) | pt(5) => 0,
+      lt(3) => Float::INFINITY,
+      le(3) => Float::INFINITY,
+      gt(3) => Float::INFINITY,
+      ge(3) => Float::INFINITY,
+      R => Float::INFINITY,
+    }.each do |interval, answer|
+      it "#{interval}.total_length should equal #{answer}" do
+        expect(interval.total_length).to eq answer
+      end
+    end
+  end
+
+  describe '#covering_interval' do
+    {
+      Empty => Empty,
+      oo(1,3) => oo(1,3),
+      oc(1,3) => oc(1,3),
+      co(1,3) => co(1,3),
+      cc(1,3) => cc(1,3),
+      pt(3) => pt(3),
+      lt(3) => lt(3),
+      le(3) => le(3),
+      gt(3) => gt(3),
+      ge(3) => ge(3),
+      R => R,
+      pt(3) | pt(4) => cc(3,4),
+      oo(1,3) | pt(4) => oc(1,4),
+      pt(0) | oo(1,3) | pt(4) => cc(0,4),
+      pt(0) | oc(1,3) => cc(0,3),
+      oo(1,3) | oo(3,6) => oo(1,6),
+      oo(1,3) | oc(3,6) => oc(1,6),
+      oo(1,3) | oc(5,8) => oc(1,8),
+      co(1,3) | oc(5,8) => cc(1,8),
+      cc(1,3) | cc(5,8) => cc(1,8),
+      oo(1,3) | oo(3,6) | cc(10,15) => oc(1,15),
+      oo(1,3) | pt(4) | oo(5,8) => oo(1,8),
+    }.each do |interval, answer|
+      it "#{interval}.covering_interval should equal #{answer}" do
+        expect(interval.covering_interval).to eq answer
+      end
+    end
+  end
+
+  describe '#closure' do
+    {
+      Empty => Empty,
+      oo(1,3) => cc(1,3),
+      oc(1,3) => cc(1,3),
+      co(1,3) => cc(1,3),
+      cc(1,3) => cc(1,3),
+      pt(3) => pt(3),
+      lt(3) => le(3),
+      le(3) => le(3),
+      gt(3) => ge(3),
+      ge(3) => ge(3),
+      lt(3) | gt(3) => R,
+      lt(3) | gt(4) => le(3) | ge(4),
+      oo(1,3) | oo(4,5) => cc(1,3) | cc(4,5),
+      oc(1,3) | co(4,5) => cc(1,3) | cc(4,5),
+      R => R,
+      oo(1,3) | pt(4) => cc(1,3) | pt(4),
+      pt(3) | pt(4) => pt(3) | pt(4),
+      oo(1,3) | oo(3,4) => cc(1,4),
+      co(1,3) | oc(3,4) => cc(1,4),
+      oo(1,3) | oo(3,6) | cc(10,15) => cc(1,6) | cc(10,15),
+      oo(1,3) | oo(3,6) | gt(10) => cc(1,6) | ge(10),
+      oo(1,3) | pt(4) | oo(5,8) => cc(1,3) | pt(4) | cc(5,8),
+    }.each do |interval, answer|
+      it "#{interval}.covering_interval should equal #{answer}" do
+        expect(interval.closure).to eq answer
       end
     end
   end
