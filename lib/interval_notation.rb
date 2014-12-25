@@ -1,7 +1,10 @@
 require_relative 'interval_notation/version'
 
+require_relative 'interval_notation/error'
 require_relative 'interval_notation/basic_intervals'
+require_relative 'interval_notation/combiners'
 require_relative 'interval_notation/interval_set'
+require_relative 'interval_notation/operations'
 
 module IntervalNotation
   UNION_SYMBOL = '∪'.freeze
