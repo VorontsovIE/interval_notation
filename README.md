@@ -91,16 +91,16 @@ bc.covering_interval # => [-5,25)
 
 If you want to combine more than two intervals, you can perform several consequent operations:
 ```ruby
-a | b | c # => {-5}∪(0,25]
+a | b | c # => {-5}∪(0,25)
 a & b & c # => ∅
 # or may be
-[a,b,c].inject(&:|) # => {-5}∪(0,25]
+[a,b,c].inject(&:|) # => {-5}∪(0,25)
 [a,b,c].inject(&:&) # => ∅
 ```
 But there is a much better and faster way to unite or intersect multiple intervals:
 ```ruby
-IntervalNotation::Operations.union(a,b,c) # => {-5}∪(0,25]
-IntervalNotation::Operations.intersection(a,b,c) # => ∅
+IntervalNotation::Operations.union([a,b,c]) # => {-5}∪(0,25]
+IntervalNotation::Operations.intersection([a,b,c]) # => ∅
 ```
 If you unite thousands or millions of intervals, you definitely should choose the last method! Do not try to inject intervals one by one for the sake of perfomance. Running time can differ dramatically (seconds vs hours for union of hundreds of thousands intervals).
 
@@ -115,10 +115,10 @@ closed_closed(0,5).contiguous? # => true
 point(8).contiguous? # => true
 (open_open(0,5) | point(8)).contiguous? # => false
 
-closed_closed_interval(0,5).include_position?(3) # => true
-open_open_interval(0,5).include_position?(5) # => false
-open_open_interval(0,5).include_position?(8) # => false
-(open_open_interval(0,5)|open_open_interval(7,9)).include_position?(8)# => true
+closed_closed(0,5).include_position?(3) # => true
+open_open(0,5).include_position?(5) # => false
+open_open(0,5).include_position?(8) # => false (actually nil which is falsy)
+(open_open(0,5)|open_open(7,9)).include_position?(8)# => true
 
 closed_closed(0,5).intersect?(closed_closed(3,10)) # => true
 closed_closed(0,5).intersect?(closed_closed(5,10)) # => true
