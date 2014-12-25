@@ -8,9 +8,9 @@ Gem::Specification.new do |spec|
   spec.version       = IntervalNotation::VERSION
   spec.authors       = ["Ilya Vorontsov"]
   spec.email         = ["prijutme4ty@gmail.com"]
-  spec.summary       = %q{TODO: Write a short summary. Required.}
-  spec.description   = %q{TODO: Write a longer description. Optional.}
-  spec.homepage      = ""
+  spec.summary       = %q{interval_notation allows one to work with 1D-intervals.}
+  spec.description   = %q{interval_notation provides methods to create intervals with open or closed boundaries or singular points, unite and intersect them, check inclusion into an interval and so on.}
+  spec.homepage      = "https://github.com/prijutme4ty/interval_notation"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")
