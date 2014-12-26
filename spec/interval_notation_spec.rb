@@ -1,21 +1,4 @@
-require_relative '../lib/interval_notation'
-
-include IntervalNotation
-include IntervalNotation::BasicIntervals
-include IntervalNotation::Syntax::Short
-
-def each_combination_of_intervals(intervals)
-  basic_intervals = intervals.flat_map(&:intervals)
-  (1..basic_intervals.size / 2).each do |chunk_1_size|
-    indices = basic_intervals.size.times.to_a
-    indices.combination(chunk_1_size).each do |chunk_1_indices|
-      chunk_2_indices = indices - chunk_1_indices
-      chunk_1 = IntervalNotation::Operations.union(chunk_1_indices.map{|i| IntervalSet.new([basic_intervals[i]]) })
-      chunk_2 = IntervalNotation::Operations.union(chunk_2_indices.map{|i| IntervalSet.new([basic_intervals[i]]) })
-      yield chunk_1, chunk_2
-    end
-  end
-end
+require_relative 'spec_helper'
 
 describe IntervalNotation do
   describe IntervalSet do
@@ -53,14 +36,14 @@ describe IntervalNotation do
         [OpenOpenInterval.new(-Float::INFINITY, 1), Point.new(0)],
         [OpenOpenInterval.new(-Float::INFINITY, 1), Point.new(1)],
         [Point.new(2), OpenOpenInterval.new(-Float::INFINITY, 1)],
-        
+
         [Point.new(11), OpenOpenInterval.new(10, Float::INFINITY)],
         [Point.new(10), OpenOpenInterval.new(10, Float::INFINITY)],
         [OpenOpenInterval.new(10, Float::INFINITY), Point.new(11)],
         [OpenOpenInterval.new(10, Float::INFINITY), Point.new(9)],
         [OpenOpenInterval.new(10, Float::INFINITY), OpenOpenInterval.new(9,13)],
         [OpenOpenInterval.new(10, Float::INFINITY), OpenOpenInterval.new(11,13)],
-        
+
         [OpenOpenInterval.new(1,3), Point.new(3)],
         [OpenOpenInterval.new(1,3), ClosedOpenInterval.new(3,4)],
         [OpenClosedInterval.new(1,3), ClosedOpenInterval.new(3,4)],
@@ -201,7 +184,7 @@ describe IntervalNotation do
       [oo(1,3), oo(4,5)] => IntervalSet.new([OpenOpenInterval.new(1,3), OpenOpenInterval.new(4,5)]),
       [oo(3,5), oo(1,3)] => IntervalSet.new([OpenOpenInterval.new(1,3), OpenOpenInterval.new(3,5)]),
       [oo(4,5), oo(1,3)] => IntervalSet.new([OpenOpenInterval.new(1,3), OpenOpenInterval.new(4,5)]),
-      
+
       [oo(1,3), oo(3,5), cc(7,9)] => IntervalSet.new([OpenOpenInterval.new(1,3), OpenOpenInterval.new(3,5), ClosedClosedInterval.new(7,9)]),
       [oo(1,3), oo(3,5), oo(5,7)] => IntervalSet.new([OpenOpenInterval.new(1,3), OpenOpenInterval.new(3,5), OpenOpenInterval.new(5,7)]),
       [oo(1,3), cc(7,9), oo(3,5)] => IntervalSet.new([OpenOpenInterval.new(1,3), OpenOpenInterval.new(3,5), ClosedClosedInterval.new(7,9)]),
@@ -259,13 +242,13 @@ describe IntervalNotation do
       [ge(3), co(1,3)] => ge(1),
       [ge(3), oc(1,3)] => gt(1),
       [ge(3), cc(1,3)] => ge(1),
-      
+
       [ge(3), oo(2,5)] => gt(2),
       [ge(3), co(2,5)] => ge(2),
       [ge(3), co(4,5)] => ge(3),
       [ge(3), oo(4,5)] => ge(3),
       [ge(3), oo(3,5)] => ge(3),
-      [ge(3), co(3,5)] => ge(3),     
+      [ge(3), co(3,5)] => ge(3),
       [ge(3), pt(2)] => IntervalSet.new([Point.new(2), ClosedOpenInterval.new(3, Float::INFINITY)]),
       [ge(3), pt(3)] => ge(3),
       [ge(3), pt(4)] => ge(3),
@@ -314,7 +297,7 @@ describe IntervalNotation do
     }).merge({ # too long hash to be one hash
       # non-adjacent
       [oo(1,3), oo(5,6)] => IntervalSet.new([OpenOpenInterval.new(1, 3), OpenOpenInterval.new(5, 6)]),
-      
+
       # adjacent
       [oo(1,3), oo(3,6)] => IntervalSet.new([OpenOpenInterval.new(1, 3), OpenOpenInterval.new(3, 6)]),
       [oo(1,3), co(3,6)] => oo(1,6),
@@ -416,97 +399,6 @@ describe IntervalNotation do
         it "#{chunk_1}.union(#{chunk_2}) should be equal to #{answer}" do
           expect( chunk_1.union(chunk_2) ).to eq answer
         end
-      end
-    end
-  end
-
-
-  describe '#intersection'  do
-    {
-      [oo(1,3), oo(1,3)] => oo(1,3),
-      [oo(1,3), oc(1,3)] => oo(1,3),
-      [oo(1,3), co(1,3)] => oo(1,3),
-      [oo(1,3), cc(1,3)] => oo(1,3),
-
-      [pt(2), pt(3)] => Empty,
-      [pt(3), pt(3)] => pt(3),
-      [pt(3)|pt(5), pt(3)|pt(5)] => pt(3)|pt(5),
-      [pt(3)|pt(5), pt(3)|pt(7)] => pt(3),
-
-      [oo(1,3)|oo(5,7), oo(1,3)|oo(5,7)] => oo(1,3)|oo(5,7),
-      [oo(1,3)|co(5,7), oo(1,3)|oo(5,7)] => oo(1,3)|oo(5,7),
-      [oo(1,3)|oo(5,7), oo(1,3)|co(5,7)] => oo(1,3)|oo(5,7),
-      [oo(1,3)|co(5,7), oo(1,3)|co(5,7)] => oo(1,3)|co(5,7),
-
-      [oo(1,3)|oo(3,5), oo(1,3)] => oo(1,3),
-      [oo(1,3)|oo(3,5), oo(1,3)|oo(7,9)] => oo(1,3),
-      [oo(1,3)|oo(3,5), oo(3,5)] => oo(3,5),
-      [oo(1,3)|oo(3,5), oo(1,3)|oo(3,5)] => oo(1,3)|oo(3,5),
-
-      [oo(1,3), oo(4,5)] => Empty,
-      [oo(1,3), oo(3,5)] => Empty,
-      [oo(1,3), co(3,5)] => Empty,
-      [oc(1,3), oo(3,5)] => Empty,
-      [oc(1,3), co(3,5)] => pt(3),
-      
-      [oo(1,3), oo(0,5)] => oo(1,3),
-      [oc(1,3), oo(0,5)] => oc(1,3),
-      [co(1,3), oo(0,5)] => co(1,3),
-      [cc(1,3), oo(0,5)] => cc(1,3),
-
-      [oo(1,3), oo(1,5)] => oo(1,3),
-      [co(1,3), oo(1,5)] => oo(1,3),
-      [oc(1,3), oo(1,5)] => oc(1,3),
-      [cc(1,3), oo(1,5)] => oc(1,3),
-      [co(3,5), oo(1,5)] => co(3,5),
-
-      [oo(1,3), oo(2,5)] => oo(2,3),
-      [oc(1,3), oo(2,5)] => oc(2,3),
-      [oo(1,3), co(2,5)] => co(2,3),
-      [oc(1,3), co(2,5)] => cc(2,3),
-
-      [oo(1,3), pt(2)] => pt(2),
-      [oo(1,3), pt(3)] => Empty,
-      [oc(1,3), pt(3)] => pt(3),
-      [oo(1,3), pt(4)] => Empty,
-      [oc(1,3), pt(4)] => Empty,
-
-      [oo(1,3)|oo(3,5), oo(2,3)|oo(3,7)] => oo(2,3)|oo(3,5),
-      [oo(1,3)|oo(3,5), oo(2,7)] => oo(2,3)|oo(3,5),
-
-      [oo(2,6), oo(1,3)|co(5,7)] => oo(2,3)|co(5,6),
-      [oo(1,6), oo(1,3)|co(5,7)] => oo(1,3)|co(5,6),
-      [oo(0,6), oo(1,3)|co(5,7)] => oo(1,3)|co(5,6),
-      [oo(0,6), oo(1,3)|co(5,6)] => oo(1,3)|co(5,6),
-
-
-    }.each do |intervals, answer|
-      it "IntervalNotation::Operations.intersection(#{intervals.map(&:to_s).join(',')} should equal #{answer}" do
-        expect( IntervalNotation::Operations.intersection(intervals) ).to eq answer
-      end
-
-      it "IntervalNotation::Operations.intersection(#{intervals.map(&:to_s).join(',')} should equal consequent unite: #{intervals.map(&:to_s).join('&')}" do
-        expect( IntervalNotation::Operations.intersection(intervals) ).to eq intervals.inject(&:intersection)
-      end
-
-      if intervals.size == 2
-        interval_1, interval_2 = intervals
-        it "#{interval_1} & #{interval_2} should equal #{answer}" do
-          expect( interval_1.intersection(interval_2) ).to eq answer
-        end
-      end
-    end
-
-    {
-      [oo(1,3), oo(1,3), oo(1,3)] => oo(1,3),
-      [oo(1,3), cc(1,3), oo(1,3)] => oo(1,3),
-      [oo(1,3), cc(0,5), cc(1,3)] => oo(1,3),
-      [cc(1,5), cc(3,7), cc(1,3)|cc(5,7)] => pt(3)|pt(5),
-      [oo(1,5), oo(3,7), oo(1,3)|oo(5,7)] => Empty,
-      [oo(1,5), oc(1,3), co(3,5)] => pt(3)
-    }.each do |intervals, answer|
-      it "#{intervals.map(&:to_s).join('&')} should equal #{answer}" do
-        expect( IntervalNotation::Operations.intersection(intervals) ).to eq answer
       end
     end
   end
@@ -663,7 +555,7 @@ describe IntervalNotation do
     end
   end
 
-  describe '#contain? / contained_by?' do 
+  describe '#contain? / contained_by?' do
     {
       [oo(1,3), oo(1,2)] => true,
       [oo(1,3), oo(1.5,2.5)] => true,
@@ -700,53 +592,13 @@ describe IntervalNotation do
     end
   end
 
-  describe '#intersect?' do 
-    {
-      [oo(1,3), oo(1,2)] => true,
-      [oo(1,3), oo(1,3)] => true,
-      [oo(1,3), cc(1.5,2.5)] => true,
-      
-      [oo(1,3), oo(3,4)] => false,
-      [oc(1,3), oo(3,4)] => false,
-      [oo(1,3), co(3,4)] => false,
-      [oc(1,3), co(3,4)] => true,
 
-      [oo(1,3), oo(4,5)] => false,
-      [cc(1,3), cc(4,5)] => false,
-      [cc(1,3), pt(2)|cc(4,5)] => true,
-      [co(1,3), pt(2)|cc(4,5)] => true,
-      [cc(1,3), pt(3)|cc(4,5)] => true,
-      [co(1,3), pt(3)|cc(4,5)] => false,
-      [cc(1,3), cc(4,5)|pt(6)] => false,
-
-      [lt(10), oo(1,3)] => true,
-      [lt(10), oo(11,12)] => false,
-      [lt(10), oo(10,11)] => false,
-      [le(10), co(10,11)] => true,
-      [le(10), le(9)] => true,
-      [le(10), le(11)] => true,
-      [le(10), ge(11)] => false,
-      [le(10), ge(10)] => true,
-      [le(10), gt(10)] => false,
-      [le(10), gt(11)] => false,
-    }.each do |(interval_1, interval_2), answer|
-      if answer
-        it "#{interval_1}.intersect?(#{interval_2}) should be truthy" do
-          expect( interval_1.intersect?(interval_2) ).to be_truthy
-        end
-      else
-        it "#{interval_1}.intersect?(#{interval_2}) should be falsy" do
-          expect( interval_1.intersect?(interval_2) ).to be_falsy
-        end
-      end
-    end
-  end
 
   describe '#contiguous?' do
     it 'Empty interval is treated as contiguous' do
       expect(Empty).to be_contiguous
     end
-    
+
     it 'Single component intervals are treated as contiguous' do
       expect(R).to be_contiguous
       expect(oo(1,3)).to be_contiguous
