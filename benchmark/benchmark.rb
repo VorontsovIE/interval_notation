@@ -7,7 +7,7 @@ srand(13)
 random_intervals_1 = num_intervals_to_unite.times.map{|i| 2.times.map{ 0.3*i + rand }.sort }.reject{|a,b| a==b }.map{|a,b| closed_closed(a,b)  }
 random_intervals_2 = num_intervals_to_unite.times.map{|i| 2.times.map{ 3000 + 0.3*i + rand }.sort }.reject{|a,b| a==b }.map{|a,b| closed_closed(a,b)  }
 
-N = 100
+N = 10
 M = 100_000
 
 dispersed_interval_1 = IntervalNotation::Operations.union(random_intervals_1)
@@ -18,6 +18,11 @@ singular_interval_2 = closed_closed(700 + rand, 1700 + rand)
 
 Benchmark.bm do |benchmark_report|
 
+  benchmark_report.report("old intersection check for dispersed intervals to singular interval (#{N} times)") do
+    N.times do
+      dispersed_interval_1.intersection(singular_interval_1).empty?
+    end
+  end
 
   benchmark_report.report("intersect? dispersed intervals to singular interval (#{M} times)") do
     M.times do

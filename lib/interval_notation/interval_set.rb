@@ -53,8 +53,13 @@ module IntervalNotation
     # Checks whether an interval set contains certain position.
     # Operation complexity is O(ln N), where N is a number of contiguous regions in an interval set
     def include_position?(value)
-      interval = @intervals.bsearch{|interv| interv.to >= value }
+      interval = @intervals.bsearch{|interv| value <= interv.to }
       interval && interval.include_position?(value)
+    end
+
+    def deep_include_position?(value)
+      interval = @intervals.bsearch{|interv| value <= interv.to }
+      interval && interval.deep_include_position?(value)
     end
 
     # Checks whether an interval set contains another interval set. Alias: +#include?+
@@ -69,10 +74,81 @@ module IntervalNotation
     end
     alias covered_by? contained_by?
 
-    # TODO: optimize if possible.
-    # Checks whether an interval set intersects another interval set. Alias: +#intersect?+
+
+    def bsearch_last_not_meeting_condition(arr)
+      found_ind = (0...arr.size).bsearch{|idx| yield(arr[idx]) } # find first not meeting condition
+      if found_ind
+        found_ind == 0 ? nil : arr[found_ind - 1]
+      else
+        arr.last
+      end
+    end
+    private :bsearch_last_not_meeting_condition
+
+    # Checks intersection with a single (basic) interval in a O(log N) time.
+    def intersect_single_interval?(interval) # :nodoc:
+      from = interval.from
+      to = interval.to
+
+      # If from is against a singular point, then ignore it.
+      #..............................pos............................
+      # interval_left_to_pos...................interval_right_to_pos
+      #
+      #..............................pos.............................
+      # interval_left_to_pos........point.......interval_right_to_pos
+      # reversed_intervals = @intervals.reverse
+
+      # find last interval +interv+ such that (interv.from < from)
+      left_to_start  = bsearch_last_not_meeting_condition(@intervals){|interv| interv.from >= from }
+      # find last interval +interv+ such that (interv.from < to)
+      left_to_finish = bsearch_last_not_meeting_condition(@intervals){|interv| interv.from >= to }
+
+      # find first interval +interv+ such that from < interv.to
+      right_to_start  = @intervals.bsearch{|interv| from < interv.to }
+      # find first interval +interv+ such that to < interv.to
+      right_to_finish = @intervals.bsearch{|interv| to < interv.to }
+
+      # If +from+ or +to+ is included in an interval, it is either
+      # a) deeply immersed (i.e. lie within interval with its vicinity) in it or
+      # b) just adjoins an interval(then it matters, whether it's included)
+      # If neither of points lie on an interval set, then it can still intersect an interval
+      # if +from+ and +to+ points are between different pairs of intervals.
+      # Problems come with singular points. If one is against interval's from or to,
+      # it is either treated as included, or is a deleted point going as either left or right boundary.
+      # It's hard to distinguish which boundary it is, so we just ignore a point if it is against +from+ or +to+
+      # (see a trick above) and treat intervals going the same side from a point as non-intersecting it.
+      # If no singular point exist against +from+ and +to+ positions, the non-overlapping interval have both
+      # +left_to_start == left_to_finish+  and  +right_to_start == right_to_finish+.
+      # Otherwise +interval+ overlap (cover) some interval.
+      include_position?(from) && (deep_include_position?(from) || interval.include_from?) ||
+      include_position?(to) && (deep_include_position?(to) || interval.include_to?) ||
+      !(left_to_start == left_to_finish || right_to_start == right_to_finish)
+    end
+    protected :intersect_single_interval?
+
+    # Checks whether intervals intersect in O(M*log N) where M and N are interval set sizes
+    def intersect_n_log_n?(other)
+      # sz_1 = num_connected_components + 2
+      # sz_2 = other.num_connected_components + 2
+      # if sz_1*Math.log2(sz_2) < sz_2 * Math.log2(sz_1)
+
+      # each of N intervals intersection check takes log(M). We prefer to take small N, large M than vice-versa
+      if @intervals.size < other.intervals.size
+        @intervals.any? do |segment|
+          other.intersect_single_interval?(segment)
+        end
+      else
+        other.intervals.any? do |segment|
+          intersect_single_interval?(segment)
+        end
+      end
+    end
+    protected :intersect_n_log_n?
+
+    # Checks whether an interval set intersects another interval set. Alias: +#overlap?+
     def intersect?(other)
-      ! intersection(other).empty?
+      intersect_n_log_n?(other) # ToDo: balance different implementations for different interval set sizes
+      # ! intersection(other).empty? # Simplest and too slow implementation
     end
     alias overlap? intersect?
 

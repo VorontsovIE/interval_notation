@@ -47,6 +47,11 @@ module IntervalNotation
       def singular_point?; false; end
       def hash; [@from, @to, include_from?, include_to?].hash; end;
       def eql?(other); other.class.equal?(self.class) && from.eql?(other.from) && to.eql?(other.to); end
+
+      # include position and its vicinity
+      def deep_include_position?(pos)
+        from < pos && pos < to
+      end
     end
 
     class OpenOpenInterval
@@ -189,6 +194,11 @@ module IntervalNotation
       def ==(other); other.is_a?(Point) && value == other.value; end
       def interval_boundaries(interval_index)
         BoundaryPoint.new(from, true, nil, interval_index, false)
+      end
+
+      # include position and its vicinity (point can't include vicinity of a position)
+      def deep_include_position?(pos)
+        false
       end
     end
 
