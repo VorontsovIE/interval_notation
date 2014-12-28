@@ -220,12 +220,12 @@ module IntervalNotation
 
     # Difference between an interval set and another interval set +other+. Alias: +-+
     def subtract(other)
-      Operations.combine([self, other], SubtractCombiner.new)
+      SubtractCombiner.new.combine([self, other])
     end
 
     # Symmetric difference between an interval set and another interval set +other+. Alias: +^+
     def symmetric_difference(other)
-      Operations.combine([self, other], SymmetricDifferenceCombiner.new)
+      SymmetricDifferenceCombiner.new.combine([self, other])
     end
 
     # Complement of an interval set in R. Alias: +~+

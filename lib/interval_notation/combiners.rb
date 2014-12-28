@@ -4,7 +4,10 @@ module IntervalNotation
   # Combiner is an internal helper class for combining interval sets using sweep line.
   # It starts moving from -∞ to +∞ and keep which intervals are crossed by sweep line.
   # Class helps to effectively recalculate number of crossed intervals without rechecking
-  # all intervals each time, and dramatically reduces speed of operations on large number of intervals
+  # all intervals each time, and dramatically reduces speed of operations on large number of intervals.
+  #
+  # Usage example:
+  #   UnionCombiner.new(3).combine([interval_1, interval_2, interval_3])
   class Combiner
     attr_reader :num_interval_sets
     attr_reader :previous_state
@@ -13,6 +16,49 @@ module IntervalNotation
       @num_interval_sets = num_interval_sets
       @inside = Array.new(num_interval_sets, false)
       @num_intervals_inside = 0 # number of intervals, we are inside (for efficiency)
+    end
+
+    # Combines intervals according on an information given by #state/#include_last_point functions
+    # which tell whether current section or point should be included to a new interval.
+    def combine(interval_sets)
+      points = interval_sets.each_with_index.flat_map{|interval_set, interval_set_index|
+        interval_set.intervals.flat_map{|interval|
+          interval.interval_boundaries(interval_set_index)
+        }
+      }.sort_by(&:value)
+
+      intervals = []
+
+      incl_from = nil
+      from = nil
+
+      points.chunk(&:value).each do |point_value, points_on_place|
+        pass(points_on_place)
+
+        if previous_state
+          if state
+            unless include_last_point
+              intervals << BasicIntervals.interval_by_boundary_inclusion(incl_from, from, false, point_value)
+              incl_from = false
+              from = point_value
+            end
+          else
+            to = point_value
+            incl_to = include_last_point
+            intervals << BasicIntervals.interval_by_boundary_inclusion(incl_from, from, incl_to, to)
+            from = nil # easier to find an error (but not necessary code)
+            incl_from = nil # ditto
+          end
+        else
+          if state
+            from = point_value
+            incl_from = include_last_point
+          else
+            intervals << BasicIntervals::Point.new(point_value)  if include_last_point
+          end
+        end
+      end
+      IntervalSet.new_unsafe(intervals)
     end
 
     # When sweep line pass several interval boundaries, +#pass+ should get all those points at once
