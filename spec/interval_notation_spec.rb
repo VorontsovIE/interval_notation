@@ -59,6 +59,13 @@ describe IntervalNotation do
     end
   end
 
+  describe 'closed_closed helper' do
+    specify 'closed_closed(x,x) returns point(x)' do
+      expect(cc(3,3)).to eq(pt(3))
+      expect(IntervalNotation::Syntax::Long.closed_closed(3,3)).to eq(IntervalNotation::Syntax::Long.point(3))
+    end
+  end
+
   describe '.to_s' do
     {
       Empty => '∅',

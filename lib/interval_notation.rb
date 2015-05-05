@@ -38,7 +38,11 @@ module IntervalNotation
       end
 
       def cc(from, to)
-        IntervalSet.new_unsafe( [BasicIntervals::ClosedClosedInterval.new(from, to)] )
+        if from != to
+          IntervalSet.new_unsafe( [BasicIntervals::ClosedClosedInterval.new(from, to)] )
+        else
+          IntervalSet.new_unsafe( [BasicIntervals::Point.new(from)] )
+        end
       end
 
       def pt(value)
@@ -86,7 +90,11 @@ module IntervalNotation
       end
 
       def closed_closed(from, to)
-        IntervalSet.new_unsafe( [BasicIntervals::ClosedClosedInterval.new(from, to)] )
+        if from != to
+          IntervalSet.new_unsafe( [BasicIntervals::ClosedClosedInterval.new(from, to)] )
+        else
+          IntervalSet.new_unsafe( [BasicIntervals::Point.new(from)] )
+        end
       end
 
       def point(value)
