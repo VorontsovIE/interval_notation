@@ -38,6 +38,9 @@ module IntervalNotation
       def from_finite?; from.to_f.finite?; end
       def to_finite?; to.to_f.finite?; end
       def finite?; from_finite? && to_finite?; end
+      def from_infinite?; from.to_f.infinite?; end
+      def to_infinite?; to.to_f.infinite?; end
+      def infinite?; from_infinite? || to_infinite?; end
 
       def from_to_s; from_finite? ? from : MINUS_INFINITY_SYMBOL; end
       def to_to_s; to_finite? ? to : PLUS_INFINITY_SYMBOL; end
@@ -85,6 +88,7 @@ module IntervalNotation
       def include_to?; true; end
 
       def to_finite?; true; end
+      def to_infinite?; false; end
       def to_to_s; to; end
 
       def closure
@@ -116,6 +120,7 @@ module IntervalNotation
       def include_to?; false; end
 
       def from_finite?; true; end
+      def from_infinite?; false; end
       def from_to_s; from; end
 
       def closure
@@ -149,6 +154,9 @@ module IntervalNotation
       def from_finite?; true; end
       def to_finite?; true; end
       def finite?; true; end
+      def from_infinite?; false; end
+      def to_infinite?; false; end
+      def infinite?; false; end
       def from_to_s; from; end
       def to_to_s; to; end
 
@@ -177,6 +185,9 @@ module IntervalNotation
       def from_finite?; true; end
       def to_finite?; true; end
       def finite?; true; end
+      def from_infinite?; false; end
+      def to_infinite?; false; end
+      def infinite?; false; end
 
       def length; 0; end
       def to_s; "{#{@value}}"; end
