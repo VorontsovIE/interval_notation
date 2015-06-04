@@ -73,6 +73,7 @@ module IntervalNotation
         [ BoundaryPoint.new(from, false, true, interval_index, true),
           BoundaryPoint.new(to, false, false, interval_index, true) ]
       end
+      def integer_points; (from + 1).floor .. (to - 1).ceil; end
     end
 
     class OpenClosedInterval
@@ -105,6 +106,7 @@ module IntervalNotation
         [ BoundaryPoint.new(from, false, true, interval_index, true),
           BoundaryPoint.new(to, true, false, interval_index, true) ]
       end
+      def integer_points; (from + 1).floor .. to.floor; end
     end
 
     class ClosedOpenInterval
@@ -137,6 +139,7 @@ module IntervalNotation
         [ BoundaryPoint.new(from, true, true, interval_index, true),
           BoundaryPoint.new(to, false, false, interval_index, true) ]
       end
+      def integer_points; from.ceil .. (to - 1).ceil; end
     end
 
     class ClosedClosedInterval
@@ -168,6 +171,7 @@ module IntervalNotation
         [ BoundaryPoint.new(from, true, true, interval_index, true),
           BoundaryPoint.new(to, true, false, interval_index, true) ]
       end
+      def integer_points; from.ceil .. to.floor; end
     end
 
     class Point
@@ -206,6 +210,7 @@ module IntervalNotation
       def interval_boundaries(interval_index)
         BoundaryPoint.new(from, true, nil, interval_index, false)
       end
+      def integer_points; value..value; end
 
       # include position and its vicinity (point can't include vicinity of a position)
       def deep_include_position?(pos)
