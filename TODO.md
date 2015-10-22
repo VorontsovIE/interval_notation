@@ -5,3 +5,4 @@
 * What about working with simgle intervals (their, length, relations etc)?
 * (?) Make it possible to use intervals with non-numeric objects to be possible to use math expressions as interval boundaries
 * May be we should check that boundary is an actual number, not a NaN
+* Make use of basic intervals (implement #coerce and make oo|co|pt|... return BasicIntervals)

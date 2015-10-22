@@ -736,5 +736,46 @@ describe IntervalNotation do
         expect(interval.closure).to eq answer
       end
     end
+
+    describe '#contiguous_intervals' do
+      {
+        Empty => [],
+        oo(1,3) => [oo(1,3)],
+        cc(5,6) => [cc(5,6)],
+        pt(4) => [pt(4)],
+        oo(1,3) | pt(4) => [oo(1,3), pt(4)],
+        oo(1,3) | cc(5,6) => [oo(1,3), cc(5,6)],
+        oo(1,3) | pt(4) | cc(5,6) => [oo(1,3), pt(4), cc(5,6)],
+      }.each do |interval, answer|
+        it "#{interval}.contiguous_intervals should equal #{answer}" do
+          expect(interval.contiguous_intervals).to eq answer
+        end
+      end
+    end
+
+    describe '#interval_covering_point' do
+      {
+        [Empty, 2] => nil,
+        [oo(1,3), 2] => OpenOpenInterval.new(1,3),
+        [cc(1,3), 2] => ClosedClosedInterval.new(1,3),
+        [oo(1,3), 4] => nil,
+        [oo(1,3), 3] => nil,
+        [oo(1,3), 1] => nil,
+        [cc(1,3), 1] => ClosedClosedInterval.new(1,3),
+        [cc(1,3), 3] => ClosedClosedInterval.new(1,3),
+        [pt(4), 5] => nil,
+        [pt(4), 4] => Point.new(4),
+        [oo(1,3) | pt(4), 4] => Point.new(4),
+        [oo(1,3) | oo(5,6), 4] => nil,
+        [oo(1,3) | oo(5,6), 2] => OpenOpenInterval.new(1,3),
+        [oo(1,3) | oo(5,6), 5.5] => OpenOpenInterval.new(5,6),
+        [oo(1,3) | pt(4) | oo(5,6), 4] => Point.new(4),
+        [oo(1,3) | pt(4) | oo(5,6), 2] => OpenOpenInterval.new(1,3),
+      }.each do |(interval, point), answer|
+        it "#{interval}.interval_covering_point(#{point}) should equal #{answer}" do
+          expect(interval.interval_covering_point(point)).to eq answer
+        end
+      end
+    end
   end
 end

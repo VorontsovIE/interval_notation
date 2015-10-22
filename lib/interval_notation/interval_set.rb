@@ -74,6 +74,14 @@ module IntervalNotation
     end
     alias covered_by? contained_by?
 
+    def interval_covering_point(value)
+      interval = @intervals.bsearch{|interv| value <= interv.to }
+      if interval && interval.include_position?(value)
+        interval
+      else
+        nil
+      end
+    end
 
     def bsearch_last_not_meeting_condition(arr)
       found_ind = (0...arr.size).bsearch{|idx| yield(arr[idx]) } # find first not meeting condition
@@ -243,6 +251,11 @@ module IntervalNotation
     # Auxiliary method to share part of common interface with basic intervals
     def to_interval_set # :nodoc:
       self
+    end
+
+    # obtain nonadjacent contiguous intervals from which whole interval set consists
+    def contiguous_intervals
+      intervals.map(&:to_interval_set)
     end
 
     class << self
