@@ -737,7 +737,7 @@ describe IntervalNotation do
       end
     end
 
-    describe '#contiguous_intervals' do
+    describe '#connected_components' do
       {
         Empty => [],
         oo(1,3) => [oo(1,3)],
@@ -747,8 +747,8 @@ describe IntervalNotation do
         oo(1,3) | cc(5,6) => [oo(1,3), cc(5,6)],
         oo(1,3) | pt(4) | cc(5,6) => [oo(1,3), pt(4), cc(5,6)],
       }.each do |interval, answer|
-        it "#{interval}.contiguous_intervals should equal #{answer}" do
-          expect(interval.contiguous_intervals).to eq answer
+        it "#{interval}.connected_components should equal #{answer}" do
+          expect(interval.connected_components).to eq answer
         end
       end
     end
@@ -771,6 +771,7 @@ describe IntervalNotation do
         [oo(1,3) | oo(5,6), 5.5] => OpenOpenInterval.new(5,6),
         [oo(1,3) | pt(4) | oo(5,6), 4] => Point.new(4),
         [oo(1,3) | pt(4) | oo(5,6), 2] => OpenOpenInterval.new(1,3),
+        [oo(1,3) | pt(4) | oo(5,6), 5.5] => OpenOpenInterval.new(5,6),
       }.each do |(interval, point), answer|
         it "#{interval}.interval_covering_point(#{point}) should equal #{answer}" do
           expect(interval.interval_covering_point(point)).to eq answer

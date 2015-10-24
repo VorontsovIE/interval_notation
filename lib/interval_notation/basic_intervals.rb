@@ -8,6 +8,9 @@ module IntervalNotation
       def closing
         !opening
       end
+      def singular_point?
+        !interval_boundary
+      end
     end
 
     module ActslikeInterval
@@ -208,7 +211,7 @@ module IntervalNotation
       def eql?(other); other.class.equal?(self.class) && value == other.value; end
       def ==(other); other.is_a?(Point) && value == other.value; end
       def interval_boundaries(interval_index)
-        BoundaryPoint.new(from, true, nil, interval_index, false)
+        [BoundaryPoint.new(from, true, nil, interval_index, false)]
       end
       def integer_points; value..value; end
 

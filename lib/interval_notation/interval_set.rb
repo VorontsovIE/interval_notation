@@ -74,6 +74,8 @@ module IntervalNotation
     end
     alias covered_by? contained_by?
 
+    # Find connected component of an interval set which covers a point.
+    # Return `BasicIntervals` for this connected component or nil if point is not covered.
     def interval_covering_point(value)
       interval = @intervals.bsearch{|interv| value <= interv.to }
       if interval && interval.include_position?(value)
@@ -228,12 +230,12 @@ module IntervalNotation
 
     # Difference between an interval set and another interval set +other+. Alias: +-+
     def subtract(other)
-      SubtractCombiner.new.combine([self, other])
+      SweepLine.make_interval_set([self, other], SweepLine::TraceState::Subtract.initial_state)
     end
 
     # Symmetric difference between an interval set and another interval set +other+. Alias: +^+
     def symmetric_difference(other)
-      SymmetricDifferenceCombiner.new.combine([self, other])
+      SweepLine.make_interval_set([self, other], SweepLine::TraceState::SymmetricDifference.initial_state)
     end
 
     # Complement of an interval set in R. Alias: +~+
@@ -253,9 +255,14 @@ module IntervalNotation
       self
     end
 
-    # obtain nonadjacent contiguous intervals from which whole interval set consists
-    def contiguous_intervals
+    # Obtain nonadjacent contiguous intervals (connected components) from which whole interval set consists
+    def connected_components
       intervals.map(&:to_interval_set)
+    end
+
+    # Create true/false `Segmentation` corresponding to an `IntervalSet`
+    def make_segmentation
+      SweepLine.make_segmentation({self => nil}, SweepLine::TraceState::Union.initial_state(1))
     end
 
     class << self

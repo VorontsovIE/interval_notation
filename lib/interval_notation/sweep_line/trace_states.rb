@@ -1,0 +1,6 @@
+require_relative 'trace_state/multiple_state'
+require_relative 'trace_state/tagging'
+require_relative 'trace_state/union'
+require_relative 'trace_state/intersection'
+require_relative 'trace_state/subtract'
+require_relative 'trace_state/symmetric_difference'
