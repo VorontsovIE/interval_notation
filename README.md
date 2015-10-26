@@ -46,7 +46,7 @@ interval_6_2 = oc(-Float::INFINITY, -3) # => (-∞,-3]
 interval_7_2 = oo(-3, Float::INFINITY) # => (-3,+∞)
 interval_8_2 = co(5.5, Float::INFINITY) # => [5.5,+∞)
 # Create interval set from string (see IntervalSet.from_string for details)
-interval_9 = int('{0}U[1,5)U(5,infty)') # => {0}U[1,5)U(5,+∞)
+interval_9 = interval('{0}U[1,5)U(5,infty)') # => {0}U[1,5)U(5,+∞)
 ```
 
 If you prefer more descriptive method names, use `IntervalNotation::Syntax::Long`. In such case you'll have `open_open`, `open_closed`, `closed_open`, `closed_closed`, `less_than`, `less_than_or_equal_to`, `greater_than`, `greater_than_or_equal_to` and `point` methods. `interval` is a long-form analog for `int` - to create interval set from string
